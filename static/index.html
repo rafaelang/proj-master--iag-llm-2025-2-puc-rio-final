@@ -108,7 +108,7 @@
     <section class="about">
       <h2>Sobre o projeto e a avaliacao (v0.1)</h2>
       <p>
-        Este chat percorre o pipeline <strong>ASR -> LLM -> TTS</strong>: sua fala e
+        Este chat percorre o pipeline <strong>ASR -&gt; LLM -&gt; TTS</strong>: sua fala e
         transcrita pelo <code>faster-whisper small</code> (com o vocabulario de dominio
         como prompt-guia), a resposta e gerada pela DeepSeek e falada em PT-BR pelo
         Piper. Abaixo, o resultado da avaliacao de WER da versao v0.1 sobre o corpus
@@ -116,6 +116,12 @@
         transcrição <strong>sem</strong> e <strong>com</strong> o prompt de
         vocabulario (<code>prompts/v0.1/vocabulario_voz.txt</code>).
       </p>
+      <ul class="highlights">
+        <li>Backend 100% local para ASR e TTS: <strong>custo zero</strong> por consulta.</li>
+        <li>Vocabulario de dominio reduziu o WER medio de <strong>0.2290</strong> para <strong>0.0863</strong>.</li>
+        <li>Acuracia media subiu de <strong>77.10%</strong> para <strong>91.37%</strong>.</li>
+        <li>O audio mais desafiador foi o <code>07.ogg</code> (agentes multimodais).</li>
+      </ul>
       <table class="result-table">
         <thead>
           <tr>
@@ -141,8 +147,8 @@
 </tbody>
       </table>
       <ul class="highlights">
-        <li>Resultados serao preenchidos apos a execucao do script de avaliacao WER.</li>
         <li>Comparacao: transcrição <strong>sem</strong> e <strong>com</strong> vocabulario de dominio.</li>
+        <li>Resultados medidos localmente com faster-whisper small (CPU).</li>
       </ul>
     </section>
   </div>
@@ -177,8 +183,8 @@
         const li = document.createElement("li");
         li.className = role;
         li.textContent = text;
-        chatEl.appendChild(li);
-        chatEl.scrollTop = chatEl.scrollHeight;
+        chatEl.insertBefore(li, chatEl.firstChild);
+        chatEl.scrollTop = 0;
       }
 
       function pickExtension(mime) {
@@ -224,12 +230,25 @@
 
       async function sendAudio() {
         resetButtons(false);
-        setStatus("Enviando audio para o assistente...");
+        recordBtn.disabled = true;
+        stopBtn.disabled = true;
+
+        const startTime = Date.now();
+        let timerId = setInterval(() => {
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          setStatus("Enviando audio para o assistente... " + elapsed + "s");
+        }, 100);
+
+        function cleanup(ok, msg) {
+          clearInterval(timerId);
+          setStatus(msg, !ok);
+          recordBtn.disabled = false;
+        }
 
         const type = mediaRecorder.mimeType || "audio/webm";
         const blob = new Blob(chunks, { type });
         if (!blob.size) {
-          setStatus("Nenhum audio capturado. Tente novamente.", true);
+          cleanup(false, "Nenhum audio capturado. Tente novamente.");
           return;
         }
 
@@ -246,7 +265,7 @@
               if (data && data.detail) detail = data.detail;
             } catch (_) {}
             addMessage("system", detail);
-            setStatus(detail, true);
+            cleanup(false, detail);
             return;
           }
 
@@ -266,9 +285,9 @@
           player.classList.add("visible");
           await player.play();
 
-          setStatus("Resposta recebida e reproduzida.");
+          cleanup(true, "Resposta recebida e reproduzida.");
         } catch (err) {
-          setStatus("Falha ao enviar o audio: " + err.message, true);
+          cleanup(false, "Falha ao enviar o audio: " + err.message);
         }
       }
 

@@ -10,15 +10,16 @@ from openai import OpenAI
 from projeto_final import config
 
 DEFAULT_MODELO = "deepseek-chat"
-MAX_PALAVRAS = 60
-MAX_TOKENS = 200
+MAX_PALAVRAS = 30
+MAX_TOKENS = 100
 
 PROMPT_TTS = (
     "Você é um assistente do Master IAG e LLM da PUC-Rio. "
     "Responda em português, em texto puro, SEM formatação: sem negrito, sem itálico, "
     "sem títulos, sem listas, sem marcadores, sem símbolos e sem emojis — "
     "apenas frases prontas para serem lidas em voz alta. "
-    f"Seja direto e responda em no máximo {MAX_PALAVRAS} palavras."
+    f"Seja direto e objetivo. Sua resposta deve ter no máximo {MAX_PALAVRAS} palavras "
+    f"e no máximo {MAX_TOKENS} tokens, então responda de forma breve e compatível com esse limite."
 )
 
 _cliente_cache: OpenAI | None = None

@@ -5,7 +5,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 RAIZ = Path(__file__).resolve().parent.parent.parent
+
+# Carrega variaveis de ambiente do .env (se existir)
+load_dotenv(RAIZ / ".env")
 
 # Diretorios
 DATA_DIR = RAIZ / "data"

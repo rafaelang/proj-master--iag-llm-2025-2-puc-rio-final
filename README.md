@@ -1,7 +1,7 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v0.0 · Fundação (reimplementação do zero, release a release)
+> **Status:** v0.1 · Voz (pipeline ASR -> LLM -> TTS funcional, WER medido)
 > **Repositório base de consulta:** `projeto2/` (protótipo de experimentação)
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
@@ -121,12 +121,45 @@ Nunca commitar `.env`.
 
 ---
 
-## 5. Status
+## 5. Arquitetura da v0.1
+
+O prototipo v0.1 segue o pipeline **ASR -&gt; LLM -&gt; TTS**, servido por uma pagina HTML estatica via FastAPI:
+
+```mermaid
+flowchart LR
+    A[Navegador - microfone] -->|audio/webm| B[FastAPI POST /chat]
+    B --> C[faster-whisper small CPU]
+    C -->|transcricao| D[DeepSeek deepseek-chat]
+    D -->|resposta texto| E[piper-tts pt-BR]
+    E -->|audio/wav| F[Navegador - player]
+```
+
+Componentes:
+
+- **Entrada:** pagina HTML em `static/index.html` grava audio do microfone e envia via multipart para `/chat`.
+- **ASR:** `faster-whisper` small roda 100% em CPU, com vocabulario de dominio como `initial_prompt`.
+- **LLM:** DeepSeek `deepseek-chat` via SDK OpenAI, prompt instruindo respostas curtas sem formatacao.
+- **TTS:** `piper-tts` com voz `pt_BR-faber-medium`, 100% local.
+- **Avaliacao:** 10 amostras de audio proprias em `data/golden_set/voz/`; WER medido antes/depois do vocabulario.
+
+### Resultado da v0.1
+
+| Metrica | Sem vocabulario | Com vocabulario | Ganho |
+|---|---|---|---|
+| WER medio | 0.2290 | 0.0863 | -0.1427 |
+| Acuracia media | 77.10% | 91.37% | +14.27 p.p. |
+| Custo por consulta | US$ 0.00 (ASR/TTS local) | US$ 0.00 | - |
+
+Mais detalhes em `docs/v01_voz_evidencia.md`.
+
+---
+
+## 6. Status
 
 | Release | Status |
 |---|---|
-| v0.0 · Fundação | ✅ Inicializado com `uv init --app`; README e estrutura criados. |
-| v0.1 · Voz | ⏳ Aguardando aprovação da v0.0 para iniciar. |
+| v0.0 · Fundação | ✅ Inicializado com `uv init --app`; README, AGENTS.md, estrutura criados. |
+| v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
 | v0.2 · RAG | ⏳ |
 | v0.3 · Imagem | ⏳ |
 | v0.4 · Agentes | ⏳ |
@@ -136,7 +169,7 @@ Nunca commitar `.env`.
 
 ---
 
-## 6. Referências
+## 7. Referências
 
 - **Protótipo de consulta:** `../projeto2/` — contém as decisões técnicas e evidências das releases anteriores.
 - **Spec oficial da disciplina:** `../projeto2/docs/spec_projeto_final.md`.
