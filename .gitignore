@@ -1,0 +1,41 @@
+# Python-generated files
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+venv/
+
+# Pytest / Jupyter
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Ambientes e segredos
+.env
+.env.*
+!.env.example
+*.token
+
+# Dados brutos e processados (fora do Git)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Artefatos grandes/gerados
+*.mp4
+*.keras
+*.h5
+*.db
+*.sqlite
+*.sqlite3
+notebooks/.ipynb_checkpoints/
+
+# Arquivos pessoais de planejamento
+EMAIL_ORIENTADOR.md
+TODO.md
