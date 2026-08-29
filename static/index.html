@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat por voz - Projeto Final</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --user: #2563eb;
+      --assistant: #334155;
+      --error: #f87171;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+    .app {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    h1 { margin: 0; font-size: 1.4rem; text-align: center; }
+    .controls { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    button {
+      padding: 10px 22px; font-size: 1rem; font-weight: 600; border: 0;
+      border-radius: 10px; cursor: pointer; color: #0b1220;
+      background: var(--accent); transition: opacity 0.15s;
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.record-on { background: var(--error); color: #fff; }
+    #status { min-height: 1.2em; text-align: center; color: var(--muted); font-size: 0.95rem; }
+    #status.error { color: var(--error); }
+    #player { width: 100%; display: none; margin: 0 auto; }
+    #player.visible { display: block; }
+    #chat {
+      list-style: none; margin: 0; padding: 0; display: flex;
+      flex-direction: column; gap: 10px; max-height: 55vh; overflow-y: auto;
+    }
+    #chat li {
+      max-width: 80%; padding: 10px 14px; border-radius: 14px;
+      line-height: 1.45; white-space: pre-wrap; word-break: break-word;
+    }
+    #chat li.user { align-self: flex-end; background: var(--user); border-bottom-right-radius: 4px; }
+    #chat li.assistant { align-self: flex-start; background: var(--assistant); border-bottom-left-radius: 4px; }
+    #chat li.system {
+      align-self: center; background: transparent; border: 1px solid var(--error);
+      color: var(--error); font-size: 0.9rem;
+    }
+    .hint { text-align: center; color: var(--muted); font-size: 0.85rem; }
+    .about {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px 18px;
+    }
+    .about h2 { margin: 0 0 8px; font-size: 1.1rem; }
+    .about p {
+      margin: 0 0 12px; color: var(--muted); line-height: 1.55; font-size: 0.95rem;
+    }
+    .about code { background: var(--bg); padding: 1px 5px; border-radius: 5px; font-size: 0.88em; }
+    .result-table {
+      width: 100%; border-collapse: collapse; font-size: 0.9rem;
+    }
+    .result-table th, .result-table td {
+      padding: 6px 8px; border-bottom: 1px solid var(--border);
+      text-align: right; white-space: nowrap;
+    }
+    .result-table th:first-child, .result-table td:first-child { text-align: left; }
+    .result-table tbody tr:last-child td {
+      font-weight: 700; color: var(--accent); border-bottom: 0;
+    }
+    .highlights {
+      list-style: none; margin: 12px 0 0; padding: 0; display: flex;
+      flex-direction: column; gap: 6px; color: var(--muted);
+      font-size: 0.9rem; line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Chat por voz</h1>
+
+    <div class="controls">
+      <button id="record" type="button">Gravar</button>
+      <button id="stop" type="button" disabled>Enviar</button>
+    </div>
+
+    <div id="status">Clique em "Gravar" e fale. Depois clique em "Enviar".</div>
+
+    <audio id="player" controls></audio>
+
+    <ul id="chat" aria-label="Historico da conversa"></ul>
+
+    <div class="hint">A transcrição da sua fala e a resposta do assistente aparecem aqui.</div>
+
+    <section class="about">
+      <h2>Sobre o projeto e a avaliacao (v0.1)</h2>
+      <p>
+        Este chat percorre o pipeline <strong>ASR -> LLM -> TTS</strong>: sua fala e
+        transcrita pelo <code>faster-whisper small</code> (com o vocabulario de dominio
+        como prompt-guia), a resposta e gerada pela DeepSeek e falada em PT-BR pelo
+        Piper. Abaixo, o resultado da avaliacao de WER da versao v0.1 sobre o corpus
+        de 10 audios (<code>01.ogg</code> ... <code>10.ogg</code>), comparando a
+        transcrição <strong>sem</strong> e <strong>com</strong> o prompt de
+        vocabulario (<code>prompts/v0.1/vocabulario_voz.txt</code>).
+      </p>
+      <table class="result-table">
+        <thead>
+          <tr>
+            <th>Arquivo</th>
+            <th>WER sem</th>
+            <th>WER com</th>
+            <th>Acuracia sem</th>
+            <th>Acuracia com</th>
+          </tr>
+        </thead>
+        <tbody>
+<tr><td>01.ogg</td><td>0.2222</td><td>0.0000</td><td>0.7778</td><td>1.0000</td></tr>
+<tr><td>02.ogg</td><td>0.3333</td><td>0.1667</td><td>0.6667</td><td>0.8333</td></tr>
+<tr><td>03.ogg</td><td>0.1667</td><td>0.0000</td><td>0.8333</td><td>1.0000</td></tr>
+<tr><td>04.ogg</td><td>0.0000</td><td>0.0000</td><td>1.0000</td><td>1.0000</td></tr>
+<tr><td>05.ogg</td><td>0.3750</td><td>0.1250</td><td>0.6250</td><td>0.8750</td></tr>
+<tr><td>06.ogg</td><td>0.1000</td><td>0.0000</td><td>0.9000</td><td>1.0000</td></tr>
+<tr><td>07.ogg</td><td>0.8571</td><td>0.5714</td><td>0.1429</td><td>0.4286</td></tr>
+<tr><td>08.ogg</td><td>0.1250</td><td>0.0000</td><td>0.8750</td><td>1.0000</td></tr>
+<tr><td>09.ogg</td><td>0.0000</td><td>0.0000</td><td>1.0000</td><td>1.0000</td></tr>
+<tr><td>10.ogg</td><td>0.1111</td><td>0.0000</td><td>0.8889</td><td>1.0000</td></tr>
+<tr><td>MEDIA</td><td>0.2290</td><td>0.0863</td><td>0.7710</td><td>0.9137</td></tr>
+</tbody>
+      </table>
+      <ul class="highlights">
+        <li>Resultados serao preenchidos apos a execucao do script de avaliacao WER.</li>
+        <li>Comparacao: transcrição <strong>sem</strong> e <strong>com</strong> vocabulario de dominio.</li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const recordBtn = document.getElementById("record");
+      const stopBtn = document.getElementById("stop");
+      const statusEl = document.getElementById("status");
+      const player = document.getElementById("player");
+      const chatEl = document.getElementById("chat");
+
+      const EXT_BY_MIME = {
+        "audio/webm": "webm",
+        "audio/ogg": "ogg",
+        "audio/mp4": "m4a",
+        "audio/x-m4a": "m4a",
+      };
+
+      let mediaRecorder = null;
+      let chunks = [];
+
+      function setStatus(msg, isError) {
+        statusEl.textContent = msg;
+        statusEl.classList.toggle("error", Boolean(isError));
+      }
+
+      function addMessage(role, text) {
+        if (!text) return;
+        const li = document.createElement("li");
+        li.className = role;
+        li.textContent = text;
+        chatEl.appendChild(li);
+        chatEl.scrollTop = chatEl.scrollHeight;
+      }
+
+      function pickExtension(mime) {
+        const base = String(mime || "").split(";")[0].trim();
+        return EXT_BY_MIME[base] || "webm";
+      }
+
+      function resetButtons(recordingState) {
+        recordBtn.disabled = recordingState;
+        stopBtn.disabled = !recordingState;
+        recordBtn.classList.toggle("record-on", recordingState);
+      }
+
+      async function startRecording() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setStatus("Microfone indisponivel (use localhost ou HTTPS).", true);
+          return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          chunks = [];
+          mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 128000 });
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) chunks.push(e.data);
+          };
+          mediaRecorder.onstop = () => {
+            mediaRecorder.stream.getTracks().forEach((t) => t.stop());
+            sendAudio();
+          };
+          mediaRecorder.start();
+          resetButtons(true);
+          setStatus('Gravando... clique em "Enviar" para finalizar.');
+        } catch (err) {
+          setStatus("Nao foi possivel acessar o microfone: " + err.message, true);
+        }
+      }
+
+      function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          mediaRecorder.stop();
+        }
+      }
+
+      async function sendAudio() {
+        resetButtons(false);
+        setStatus("Enviando audio para o assistente...");
+
+        const type = mediaRecorder.mimeType || "audio/webm";
+        const blob = new Blob(chunks, { type });
+        if (!blob.size) {
+          setStatus("Nenhum audio capturado. Tente novamente.", true);
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", blob, "gravacao." + pickExtension(type));
+
+        try {
+          const res = await fetch("/chat", { method: "POST", body: formData });
+
+          if (!res.ok) {
+            let detail = "Erro " + res.status;
+            try {
+              const data = await res.json();
+              if (data && data.detail) detail = data.detail;
+            } catch (_) {}
+            addMessage("system", detail);
+            setStatus(detail, true);
+            return;
+          }
+
+          const decode = (v) => {
+            if (!v) return "";
+            try { return decodeURIComponent(v); } catch (_) { return v; }
+          };
+          const transcription = decode(res.headers.get("X-Transcription"));
+          const answer = decode(res.headers.get("X-Answer"));
+
+          addMessage("user", transcription);
+          addMessage("assistant", answer);
+
+          const audioBlob = await res.blob();
+          const url = URL.createObjectURL(audioBlob);
+          player.src = url;
+          player.classList.add("visible");
+          await player.play();
+
+          setStatus("Resposta recebida e reproduzida.");
+        } catch (err) {
+          setStatus("Falha ao enviar o audio: " + err.message, true);
+        }
+      }
+
+      recordBtn.addEventListener("click", startRecording);
+      stopBtn.addEventListener("click", stopRecording);
+    })();
+  </script>
+</body>
+</html>

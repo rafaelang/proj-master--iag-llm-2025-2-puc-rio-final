@@ -7,7 +7,16 @@ authors = [
     { name = "Rafael Garcia", email = "rafa.informatica@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi>=0.141.1",
+    "faster-whisper>=1.2.1",
+    "loguru>=0.7.3",
+    "openai>=3.6.0",
+    "piper-tts>=1.7.0",
+    "pytest>=9.1.1",
+    "python-multipart>=0.0.32",
+    "uvicorn>=0.52.4",
+]
 
 [project.scripts]
 projeto-final = "projeto_final:main"

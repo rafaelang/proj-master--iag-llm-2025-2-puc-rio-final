@@ -1,0 +1,5 @@
+Transcrição de áudio sobre o Master IAG e LLM da PUC-Rio.
+Termos frequentes do domínio: embeddings, Transformers, atenção, fine-tuning,
+Whisper, WER, FastAPI, agentes multimodais, golden set, modelos de difusão, CLIP,
+YOLO, deep learning, prompt, ementa, disciplina, vocabulário, RAG, machine learning,
+dados não estruturados, banco de dados relacional, PUC-Rio, Master IAG, LLM.

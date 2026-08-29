@@ -1,0 +1,44 @@
+{
+  "frases": [
+    {
+      "id": 1,
+      "referencia": "O que é RAG no curso de inteligência artificial?"
+    },
+    {
+      "id": 2,
+      "referencia": "Embeddings representam palavras em vetores numéricos"
+    },
+    {
+      "id": 3,
+      "referencia": "Transformers usam atenção para processar texto"
+    },
+    {
+      "id": 4,
+      "referencia": "O fine-tuning adapta o modelo ao domínio"
+    },
+    {
+      "id": 5,
+      "referencia": "Whisper transcreve áudio em texto com baixo WER"
+    },
+    {
+      "id": 6,
+      "referencia": "Na aula de deploy usamos FastAPI para servir o modelo"
+    },
+    {
+      "id": 7,
+      "referencia": "Agentes multimodais combinam texto, imagem e áudio"
+    },
+    {
+      "id": 8,
+      "referencia": "O golden set avalia o desempenho do assistente"
+    },
+    {
+      "id": 9,
+      "referencia": "Modelos de difusão geram imagens a partir de ruído"
+    },
+    {
+      "id": 10,
+      "referencia": "A PUC-Rio oferece o Master IAG e LLM"
+    }
+  ]
+}

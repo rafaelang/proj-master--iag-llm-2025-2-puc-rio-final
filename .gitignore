@@ -39,3 +39,6 @@ notebooks/.ipynb_checkpoints/
 # Arquivos pessoais de planejamento
 EMAIL_ORIENTADOR.md
 TODO.md
+
+# SQLite in-memory session artifacts
+:memory:.ses
