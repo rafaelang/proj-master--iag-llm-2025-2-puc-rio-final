@@ -17,9 +17,11 @@ NAO altera o golden set. Apenas le data/golden_set/rag/perguntas.json.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import time
+from datetime import datetime
 
 from loguru import logger
 from openai import OpenAI
@@ -32,6 +34,7 @@ from projeto_final.rag.retrieve import recuperar
 GOLDEN = config.RAG_GOLDEN_SET
 JSON_SAIDA = config.RAG_DIR / "avaliacao_v2.json"
 EVIDENCIA_MD = config.DOCS_DIR / "v02_evidencia.md"
+HISTORICO = config.RAG_DIR / "avaliacao_historico.json"
 
 TOP_K_RECALL = 5    # granularidade de documento, como a v0.2 real (recall@5)
 TOP_K_GERACAO = 10  # blocos de contexto enviados ao LLM na geracao
@@ -290,7 +293,7 @@ def _falhas(linhas: list[dict]) -> list[dict]:
 
 # ------------------------------------------------------- evidencia (Markdown)
 
-def gerar_evidencia(out: dict) -> str:
+def gerar_evidencia(out: dict, historico: list[dict] | None = None) -> str:
     meta = out.get("meta", {})
     r = out["resumo"]
     md = [
@@ -300,6 +303,7 @@ def gerar_evidencia(out: dict) -> str:
         f"> Dataset: `{meta.get('golden_set', 'data/golden_set/rag/perguntas.json')}`.",
         f"> Criterios: {meta.get('criterios', 'detectar_abstencao + auditoria deterministica de citacao + juiz LLM-as-judge')}.",
         f"> Juiz: LLM-as-judge `{meta.get('juiz_model', config.JUIZ_MODEL)}` (mesmo prompt do 'juiz_correcao.py' v0.6).",
+        f"> Prompt de geração: `rag_sistema.txt#{_prompt_hash()}`.",
         "",
         "## Metricas por estrato",
         "",
@@ -354,7 +358,41 @@ def gerar_evidencia(out: dict) -> str:
             md.append(f"- **Justificativa do juiz:** {l['juiz_justificativa']}")
         md.append(f"- **Citações:** {cit}")
         md.append("")
+
+    if historico:
+        md += ["## Histórico de medições", ""]
+        md += [
+            "| Data | Geração | Juiz | Prompt | recall@5 | acerto | abstenção correta | abstenção indevida | citação presente | auditoria fiel/fora/fantasma |",
+            "|---|---|---|---|---|---|---|---|---|---|",
+        ]
+        for h in historico:
+            r = h["resumo"]
+            rec = f"{r['recall_k5_media']:.3f}" if r.get("recall_k5_media") is not None else "-"
+            aud = r["auditoria_citacao"]
+            md.append(
+                f"| {h['data']} | {h['modelo_geracao']} | {h['juiz_model']} | {h['prompt']} | {rec} "
+                f"| {r['acerto_end_to_end']:.3f} | {r['abstencao_correta_20']:.3f} "
+                f"| {r['abstencao_indevida']['taxa']:.3f} | {r['citacao_presente']:.3f} "
+                f"| {aud['citacao_fiel']}/{aud['citacao_fora']}/{aud['citacao_fantasma']} |"
+            )
+        md.append("")
+
     return "\n".join(md) + "\n"
+
+
+def _prompt_hash() -> str:
+    """Hash curto do prompt de geracao atual (para identificar versoes no historico)."""
+    sistema = config.ler_prompt("v0.2/rag_sistema.txt") or ""
+    return hashlib.sha256(sistema.encode("utf-8")).hexdigest()[:8]
+
+
+def _carregar_historico() -> list[dict]:
+    if HISTORICO.exists():
+        try:
+            return json.loads(HISTORICO.read_text(encoding="utf-8"))
+        except Exception:
+            logger.warning("Historico invalido; reiniciando a lista de medicoes")
+    return []
 
 
 def main() -> None:
@@ -362,11 +400,23 @@ def main() -> None:
     logger.add(config.RAG_DIR / "avaliacao_v2.log", rotation="1 MB", level="DEBUG")
     logger.info("Avaliacao v0.2 iniciada: dataset unico {}", GOLDEN)
     out = avaliar()
+
+    historico = _carregar_historico()
+    historico.append({
+        "data": datetime.now().isoformat(timespec="seconds"),
+        "modelo_geracao": config.DEEPSEEK_MODEL,
+        "juiz_model": config.JUIZ_MODEL,
+        "prompt": f"rag_sistema.txt#{_prompt_hash()}",
+        "resumo": out["resumo"],
+    })
+    HISTORICO.write_text(json.dumps(historico, ensure_ascii=False, indent=2), encoding="utf-8")
+
     JSON_SAIDA.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     config.DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    EVIDENCIA_MD.write_text(gerar_evidencia(out), encoding="utf-8")
+    EVIDENCIA_MD.write_text(gerar_evidencia(out, historico), encoding="utf-8")
     print("RESUMO:", json.dumps(out["resumo"], ensure_ascii=False, indent=2))
     print(f"json intermediario: {JSON_SAIDA}")
+    print(f"historico de medicoes: {HISTORICO}")
     print(f"evidencia (markdown): {EVIDENCIA_MD}")
 
 
