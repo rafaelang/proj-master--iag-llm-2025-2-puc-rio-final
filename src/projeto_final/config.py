@@ -32,13 +32,27 @@ PIPER_VOICE = os.getenv("PIPER_VOICE", "pt_BR-faber-medium")
 PIPER_MODEL = os.getenv("PIPER_MODEL")
 PIPER_MODELS_DIR = PROCESSED_DIR / "piper_models"
 
+# RAG
+RAG_DIR = PROCESSED_DIR / "rag"
+RAG_CHUNK_PATH = RAG_DIR / "chunks.json"
+RAG_BM25_PATH = RAG_DIR / "bm25.pkl"
+RAG_EMBEDDINGS_PATH = RAG_DIR / "embeddings.npy"
+RAG_CHUNK_IDS_PATH = RAG_DIR / "chunk_ids.json"
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+
 # LLM
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
+def ler_prompt(caminho_relativo: str) -> str | None:
+    """Le um prompt versionado em prompts/ por caminho relativo."""
+    p = PROMPTS_DIR / caminho_relativo
+    if p.exists():
+        return p.read_text(encoding="utf-8").strip()
+    return None
+
+
 def ler_prompt_vocabulario() -> str | None:
     """Le o vocabulario de dominio para initial_prompt do Whisper."""
-    if PROMPT_VOCABULARIO.exists():
-        return PROMPT_VOCABULARIO.read_text(encoding="utf-8").strip()
-    return None
+    return ler_prompt("v0.1/vocabulario_voz.txt")

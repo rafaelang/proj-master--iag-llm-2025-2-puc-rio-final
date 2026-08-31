@@ -1,4 +1,4 @@
-"""FastAPI — v0.1."""
+"""FastAPI — v0.2 (RAG + voz)."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from starlette.concurrency import run_in_threadpool
 from urllib.parse import quote
 
 from projeto_final import config, llm, tts, voz
+from projeto_final.rag import pipeline as rag_pipeline
 
 RAIZ = config.RAIZ
 STATIC_INDEX = RAIZ / "static" / "index.html"
@@ -22,16 +23,21 @@ CHAT_EXTS = (*voz.AUDIO_EXTS,)
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Assistente Master IAG & LLM - API de Voz",
-        description="Recebe audio, transcreve, responde via LLM e devolve audio sintetizado.",
-        version="0.1.0",
+        title="Assistente Master IAG & LLM - API de Voz e RAG",
+        description="Recebe audio, transcreve, responde via RAG e devolve audio sintetizado.",
+        version="0.2.0",
     )
 
     @app.on_event("startup")
     def startup():
-        logger.info("Iniciando API v0.1 em {}", RAIZ)
+        logger.info("Iniciando API v0.2 em {}", RAIZ)
         if not config.DEEPSEEK_API_KEY:
             logger.warning("DEEPSEEK_API_KEY nao configurada — endpoint /chat usara TTS echo se LLM falhar")
+        try:
+            rag_pipeline.carregar_chunks()
+            logger.info("Chunks RAG carregados com sucesso")
+        except Exception as e:
+            logger.warning("RAG ainda nao configurado: {}", e)
 
     @app.get("/", response_class=HTMLResponse)
     def pagina() -> HTMLResponse:
@@ -39,8 +45,13 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail="index.html nao encontrado")
         return HTMLResponse(STATIC_INDEX.read_text(encoding="utf-8"))
 
-    @app.get("/voz/saude")
+    @app.get("/saude")
     def saude() -> dict:
+        chunks = []
+        try:
+            chunks = rag_pipeline.carregar_chunks()
+        except Exception:
+            pass
         return {
             "asr": {
                 "backend": "faster-whisper (CPU)",
@@ -55,7 +66,28 @@ def create_app() -> FastAPI:
                 "backend": config.TTS_BACKEND,
                 "voz": config.PIPER_VOICE,
             },
+            "rag": {
+                "chunks_indexados": len(chunks),
+                "corpus_raw": list(config.RAW_DIR.glob("*.*")),
+            },
         }
+
+    @app.get("/voz/saude")
+    def saude_voz() -> dict:
+        return saude()
+
+    @app.get("/rag/saude")
+    def saude_rag() -> dict:
+        return saude()["rag"]
+
+    @app.post("/rag/perguntar")
+    async def rag_perguntar(pergunta: str) -> dict:
+        logger.info("RAG /rag/perguntar: {}", pergunta)
+        try:
+            return await run_in_threadpool(rag_pipeline.responder, pergunta)
+        except Exception as e:
+            logger.error("Erro no RAG: {}", e)
+            raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/chat")
     async def chat(file: UploadFile = File(...)) -> Response:
@@ -105,9 +137,19 @@ def _pipeline_voz(dados: bytes, ext: str) -> dict:
         raise HTTPException(status_code=422, detail="Nao foi possivel transcrever o audio")
 
     try:
-        resposta, meta_llm = llm.responder(texto)
+        if os.getenv("USE_RAG", "true").lower() == "true":
+            logger.debug("Usando RAG para resposta")
+            resultado_rag = rag_pipeline.responder(texto)
+            resposta = resultado_rag["resposta"]
+            meta_llm = {
+                "modelo": resultado_rag["modelo_llm"],
+                "uso": resultado_rag["uso"],
+                "latencia_s": resultado_rag["latencia_s"],
+            }
+        else:
+            resposta, meta_llm = llm.responder(texto)
     except Exception as e:
-        logger.error("LLM falhou: {}. Usando resposta local.", e)
+        logger.error("LLM/RAG falhou: {}. Usando resposta local.", e)
         resposta = "Desculpe, nao consegui consultar o modelo agora. Tente novamente."
         meta_llm = {"modelo": config.DEEPSEEK_MODEL, "uso": None, "latencia_s": 0.0}
 

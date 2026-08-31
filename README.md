@@ -1,7 +1,7 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v0.1 · Voz (pipeline ASR -> LLM -> TTS funcional, WER medido)
+> **Status:** v0.2 · RAG (busca hibrida, citacao e abstencao, golden set medido)
 > **Repositório base de consulta:** `projeto2/` (protótipo de experimentação)
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
@@ -150,7 +150,37 @@ Componentes:
 | Acuracia media | 77.10% | 91.37% | +14.27 p.p. |
 | Custo por consulta | US$ 0.00 (ASR/TTS local) | US$ 0.00 | - |
 
-Mais detalhes em `docs/v01_voz_evidencia.md`.
+Mais detalhes em `docs/v01.md`.
+
+## Arquitetura da v0.2
+
+A v0.2 adiciona RAG ao pipeline de voz:
+
+```mermaid
+flowchart TB
+    subgraph Entrada
+        A[Navegador - microfone] -->|audio/webm| B[FastAPI POST /chat]
+        C[Texto /rag/perguntar] --> D[RAG pipeline]
+    end
+    B --> E[faster-whisper small]
+    E -->|transcricao| D
+    D --> F[BM25 + embeddings fastembed]
+    F -->|RRF top-k| G[Contexto com chunks]
+    G --> H[DeepSeek deepseek-chat]
+    H -->|resposta + citacao| I[piper-tts pt-BR]
+    I -->|audio/wav| J[Navegador - player]
+```
+
+### Resultado da v0.2
+
+| Metrica | Valor |
+|---|---|
+| recall@5 (perguntas com docs esperados) | 1.000 |
+| Abstencao correta (negativas + adversariais) | 1.000 |
+| Citacao presente (respostas nao-abstidas) | 1.000 |
+| Custo de embeddings/recuperacao | US$ 0.00 (local) |
+
+Mais detalhes em `docs/v02_evidencia.md`.
 
 ---
 
@@ -160,7 +190,7 @@ Mais detalhes em `docs/v01_voz_evidencia.md`.
 |---|---|
 | v0.0 · Fundação | ✅ Inicializado com `uv init --app`; README, AGENTS.md, estrutura criados. |
 | v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
-| v0.2 · RAG | ⏳ |
+| v0.2 · RAG | ✅ recall@5=1.0; abstenção correta=1.0; citação=1.0; BM25 + fastembed + RRF; golden set 20 perguntas. |
 | v0.3 · Imagem | ⏳ |
 | v0.4 · Agentes | ⏳ |
 | v0.5 · Adaptação | ⏳ |

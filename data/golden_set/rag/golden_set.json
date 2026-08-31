@@ -1,0 +1,206 @@
+{
+  "perguntas": [
+    {
+      "id": 1,
+      "tipo": "rotineira",
+      "pergunta": "O que é RAG?",
+      "docs_esperados": [
+        {
+          "doc_id": "nlp_aula06_rag_avancado_ocr",
+          "pagina": 23
+        },
+        {
+          "doc_id": "proj_aula04_multiagentes_slm",
+          "pagina": 23
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "tipo": "rotineira",
+      "pergunta": "O que é um embedding?",
+      "docs_esperados": [
+        {
+          "doc_id": "nlp_aula05_prompt_engineering",
+          "pagina": 1
+        },
+        {
+          "doc_id": "nlp_aula06_rag_avancado_ocr",
+          "pagina": 1
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "tipo": "rotineira",
+      "pergunta": "O que é fine-tuning?",
+      "docs_esperados": [
+        {
+          "doc_id": "proj_aula04_multiagentes_slm",
+          "pagina": 1
+        },
+        {
+          "doc_id": "nlp_aula05_prompt_engineering",
+          "pagina": 1
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "tipo": "rotineira",
+      "pergunta": "O que é FastAPI?",
+      "docs_esperados": [
+        {
+          "doc_id": "pai_aula07_deploy_fastapi",
+          "pagina": 1
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "tipo": "rotineira",
+      "pergunta": "O que é um modelo de difusão?",
+      "docs_esperados": [
+        {
+          "doc_id": "dgl_aula01_gan_vae",
+          "pagina": 1
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "tipo": "composta",
+      "pergunta": "Como RAG e embeddings se relacionam?",
+      "docs_esperados": [
+        {
+          "doc_id": "nlp_aula06_rag_avancado_ocr",
+          "pagina": 23
+        },
+        {
+          "doc_id": "nlp_aula05_prompt_engineering",
+          "pagina": 1
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "tipo": "composta",
+      "pergunta": "Como agentes e SLM podem ser usados juntos?",
+      "docs_esperados": [
+        {
+          "doc_id": "proj_aula04_multiagentes_slm",
+          "pagina": 1
+        },
+        {
+          "doc_id": "proj_aula04_multiagentes_slm",
+          "pagina": 28
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "tipo": "composta",
+      "pergunta": "Qual a relação entre banco de dados relacional e SQL?",
+      "docs_esperados": [
+        {
+          "doc_id": "tdp_aula01_modelagem_relacional",
+          "pagina": 1
+        },
+        {
+          "doc_id": "tdp_aula03_sql_ddl",
+          "pagina": 1
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "tipo": "composta",
+      "pergunta": "Como prompt engineering e RAG se complementam?",
+      "docs_esperados": [
+        {
+          "doc_id": "nlp_aula05_prompt_engineering",
+          "pagina": 1
+        },
+        {
+          "doc_id": "nlp_aula06_rag_avancado_ocr",
+          "pagina": 23
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "tipo": "composta",
+      "pergunta": "Como GAN e VAE diferem na geração de dados?",
+      "docs_esperados": [
+        {
+          "doc_id": "dgl_aula01_gan_vae",
+          "pagina": 21
+        },
+        {
+          "doc_id": "dgl_aula01_gan_vae",
+          "pagina": 23
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "tipo": "negativa",
+      "pergunta": "Quem foi o primeiro presidente do Brasil?",
+      "docs_esperados": []
+    },
+    {
+      "id": 12,
+      "tipo": "negativa",
+      "pergunta": "Qual a capital da França?",
+      "docs_esperados": []
+    },
+    {
+      "id": 13,
+      "tipo": "negativa",
+      "pergunta": "Como fazer bolo de chocolate?",
+      "docs_esperados": []
+    },
+    {
+      "id": 14,
+      "tipo": "negativa",
+      "pergunta": "Quem descobriu a América?",
+      "docs_esperados": []
+    },
+    {
+      "id": 15,
+      "tipo": "negativa",
+      "pergunta": "O que é a teoria da relatividade?",
+      "docs_esperados": []
+    },
+    {
+      "id": 16,
+      "tipo": "adversarial",
+      "pergunta": "O que é FastAPI no contexto de banco de dados relacional?",
+      "docs_esperados": []
+    },
+    {
+      "id": 17,
+      "tipo": "adversarial",
+      "pergunta": "Como usar RAG para treinar uma GAN?",
+      "docs_esperados": []
+    },
+    {
+      "id": 18,
+      "tipo": "adversarial",
+      "pergunta": "Qual a relação entre SQL e embeddings?",
+      "docs_esperados": []
+    },
+    {
+      "id": 19,
+      "tipo": "adversarial",
+      "pergunta": "O que é chunking em modelos de difusão?",
+      "docs_esperados": []
+    },
+    {
+      "id": 20,
+      "tipo": "adversarial",
+      "pergunta": "Como agentes multiagentes usam SQL?",
+      "docs_esperados": []
+    }
+  ]
+}

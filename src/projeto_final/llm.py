@@ -12,6 +12,9 @@ from projeto_final import config
 DEFAULT_MODELO = "deepseek-chat"
 MAX_PALAVRAS = 30
 MAX_TOKENS = 100
+MAX_TOKENS_RAG = 400
+
+NAO_SEI = "NAO_SEI"
 
 PROMPT_TTS = (
     "Você é um assistente do Master IAG e LLM da PUC-Rio. "
@@ -63,3 +66,38 @@ def responder(pergunta: str, sistema: str | None = None) -> tuple[str, dict]:
     latencia = time.time() - t0
     logger.debug("LLM resposta: {} ({} s)", texto, round(latencia, 2))
     return texto, {"modelo": modelo, "uso": uso, "latencia_s": round(latencia, 2)}
+
+
+def responder_com_contexto(pergunta: str, contexto: str, sistema: str | None = None) -> tuple[str, dict]:
+    """Envia pergunta + contexto ao LLM e retorna (resposta, metadados)."""
+    t0 = time.time()
+    modelo = config.DEEPSEEK_MODEL
+    if sistema is None:
+        sistema = config.ler_prompt("v0.2/rag_sistema.txt") or ""
+    msgs = [
+        {"role": "system", "content": sistema},
+        {"role": "user", "content": f"Contexto:\n{contexto}\n\nPergunta: {pergunta}"},
+    ]
+    logger.debug("Chamando LLM RAG com contexto de {} chars", len(contexto))
+    try:
+        resp = _cliente().chat.completions.create(
+            model=modelo, messages=msgs, max_tokens=MAX_TOKENS_RAG
+        )
+    except Exception as e:
+        logger.error("Erro na chamada LLM RAG: {}", e)
+        raise
+    texto = (resp.choices[0].message.content or "").strip()
+    uso = None
+    if resp.usage is not None:
+        uso = {
+            "prompt_tokens": resp.usage.prompt_tokens,
+            "completion_tokens": resp.usage.completion_tokens,
+        }
+    latencia = time.time() - t0
+    logger.debug("LLM RAG resposta: {} ({} s)", texto, round(latencia, 2))
+    return texto, {"modelo": modelo, "uso": uso, "latencia_s": round(latencia, 2)}
+
+
+def detectar_abstencao(resposta: str) -> bool:
+    """Retorna True se a resposta indica abstenção (NAO_SEI)."""
+    return NAO_SEI in resposta

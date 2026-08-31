@@ -151,6 +151,34 @@
         <li>Resultados medidos localmente com faster-whisper small (CPU).</li>
       </ul>
     </section>
+
+    <section class="about">
+      <h2>Sobre a v0.2 - RAG com citacao</h2>
+      <p>
+        A partir da v0.2, o assistente usa <strong>Retrieval-Augmented Generation (RAG)</strong>:
+        a pergunta (texto ou transcricao de voz) recupera trechos dos PDFs do curso por
+        <strong>busca hibrida</strong> (BM25 lexical + embeddings semanticos, fusionados por RRF).
+        A resposta do DeepSeek e obrigada a citar a fonte com
+        <code>[N] doc_id, pagina X</code> e se abster (<code>NAO_SEI</code>) quando o corpus
+        nao responder.
+      </p>
+      <ul class="highlights">
+        <li>Embeddings 100% locais com <code>fastembed</code> (CPU, ONNX).</li>
+        <li>10 documentos do corpus indexados em 327 chunks.</li>
+        <li>Golden set de 20 perguntas estratificadas (rotineiras, compostas, negativas, adversariais).</li>
+      </ul>
+      <table class="result-table">
+        <thead>
+          <tr><th>Metrica</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>recall@5 (perguntas com docs esperados)</td><td>1.000</td></tr>
+          <tr><td>Abstencao correta (negativas + adversariais)</td><td>1.000</td></tr>
+          <tr><td>Citacao presente (respostas nao-abstidas)</td><td>1.000</td></tr>
+          <tr><td>Chunks indexados</td><td>327</td></tr>
+        </tbody>
+      </table>
+    </section>
   </div>
 
   <script>
