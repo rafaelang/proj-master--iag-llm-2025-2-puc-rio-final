@@ -165,16 +165,17 @@
       <ul class="highlights">
         <li>Embeddings 100% locais com <code>fastembed</code> (CPU, ONNX).</li>
         <li>10 documentos do corpus indexados em 327 chunks.</li>
-        <li>Golden set de 20 perguntas estratificadas (rotineiras, compostas, negativas, adversariais).</li>
+        <li>Dataset unico da v0.2: 20 perguntas do projeto2 (rotineiras, compostas, negativas, adversariais).</li>
       </ul>
       <table class="result-table">
         <thead>
           <tr><th>Metrica</th><th>Valor</th></tr>
         </thead>
         <tbody>
-          <tr><td>recall@5 (perguntas com docs esperados)</td><td>1.000</td></tr>
-          <tr><td>Abstencao correta (negativas + adversariais)</td><td>1.000</td></tr>
-          <tr><td>Citacao presente (respostas nao-abstidas)</td><td>1.000</td></tr>
+          <tr><td>recall@5 (16 com docs esperados)</td><td>0.812</td></tr>
+          <tr><td>Acuracia end-to-end (20, juiz deepseek-v4-pro)</td><td>0.600</td></tr>
+          <tr><td>Abstencao correta (20)</td><td>0.650</td></tr>
+          <tr><td>Citacao presente (9 nao-abstidas)</td><td>1.000</td></tr>
           <tr><td>Chunks indexados</td><td>327</td></tr>
         </tbody>
       </table>

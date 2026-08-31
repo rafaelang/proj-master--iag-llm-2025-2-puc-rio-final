@@ -38,12 +38,14 @@ RAG_CHUNK_PATH = RAG_DIR / "chunks.json"
 RAG_BM25_PATH = RAG_DIR / "bm25.pkl"
 RAG_EMBEDDINGS_PATH = RAG_DIR / "embeddings.npy"
 RAG_CHUNK_IDS_PATH = RAG_DIR / "chunk_ids.json"
+RAG_GOLDEN_SET = GOLDEN_SET_DIR / "rag" / "perguntas.json"
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
 # LLM
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+JUIZ_MODEL = os.getenv("JUIZ_MODEL", "deepseek-v4-pro")
 
 def ler_prompt(caminho_relativo: str) -> str | None:
     """Le um prompt versionado em prompts/ por caminho relativo."""

@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "dominio": "materiais do Master IAG & LLM (PUC-Rio)",
+    "estratos": ["rotineira", "composta", "negativa", "adversarial"],
+    "metricas": "recall@k (docs_esperados recuperados) + taxa de abstenção correta (absteve == deve_abster)"
+  },
+  "perguntas": [
+    { "id": 1,  "pergunta": "O que é RAG?", "estrato": "rotineira", "docs_esperados": ["nlp_aula06_rag_avancado_ocr.pdf"], "deve_abster": false },
+    { "id": 2,  "pergunta": "O que significa DDL e para que serve?", "estrato": "rotineira", "docs_esperados": ["tdp_aula03_sql_ddl.pdf"], "deve_abster": false },
+    { "id": 3,  "pergunta": "O que é DQL?", "estrato": "rotineira", "docs_esperados": ["tdp_aula03_sql_ddl.pdf"], "deve_abster": false },
+    { "id": 4,  "pergunta": "Como o FastAPI é usado para servir um modelo?", "estrato": "rotineira", "docs_esperados": ["pai_aula07_deploy_fastapi.pdf"], "deve_abster": false },
+    { "id": 5,  "pergunta": "O que são GAN e VAE?", "estrato": "rotineira", "docs_esperados": ["dgl_aula01_gan_vae.pdf"], "deve_abster": false },
+    { "id": 6,  "pergunta": "O que é OCR e como ele ajuda na recuperação de documentos?", "estrato": "rotineira", "docs_esperados": ["nlp_aula06_rag_avancado_ocr.pdf"], "deve_abster": false },
+    { "id": 7,  "pergunta": "O que é fine-tuning de um modelo de linguagem?", "estrato": "rotineira", "docs_esperados": ["nlp_aula05_prompt_engineering.pdf"], "deve_abster": false },
+    { "id": 8,  "pergunta": "O que é transfer learning?", "estrato": "rotineira", "docs_esperados": ["pai_aula07_deploy_fastapi.pdf"], "deve_abster": false },
+    { "id": 9,  "pergunta": "O que é WER e como ele é usado na avaliação de voz?", "estrato": "rotineira", "docs_esperados": ["proj_spec_tcc.pdf"], "deve_abster": false },
+    { "id": 10, "pergunta": "O que são sistemas multiagentes com small language models?", "estrato": "rotineira", "docs_esperados": ["proj_aula04_multiagentes_slm.pdf"], "deve_abster": false },
+    { "id": 11, "pergunta": "O que são embeddings e como são usados no RAG?", "estrato": "composta", "docs_esperados": ["nlp_aula06_rag_avancado_ocr.pdf"], "deve_abster": false },
+    { "id": 12, "pergunta": "Qual a diferença entre prompt engineering e fine-tuning?", "estrato": "composta", "docs_esperados": ["nlp_aula05_prompt_engineering.pdf"], "deve_abster": false },
+    { "id": 13, "pergunta": "O que é atenção em modelos de linguagem e onde ela é usada?", "estrato": "composta", "docs_esperados": ["proj_aula04_multiagentes_slm.pdf"], "deve_abster": false },
+    { "id": 14, "pergunta": "Como Whisper e WER se relacionam com o protótipo de voz do projeto?", "estrato": "composta", "docs_esperados": ["proj_spec_tcc.pdf"], "deve_abster": false },
+    { "id": 15, "pergunta": "Qual destes termos NÃO está relacionado a bancos de dados: DDL, DQL ou GAN?", "estrato": "negativa", "docs_esperados": ["tdp_aula03_sql_ddl.pdf"], "deve_abster": false },
+    { "id": 16, "pergunta": "O WER é uma métrica de qual modalidade: voz, imagem ou banco de dados?", "estrato": "negativa", "docs_esperados": ["proj_spec_tcc.pdf"], "deve_abster": false },
+    { "id": 17, "pergunta": "Qual a previsão do tempo para amanhã no Rio de Janeiro?", "estrato": "adversarial", "docs_esperados": [], "deve_abster": true },
+    { "id": 18, "pergunta": "Quem ganhou a Copa do Mundo de 2022?", "estrato": "adversarial", "docs_esperados": [], "deve_abster": true },
+    { "id": 19, "pergunta": "Explique a teoria da relatividade geral de Einstein.", "estrato": "adversarial", "docs_esperados": [], "deve_abster": true },
+    { "id": 20, "pergunta": "Qual o preço atual da ação da Petrobras?", "estrato": "adversarial", "docs_esperados": [], "deve_abster": true }
+  ]
+}

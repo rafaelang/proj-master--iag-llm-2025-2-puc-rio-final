@@ -1,139 +1,224 @@
-# v0.2 - Evidencia - RAG com citacao e abstencao
+# v0.2 - Evidencia - RAG (dataset unico do projeto2)
 
-- **Perguntas avaliadas:** 20
-- **recall@5 (sobre perguntas com docs esperados):** 1.000
-- **Taxa de abstencao correta (negativas + adversariais):** 1.000
-- **Citacao presente (sobre respostas nao-abstidas):** 1.000
-- **Top-k usado:** 5
+> Pipeline alvo: `projeto_final (BM25 + fastembed + RRF, DeepSeek deepseek-chat)`
+> Dataset: `data/golden_set/rag/perguntas.json`.
+> Criterios: projeto2 (detectar_abstencao, extrair_citacoes, auditar_citacao, juiz LLM-as-judge).
+> Juiz: LLM-as-judge `deepseek-v4-pro` (mesmo prompt do 'juiz_correcao.py' v0.6).
 
 ## Metricas por estrato
 
-| Estrato | n | recall@5 | abstencao correta | citacao presente |
-|---|---|---|---|---|
-| rotineira | 5 | 1.000 | - | 1.000 |
-| composta | 5 | 1.000 | - | 1.000 |
-| negativa | 5 | 0.000 | 1.000 | 0.000 |
-| adversarial | 5 | 0.000 | 1.000 | 0.000 |
+| Estrato | n | recall@5 | acerto | abstencao correta | citacao presente |
+|---|---|---|---|---|---|
+| rotineira | 10 | 0.900 | 0.500 | 0.600 | 1.000 |
+| composta | 4 | 0.750 | 0.250 | 0.250 | 1.000 |
+| negativa | 2 | 0.500 | 1.000 | 1.000 | 1.000 |
+| adversarial | 4 | - | 1.000 | 1.000 | 0.000 |
+
+## Resumo honesto
+
+- **recall@5** (sobre as 16 com `docs_esperados`): **0.812**
+- **acurácia end-to-end** (sobre 20, juiz LLM-as-judge): **0.600**
+- **abstenção correta** (sobre 20): **0.650**
+- **abstenção indevida** (sobre as 16 com `deve_abster`: false): **0.438** (7)
+- **citação presente** (respostas não-abstidas com `[n]`): **1.000**
+- **auditoria de citação** — fiel: 7 · fora: 2 · fantasma: 0
+- **alucinações** (juiz flag "alucinou"): 0
+- juiz não julgou (erro de parse): 0
+
+## Falhas detectadas
+
+### #01 [rotineira] O que é RAG?
+- **causa:** citacao fora
+- **resposta:** RAG, ou Retrieval-Augmented Generation, é uma técnica que conecta a resposta de um modelo de linguagem a documentos recuperados no momento da tarefa, substituindo a memória implícita por evidências ra
+
+### #04 [rotineira] Como o FastAPI é usado para servir um modelo?
+- **causa:** resposta incorreta (juiz): A resposta apenas cita a fonte e a página, sem explicar como o FastAPI é usado para servir um modelo, não atendendo à pergunta.
+- **resposta:** [1] pai_aula07_deploy_fastapi, pagina 32
+
+### #06 [rotineira] O que é OCR e como ele ajuda na recuperação de documentos?
+- **causa:** citacao fora
+- **resposta:** OCR, ou Optical Character Recognition, é uma tecnologia que converte imagens de texto em dados de texto editáveis e pesquisáveis, sendo essencial para PDFs escaneados e fotografias de documentos físic
+
+### #07 [rotineira] O que é fine-tuning de um modelo de linguagem?
+- **causa:** recuperacao falhou (nenhum doc esperado no top-5)
+- **causa:** abstencao indevida
+- **causa:** resposta incorreta (juiz): A resposta se absteve (NAO_SEI) mesmo havendo fonte esperada no corpus que poderia embasar a definição de fine-tuning.
+- **resposta:** NAO_SEI
+
+### #08 [rotineira] O que é transfer learning?
+- **causa:** abstencao indevida
+- **causa:** resposta incorreta (juiz): A resposta se absteve mesmo havendo fonte esperada no corpus que deveria embasar o tema, portanto está incorreta.
+- **resposta:** NAO_SEI
+
+### #09 [rotineira] O que é WER e como ele é usado na avaliação de voz?
+- **causa:** abstencao indevida
+- **causa:** resposta incorreta (juiz): Havia fonte esperada (proj_spec_tcc.pdf) que poderia embasar a resposta, mas o assistente se absteve com NAO_SEI, o que é incorreto neste ca
+- **resposta:** NAO_SEI
+
+### #10 [rotineira] O que são sistemas multiagentes com small language models?
+- **causa:** abstencao indevida
+- **causa:** resposta incorreta (juiz): Havia fonte esperada sobre o tema, mas o assistente se absteve com NAO_SEI, deixando de responder uma pergunta coberta pelo corpus.
+- **resposta:** NAO_SEI
+
+### #11 [composta] O que são embeddings e como são usados no RAG?
+- **causa:** abstencao indevida
+- **causa:** resposta incorreta (juiz): A resposta se absteve (NAO_SEI) mesmo havendo fonte esperada que aborda o tema de embeddings e RAG.
+- **resposta:** NAO_SEI
+
+### #12 [composta] Qual a diferença entre prompt engineering e fine-tuning?
+- **causa:** recuperacao falhou (nenhum doc esperado no top-5)
+- **causa:** abstencao indevida
+- **causa:** resposta incorreta (juiz): A resposta se absteve com NAO_SEI, mas existem fontes esperadas sobre prompt engineering que poderiam embasar a diferença em relação a fine-
+- **resposta:** NAO_SEI
+
+### #13 [composta] O que é atenção em modelos de linguagem e onde ela é usada?
+- **causa:** abstencao indevida
+- **causa:** resposta incorreta (juiz): A resposta se absteve (NAO_SEI) mesmo havendo uma fonte esperada no corpus do curso, portanto não responde à pergunta.
+- **resposta:** NAO_SEI
+
+### #16 [negativa] O WER é uma métrica de qual modalidade: voz, imagem ou banco de dados?
+- **causa:** recuperacao falhou (nenhum doc esperado no top-5)
+- **resposta:** O WER é uma métrica da modalidade de voz, pois é mencionado no contexto de um protótipo de voz funcional, onde se mede o WER antes e depois do vocabulário customizado. [7] proj_spec_tcc, pagina 1
 
 ## Detalhes por pergunta
 
-### 1. (rotineira) O que é RAG?
-- **Resposta:** RAG, ou Retrieval-Augmented Generation, é uma técnica que conecta a resposta de um modelo de linguagem a documentos recuperados no momento da tarefa, substituindo a memória implícita do modelo por evidências rastreáveis e relevantes [4] proj_aula04_multiagentes_slm, pagina 23. O processo funciona extraindo embeddings de dados como PDFs e crawlers, recuperando os parágrafos mais similares à query e usando-os no prompt para gerar a resposta [7] nlp_aula06_rag_avancado_ocr, pagina 4. No LangChain, a memória baseada em vetor é apenas busca semântica, sem uma memória "viva", pois o vectorstore decide o que recuperar com base na similaridade dos embeddings [3] nlp_aula06_rag_avancado_ocr, pagina 25.
-- **Abstencao:** False
-- **recall@5:** True
-- **Citacoes:** [(4, 'proj_aula04_multiagentes_slm', 23), (7, 'nlp_aula06_rag_avancado_ocr', 4), (3, 'nlp_aula06_rag_avancado_ocr', 25)]
+### #01 [rotineira] O que é RAG?
+- **Resposta:** RAG, ou Retrieval-Augmented Generation, é uma técnica que conecta a resposta de um modelo de linguagem a documentos recuperados no momento da tarefa, substituindo a memória implícita por evidências rastreáveis e relevantes [4] proj_aula04_multiagentes_slm, pagina 23. O processo funciona com dados, um extrator de embeddings, recuperação da informação, prompt engineering e geração de respostas, onde parágrafos mais similares à query são recuperados por vizinhança de embeddings [7] nlp_aula06_rag_avancado_ocr, pagina 4.
+- **Absteve:** False · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** A resposta define RAG corretamente e descreve o processo com embeddings, recuperação e geração, alinhada ao conteúdo da disciplina.
+- **Citações:** [4] proj_aula04_multiagentes_slm.pdf; [7] nlp_aula06_rag_avancado_ocr.pdf
 
-### 2. (rotineira) O que é um embedding?
+### #02 [rotineira] O que significa DDL e para que serve?
+- **Resposta:** DDL significa Linguagem de Definição de Dados, e serve para criar e modificar objetos em um banco de dados, como tabelas, índices e visões [1] tdp_aula03_sql_ddl, pagina 5. O comando Create é usado para criar esses objetos, enquanto o comando Alter é utilizado para realizar modificações em tabelas [7] tdp_aula03_sql_ddl, pagina 15.
+- **Absteve:** False · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** A resposta define DDL corretamente como Linguagem de Definição de Dados e explica seus comandos Create e Alter para criar e modificar objetos, conforme o material da aula.
+- **Citações:** [1] tdp_aula03_sql_ddl.pdf; [7] tdp_aula03_sql_ddl.pdf
+
+### #03 [rotineira] O que é DQL?
+- **Resposta:** DQL é a Linguagem de Consultas de Dados, uma das cinco categorias de comandos da SQL, a linguagem padrão de consultas aos bancos de dados relacionais [1] tdp_aula03_sql_ddl, pagina 4.
+- **Absteve:** False · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** A resposta define corretamente DQL como Linguagem de Consultas de Dados, uma das cinco categorias de comandos SQL, conforme o material da aula.
+- **Citações:** [1] tdp_aula03_sql_ddl.pdf
+
+### #04 [rotineira] Como o FastAPI é usado para servir um modelo?
+- **Resposta:** [1] pai_aula07_deploy_fastapi, pagina 32
+- **Absteve:** False · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** false · **Alucinou:** false · **Nota:** 2
+- **Justificativa do juiz:** A resposta apenas cita a fonte e a página, sem explicar como o FastAPI é usado para servir um modelo, não atendendo à pergunta.
+- **Citações:** [1] pai_aula07_deploy_fastapi.pdf
+
+### #05 [rotineira] O que são GAN e VAE?
+- **Resposta:** GAN e VAE são modelos generativos de IA. A GAN é um jogo entre dois modelos em competição: um gerador que aprende a criar dados falsos e um discriminador que aprende a distinguir real de falso, e o equilíbrio entre eles leva à qualidade [1] dgl_aula01_gan_vae, pagina 11. A GAN gera imagens realistas, mas sem controle, pois o espaço de ruído é opaco e desorganizado [5] dgl_aula01_gan_vae, pagina 23. Já o VAE é um modelo que combina compressão com estrutura probabilística, aprendendo a organizar o mundo, pois ele comprime, organiza e reconstrói [4] dgl_aula01_gan_vae, pagina 26. O VAE funciona como um funil inteligente que comprime a imagem em sua essência no espaço latente e reconstrói a partir dessa representação [3] dgl_aula01_gan_vae, pagina 28, e o encoder mapeia a imagem para uma distribuição gaussiana, não um ponto fixo [9] dgl_aula01_gan_vae, pagina 30. Enquanto a GAN gera bem sem controle, o VAE aprende um espaço estruturado [7] dgl_aula01_gan_vae, pagina 21.
+- **Absteve:** False · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** A resposta descreve corretamente GAN e VAE conforme o material indicado, contrastando geração realista sem controle da GAN com o espaço latente estruturado do VAE.
+- **Citações:** [1] dgl_aula01_gan_vae.pdf; [5] dgl_aula01_gan_vae.pdf; [4] dgl_aula01_gan_vae.pdf; [3] dgl_aula01_gan_vae.pdf; [9] dgl_aula01_gan_vae.pdf; [7] dgl_aula01_gan_vae.pdf
+
+### #06 [rotineira] O que é OCR e como ele ajuda na recuperação de documentos?
+- **Resposta:** OCR, ou Optical Character Recognition, é uma tecnologia que converte imagens de texto em dados de texto editáveis e pesquisáveis, sendo essencial para PDFs escaneados e fotografias de documentos físicos quando a extração direta retorna vazio [1] nlp_aula06_rag_avancado_ocr, pagina 8. Ele ajuda na recuperação de documentos ao transformar conteúdo baseado em imagem em texto utilizável, o que é crucial para o pipeline de RAG, pois permite que a extração de dados funcione mesmo quando o PDF não possui texto nativo [2] proj_aula04_multiagentes_slm, pagina 23. Bibliotecas como PyPDFLoader, que funciona bem para PDFs nativos, e Tesseract, um motor de OCR maduro, são usadas nesse processo [5] nlp_aula06_rag_avancado_ocr, pagina 7.
+- **Absteve:** False · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** A resposta define OCR corretamente e explica sua importância na recuperação de documentos para RAG, com suporte na fonte esperada (nlp_aula06). A citação de fonte extra não invalida o conteúdo, pois está alinhado ao tema do curso.
+- **Citações:** [1] nlp_aula06_rag_avancado_ocr.pdf; [2] proj_aula04_multiagentes_slm.pdf; [5] nlp_aula06_rag_avancado_ocr.pdf
+
+### #07 [rotineira] O que é fine-tuning de um modelo de linguagem?
 - **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** True
-- **Citacoes:** []
+- **Absteve:** True · **Deve abster:** False · **recall@5:** 0.0
+- **Acerto (juiz):** false · **Alucinou:** false · **Nota:** 1
+- **Justificativa do juiz:** A resposta se absteve (NAO_SEI) mesmo havendo fonte esperada no corpus que poderia embasar a definição de fine-tuning.
+- **Citações:** -
 
-### 3. (rotineira) O que é fine-tuning?
+### #08 [rotineira] O que é transfer learning?
 - **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** True
-- **Citacoes:** []
+- **Absteve:** True · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** false · **Alucinou:** false · **Nota:** 1
+- **Justificativa do juiz:** A resposta se absteve mesmo havendo fonte esperada no corpus que deveria embasar o tema, portanto está incorreta.
+- **Citações:** -
 
-### 4. (rotineira) O que é FastAPI?
+### #09 [rotineira] O que é WER e como ele é usado na avaliação de voz?
 - **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** True
-- **Citacoes:** []
+- **Absteve:** True · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** false · **Alucinou:** false · **Nota:** 1
+- **Justificativa do juiz:** Havia fonte esperada (proj_spec_tcc.pdf) que poderia embasar a resposta, mas o assistente se absteve com NAO_SEI, o que é incorreto neste caso.
+- **Citações:** -
 
-### 5. (rotineira) O que é um modelo de difusão?
+### #10 [rotineira] O que são sistemas multiagentes com small language models?
 - **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** True
-- **Citacoes:** []
+- **Absteve:** True · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** false · **Alucinou:** false · **Nota:** 1
+- **Justificativa do juiz:** Havia fonte esperada sobre o tema, mas o assistente se absteve com NAO_SEI, deixando de responder uma pergunta coberta pelo corpus.
+- **Citações:** -
 
-### 6. (composta) Como RAG e embeddings se relacionam?
-- **Resposta:** RAG e embeddings se relacionam porque os embeddings são usados para recuperar informações relevantes: os dados são convertidos em embeddings e a query também passa por um extrator de embedding, permitindo buscar parágrafos mais similares à query por vizinhança de embeddings, que são então usados na geração da resposta [2] nlp_aula06_rag_avancado_ocr, pagina 4 e [3] nlp_aula06_rag_avancado_ocr, pagina 5.
-- **Abstencao:** False
-- **recall@5:** True
-- **Citacoes:** [(2, 'nlp_aula06_rag_avancado_ocr', 4), (3, 'nlp_aula06_rag_avancado_ocr', 5)]
-
-### 7. (composta) Como agentes e SLM podem ser usados juntos?
-- **Resposta:** Agentes e SLMs podem ser usados juntos de forma que SLMs especializados realizem tarefas repetitivas e de alto volume, enquanto modelos maiores ficam reservados para exceções e tarefas complexas. Em aplicações agentic, o trabalho é decomposto em papéis estreitos como classificar intenção, extrair campos, rotear fluxos e validar formatos, o que reduz a necessidade de uma capacidade geral em cada chamada e torna os SLMs atraentes por economia operacional, com menor custo por chamada, menor latência e maior previsibilidade, desde que o sistema encaminhe exceções para capacidades mais fortes [1] proj_aula04_multiagentes_slm, pagina 3; [3] proj_aula04_multiagentes_slm, pagina 7. O melhor desenho costuma ser heterogêneo, com SLMs para volume, modelos maiores para exceções e pessoas para decisões que exigem responsabilidade, como em um fluxo de atendimento onde um SLM classifica a intenção e responde casos padrão, um modelo maior lida com ambiguidade e contexto complexo, e revisão humana é preservada para riscos altos ou ações irreversíveis [4] proj_aula04_multiagentes_slm, pagina 35; [10] proj_aula04_multiagentes_slm, pagina 19. Evoluções como o agentic RAG também mostram agentes autônomos que planejam, quebram perguntas complexas e decidem quando buscar mais informações, integrando SLMs em etapas especializadas [2] nlp_aula06_rag_avancado_ocr, pagina 30; [6] proj_aula04_multiagentes_slm, pagina 1.
-- **Abstencao:** False
-- **recall@5:** True
-- **Citacoes:** [(1, 'proj_aula04_multiagentes_slm', 3), (3, 'proj_aula04_multiagentes_slm', 7), (4, 'proj_aula04_multiagentes_slm', 35), (10, 'proj_aula04_multiagentes_slm', 19), (2, 'nlp_aula06_rag_avancado_ocr', 30), (6, 'proj_aula04_multiagentes_slm', 1)]
-
-### 8. (composta) Qual a relação entre banco de dados relacional e SQL?
-- **Resposta:** A SQL é a linguagem padrão de consultas aos bancos de dados relacionais, e seus comandos são agrupados em cinco categorias: DDL, DML, DCL, DTL e DQL [1] tdp_aula03_sql_ddl, pagina 4. O curso também aborda a SQL em contextos específicos, como a criação de estruturas (DDL) e a manipulação de dados (DML) [2] tdp_aula03_sql_ddl, pagina 2.
-- **Abstencao:** False
-- **recall@5:** True
-- **Citacoes:** [(1, 'tdp_aula03_sql_ddl', 4), (2, 'tdp_aula03_sql_ddl', 2)]
-
-### 9. (composta) Como prompt engineering e RAG se complementam?
+### #11 [composta] O que são embeddings e como são usados no RAG?
 - **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** True
-- **Citacoes:** []
+- **Absteve:** True · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** false · **Alucinou:** false · **Nota:** 1
+- **Justificativa do juiz:** A resposta se absteve (NAO_SEI) mesmo havendo fonte esperada que aborda o tema de embeddings e RAG.
+- **Citações:** -
 
-### 10. (composta) Como GAN e VAE diferem na geração de dados?
-- **Resposta:** A GAN gera dados realistas imitando distribuições complexas, mas sem controle sobre o que é gerado, pois seu espaço de ruído é opaco e desorganizado [6] dgl_aula01_gan_vae, pagina 23. Já o VAE aprende um espaço latente estruturado, organizando os dados e permitindo reconstrução, combinando realismo com estrutura [5] dgl_aula01_gan_vae, pagina 21. Enquanto a GAN foca em replicar uma distribuição de probabilidade com uma função custo que mede a distância entre dados gerados e reais [2] dgl_aula01_gan_vae, pagina 15, o VAE é treinado com forças de reconstrução (erro pixel a pixel) e organização (KL divergence para proximidade de uma gaussiana padrão) [4] dgl_aula01_gan_vae, pagina 31.
-- **Abstencao:** False
-- **recall@5:** True
-- **Citacoes:** [(6, 'dgl_aula01_gan_vae', 23), (5, 'dgl_aula01_gan_vae', 21), (2, 'dgl_aula01_gan_vae', 15), (4, 'dgl_aula01_gan_vae', 31)]
-
-### 11. (negativa) Quem foi o primeiro presidente do Brasil?
+### #12 [composta] Qual a diferença entre prompt engineering e fine-tuning?
 - **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** False
-- **Citacoes:** []
+- **Absteve:** True · **Deve abster:** False · **recall@5:** 0.0
+- **Acerto (juiz):** false · **Alucinou:** false · **Nota:** 1
+- **Justificativa do juiz:** A resposta se absteve com NAO_SEI, mas existem fontes esperadas sobre prompt engineering que poderiam embasar a diferença em relação a fine-tuning, portanto está incorreta.
+- **Citações:** -
 
-### 12. (negativa) Qual a capital da França?
+### #13 [composta] O que é atenção em modelos de linguagem e onde ela é usada?
 - **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** False
-- **Citacoes:** []
+- **Absteve:** True · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** false · **Alucinou:** false · **Nota:** 1
+- **Justificativa do juiz:** A resposta se absteve (NAO_SEI) mesmo havendo uma fonte esperada no corpus do curso, portanto não responde à pergunta.
+- **Citações:** -
 
-### 13. (negativa) Como fazer bolo de chocolate?
-- **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** False
-- **Citacoes:** []
+### #14 [composta] Como Whisper e WER se relacionam com o protótipo de voz do projeto?
+- **Resposta:** O Whisper é citado como uma das tecnologias para o pipeline de fala do projeto, que inclui ASR, diarização e TTS, e o WER é uma métrica que deve ser medida no protótipo de voz. Especificamente, a entrega v0.1 do projeto exige um protótipo de voz funcional, com WER medido em 10 amostras próprias, antes e depois do vocabulário customizado, que serve para corrigir problemas como ruído de ambiente, sotaque e jargão técnico. Portanto, o Whisper é uma tecnologia usada no pipeline de fala, e o WER é a métrica para avaliar a qualidade da transcrição do protótipo. [1] proj_spec_tcc, pagina 1
+- **Absteve:** False · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** A resposta descreve corretamente que Whisper é tecnologia de ASR no pipeline de fala e que WER é métrica avaliada no protótipo, incluindo detalhes de v0.1, amostras e customização, alinhados ao documento do projeto.
+- **Citações:** [1] proj_spec_tcc.pdf
 
-### 14. (negativa) Quem descobriu a América?
-- **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** False
-- **Citacoes:** []
+### #15 [negativa] Qual destes termos NÃO está relacionado a bancos de dados: DDL, DQL ou GAN?
+- **Resposta:** GAN não está relacionado a bancos de dados, pois DDL e DQL são categorias da linguagem SQL, conforme [1] tdp_aula03_sql_ddl, pagina 4.
+- **Absteve:** False · **Deve abster:** False · **recall@5:** 1.0
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** A resposta identifica corretamente GAN como não relacionado a bancos de dados e cita a fonte do curso para DDL e DQL.
+- **Citações:** [1] tdp_aula03_sql_ddl.pdf
 
-### 15. (negativa) O que é a teoria da relatividade?
-- **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** False
-- **Citacoes:** []
+### #16 [negativa] O WER é uma métrica de qual modalidade: voz, imagem ou banco de dados?
+- **Resposta:** O WER é uma métrica da modalidade de voz, pois é mencionado no contexto de um protótipo de voz funcional, onde se mede o WER antes e depois do vocabulário customizado. [7] proj_spec_tcc, pagina 1
+- **Absteve:** False · **Deve abster:** False · **recall@5:** 0.0
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** A resposta identifica corretamente WER como métrica de voz, alinhada ao contexto do documento sobre protótipo de voz funcional.
+- **Citações:** [7] proj_spec_tcc.pdf
 
-### 16. (adversarial) O que é FastAPI no contexto de banco de dados relacional?
+### #17 [adversarial] Qual a previsão do tempo para amanhã no Rio de Janeiro?
 - **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** False
-- **Citacoes:** []
+- **Absteve:** True · **Deve abster:** True · **recall@5:** -
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** Pergunta fora do corpus do curso e o assistente se absteve corretamente com NAO_SEI.
+- **Citações:** -
 
-### 17. (adversarial) Como usar RAG para treinar uma GAN?
+### #18 [adversarial] Quem ganhou a Copa do Mundo de 2022?
 - **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** False
-- **Citacoes:** []
+- **Absteve:** True · **Deve abster:** True · **recall@5:** -
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** A pergunta está fora do corpus do curso e o assistente se absteve corretamente, sem alucinar.
+- **Citações:** -
 
-### 18. (adversarial) Qual a relação entre SQL e embeddings?
+### #19 [adversarial] Explique a teoria da relatividade geral de Einstein.
 - **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** False
-- **Citacoes:** []
+- **Absteve:** True · **Deve abster:** True · **recall@5:** -
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** Pergunta fora do corpus do curso e o assistente se absteve, conforme esperado.
+- **Citações:** -
 
-### 19. (adversarial) O que é chunking em modelos de difusão?
+### #20 [adversarial] Qual o preço atual da ação da Petrobras?
 - **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** False
-- **Citacoes:** []
-
-### 20. (adversarial) Como agentes multiagentes usam SQL?
-- **Resposta:** NAO_SEI
-- **Abstencao:** True
-- **recall@5:** False
-- **Citacoes:** []
+- **Absteve:** True · **Deve abster:** True · **recall@5:** -
+- **Acerto (juiz):** true · **Alucinou:** false · **Nota:** 5
+- **Justificativa do juiz:** A pergunta está fora do corpus e a resposta se absteve corretamente com NAO_SEI.
+- **Citações:** -
 

@@ -34,6 +34,18 @@
 - Prompts de sistema/etapa vivem em `prompts/` como arquivos versionados.
 - Testes em `tests/` com `pytest`; rodar `pytest` antes de fechar cada release.
 - Commits por release com mensagem `v0.X - <descrição>`; tags `v0.X` quando aprovado.
+- Scripts de avaliação padronizados em `scripts/avaliadores/avaliar_v{n}.py`
+  (ex.: `avaliar_v1.py` para voz, `avaliar_v2.py` para RAG) — avaliadores não ficam em `src/`.
+- **Dataset único por release:** a v0.2 avalia apenas `data/golden_set/rag/perguntas.json`
+  (cópia da tag `v0.2` do projeto2). Um novo dataset substitui o anterior — não manter
+  dois datasets avaliados para a mesma release.
+- **Evidência em Markdown:** JSONs podem servir como dado de entrada/intermediário, mas a
+  evidência oficial de uma release é o resultado em Markdown em `docs/`
+  (ex.: `docs/v02_evidencia.md`).
+- **Documentação consolidada:** cada release tem, no máximo, dois arquivos —
+  `docs/v0X.md` (todos os detalhes) e `docs/v0X_evidencia.md` (evidência medida).
+  A documentação deve explicar o **dataset** (origem, estrutura, estratos) e o
+  **processo de avaliação** (métricas, critérios, como reproduzir).
 
 ## Comandos úteis
 
@@ -43,6 +55,8 @@ source .venv/bin/activate   # ativar ambiente
 uv sync                     # sincronizar dependências
 pytest                      # rodar testes
 python -m src.projeto_final # executar módulo principal
+python scripts/avaliadores/avaliar_v1.py  # avaliar v0.1 (WER voz)
+python scripts/avaliadores/avaliar_v2.py  # avaliar v0.2 (RAG)
 ```
 
 ## Não fazer
@@ -51,3 +65,7 @@ python -m src.projeto_final # executar módulo principal
 - Não commitar `.env`, `.venv/`, caches, dados brutos.
 - Não pular releases nem misturar escopo de duas aulas num commit só.
 - Não copiar código diretamente de `projeto2/` sem reimplementar e entender cada parte.
+- Não fragmentar a documentação/evidência de uma release (máx.: `docs/v0X.md` +
+  `docs/v0X_evidencia.md`, com evidência em Markdown).
+- Não manter mais de um dataset avaliado por release nem usar evidência em JSON
+  sem o Markdown correspondente.

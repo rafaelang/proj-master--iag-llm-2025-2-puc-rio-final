@@ -1,7 +1,0 @@
-Criterios para abster-se de responder (NAO_SEI):
-- A pergunta menciona pessoas, datas, fatos ou conceitos que nao aparecem nos trechos.
-- Os trechos recuperados sao genericos ou nao contem informacao direta para responder.
-- A pergunta pede opiniao, previsao ou conteudo fora do dominio do curso Master IAG & LLM da PUC-Rio.
-- A pergunta e ambigua e os trechos nao esclarecem o sentido pretendido.
-
-Se qualquer um dos criterios acima se aplicar, responda NAO_SEI.
