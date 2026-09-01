@@ -10,6 +10,9 @@ from projeto_final.bm25 import preparar_query
 from projeto_final.rag.index import carregar_indices, construir_indices
 
 K_RRF = 60  # constante padrao do RRF
+# Pesos da fusao RRF: denso pesa mais (semantica ajuda mais em perguntas "o que e X").
+PESO_BM25 = 1.0
+PESO_DENSO = 1.5
 
 
 def _normalizar(vetores: np.ndarray) -> np.ndarray:
@@ -38,15 +41,20 @@ def _ranking_embeddings(pergunta: str, embeddings: np.ndarray, chunk_ids: list[i
 
 
 def recuperar(pergunta: str, chunks: list[dict], top_k: int = 5) -> list[dict]:
-    """Recupera top-k chunks usando fusao RRF de BM25 + embeddings."""
-    bm25, embeddings, chunk_ids = construir_indices(chunks)
-    r_bm25 = _ranking_bm25(pergunta, bm25, chunks)
-    r_emb = _ranking_embeddings(pergunta, embeddings, chunk_ids, chunks)
+    """Recupera top-k chunks usando fusao RRF ponderada de BM25 + embeddings.
 
-    # RRF
+    Over-fetch: cada lado busca top_k * 2 candidatos antes da fusao (top_k=12 -> 24).
+    Pesos: BM25 1.0, denso 1.5 — a semantica pesa mais para perguntas "o que e X".
+    """
+    bm25, embeddings, chunk_ids = construir_indices(chunks)
+    candidatos = top_k * 2
+    r_bm25 = _ranking_bm25(pergunta, bm25, chunks, top_k=candidatos)
+    r_emb = _ranking_embeddings(pergunta, embeddings, chunk_ids, chunks, top_k=candidatos)
+
+    # RRF ponderado
     scores = {}
     for cid in set(r_bm25) | set(r_emb):
-        scores[cid] = r_bm25.get(cid, 0.0) + r_emb.get(cid, 0.0)
+        scores[cid] = PESO_BM25 * r_bm25.get(cid, 0.0) + PESO_DENSO * r_emb.get(cid, 0.0)
 
     ranking = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     top_ids = [cid for cid, _ in ranking[:top_k]]

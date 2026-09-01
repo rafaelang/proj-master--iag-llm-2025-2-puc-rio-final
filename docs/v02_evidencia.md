@@ -276,18 +276,31 @@ IDF suavizado) foi o **maior ganho da rodada**: #11 (embeddings no RAG) subiu o
 doc esperado para o **top-1** e #12 (prompt eng vs fine-tuning) passou a entrar
 no **top-10** (rank 7).
 
-### Baseline atual — parágrafos + limpeza + BM25 próprio (RRF k=60)
+#### 4. RRF ponderado (BM25 1.0 × denso 1.5) + over-fetch 2x
 
-- **Recall@5** (sobre as 16 com `docs_esperados`): **0.875**
+| Métrica | RRF igual (anterior) | RRF ponderado | Δ |
+|---|---|---|---|
+| Recall@5 | 0.875 | **0.938** | **+0.063** |
+| Recall@10 | 0.938 | 0.938 | 0.000 |
+| MRR | 0.884 | **0.906** | **+0.022** |
+
+O peso maior no denso (`PESO_DENSO=1.5`, over-fetch `top_k*2`) resolveu **#07**
+(fine-tuning), que passou a entrar no **top-5** (rank 2) — recall@5 da rotineira
+chegou a **1.000**. Custo: **#12** (prompt eng vs fine-tuning) saiu do top-10,
+recuando a composta (recall@10 1.000 → 0.750).
+
+### Baseline atual — parágrafos + limpeza + BM25 próprio + RRF ponderado (k=60, denso 1.5x)
+
+- **Recall@5** (sobre as 16 com `docs_esperados`): **0.938**
 - **Recall@10** (idem): **0.938**
-- **MRR** (idem): **0.884**
+- **MRR** (idem): **0.906**
 
 Por estrato:
 
 | Estrato | n | Recall@5 | Recall@10 | MRR |
 |---|---|---|---|---|
-| rotineira | 10 | 0.900 | 0.900 | 0.900 |
-| composta | 4 | 0.750 | 1.000 | 0.786 |
+| rotineira | 10 | 1.000 | 1.000 | 0.950 |
+| composta | 4 | 0.750 | 0.750 | 0.750 |
 | negativa | 2 | 1.000 | 1.000 | 1.000 |
 
 Detalhes por pergunta em `data/processed/rag/retrieval.json`.
@@ -296,6 +309,6 @@ Detalhes por pergunta em `data/processed/rag/retrieval.json`.
 
 | Ajuste | Recall@5 | Recall@10 | MRR | Δ MRR vs baseline |
 |---|---|---|---|---|
-| Baseline (BM25 próprio, RRF k=60, parág. + limpeza) | 0.875 | 0.938 | 0.884 | — |
+| Baseline (RRF k=60, denso 1.5x, BM25 próprio, parág. + limpeza) | 0.938 | 0.938 | 0.906 | — |
 | _a definir: ex. RRF k=30 / peso BM25 2x_ | | | | |
 | _a definir: ex. max_chars=800 / min_chars=200_ | | | | |
