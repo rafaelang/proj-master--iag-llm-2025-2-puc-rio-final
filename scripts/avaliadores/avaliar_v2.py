@@ -39,7 +39,7 @@ HISTORICO = config.RAG_DIR / "avaliacao_historico.json"
 MARKER = "<!-- ===== SECOES MANUAIS (nao geradas pelos avaliadores) ===== -->"
 
 TOP_K_RECALL = 5    # granularidade de documento, como a v0.2 real (recall@5)
-TOP_K_GERACAO = 10  # blocos de contexto enviados ao LLM na geracao
+TOP_K_GERACAO = 5   # blocos de contexto enviados ao LLM na geracao (RAG retorna top-5)
 
 
 # ------------------------------------------------------- criterios (referencia projeto2)
@@ -132,14 +132,14 @@ def avaliar() -> dict:
         deve_abster = q.get("deve_abster", False)
         logger.info("== #{} [{}] {}", qid, q["estrato"], q["pergunta"][:60])
 
-        # 1) recuperacao top-K (uma unica busca; o top-5 deriva do top-10)
-        top10 = recuperar(q["pergunta"], chunks, top_k=TOP_K_GERACAO)
-        docs_rec5 = [c["arquivo"] for c in top10[:TOP_K_RECALL]]
+        # 1) recuperacao top-K (uma unica busca no tamanho do contexto do RAG)
+        top_n = recuperar(q["pergunta"], chunks, top_k=TOP_K_GERACAO)
+        docs_rec5 = [c["arquivo"] for c in top_n[:TOP_K_RECALL]]
         docs_rec5_set = set(docs_rec5)
         recall = (len(esperados & docs_rec5_set) / len(esperados)) if esperados else None
 
         # 2) geracao com citacoes (mesmo contexto do pipeline alvo)
-        contexto = _formatar_contexto(top10)
+        contexto = _formatar_contexto(top_n)
         try:
             resposta, _meta = llm_mod.responder_com_contexto(q["pergunta"], contexto, sistema=sistema)
         except Exception as e:
@@ -152,7 +152,7 @@ def avaliar() -> dict:
         cit_n = extrair_citacoes(resposta)
         citacoes = []
         for n in cit_n:
-            doc = top10[n - 1]["arquivo"] if 1 <= n <= len(top10) else None
+            doc = top_n[n - 1]["arquivo"] if 1 <= n <= len(top_n) else None
             citacoes.append({"n": n, "doc": doc})
 
         # 4) acerto end-to-end (juiz)

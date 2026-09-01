@@ -175,8 +175,8 @@ flowchart TB
 
 | Metrica | Valor |
 |---|---|
-| recall@5 (16 com `docs_esperados`) | 0.812 (13/16) |
-| Acuracia end-to-end (20, juiz deepseek-v4-pro) | 0.600 (12/20) |
+| recall@5 (16 com `docs_esperados`) | 0.938 (15/16) |
+| Acuracia end-to-end (20, juiz deepseek-v4-pro) | 0.550 (11/20) |
 | Abstencao correta (20) | 0.650 (13/20) |
 | Citacao presente (9 nao-abstidas) | 1.000 (9/9) |
 | Custo de embeddings/recuperacao | US$ 0.00 (local) |
@@ -191,7 +191,7 @@ Mais detalhes em `docs/v02_evidencia.md`.
 |---|---|
 | v0.0 · Fundação | ✅ Inicializado com `uv init --app`; README, AGENTS.md, estrutura criados. |
 | v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
-| v0.2 · RAG | ✅ recall@5=0.812; acurácia=0.600 (juiz deepseek-v4-pro); abstenção correta=0.650; BM25 + fastembed + RRF; dataset único do projeto2 (20 perguntas). |
+| v0.2 · RAG | ✅ recall@5=0.938; acurácia=0.550 (juiz deepseek-v4-pro); abstenção correta=0.650; BM25 próprio + RRF ponderado; dataset único do projeto2 (20 perguntas). |
 | v0.3 · Imagem | ⏳ |
 | v0.4 · Agentes | ⏳ |
 | v0.5 · Adaptação | ⏳ |

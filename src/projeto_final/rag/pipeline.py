@@ -37,7 +37,7 @@ def _formatar_contexto(chunks: list[dict]) -> str:
     return "\n\n".join(linhas)
 
 
-def responder(pergunta: str, top_k: int = 10) -> dict:
+def responder(pergunta: str, top_k: int = 5) -> dict:
     """Executa o pipeline RAG completo e retorna dict com resposta, chunks e metadados."""
     t0 = __import__("time").time()
     chunks = carregar_chunks()
