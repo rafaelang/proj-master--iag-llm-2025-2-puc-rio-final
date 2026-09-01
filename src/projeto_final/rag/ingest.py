@@ -12,7 +12,7 @@ from pypdf import PdfReader
 
 def extrair_texto_pdf(caminho: Path) -> list[dict]:
     """Extrai texto pagina a pagina de um PDF."""
-    doc_id = caminho.stem
+    doc_id = caminho.name  # nome do arquivo COM extensao (ex.: nlp_aula06_rag_avancado_ocr.pdf)
     paginas = []
     try:
         reader = PdfReader(str(caminho))
@@ -32,7 +32,7 @@ def extrair_texto_pdf(caminho: Path) -> list[dict]:
 
 def extrair_texto_md(caminho: Path) -> list[dict]:
     """Extrai texto de um arquivo Markdown, tratando-o como uma unica pagina."""
-    doc_id = caminho.stem
+    doc_id = caminho.name  # nome do arquivo COM extensao
     texto = caminho.read_text(encoding="utf-8", errors="ignore")
     return [{
         "doc_id": doc_id,

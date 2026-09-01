@@ -233,34 +233,42 @@
 
 ### Embasamento
 
-O gargalo atual da v0.2 não é a recuperação em si, e sim a **qualidade do contexto
-entregue ao LLM**: o Recall@5 está alto (**0.812** — os documentos certos são
-encontrados), mas a **Abstenção Indevida** cravou **0.438** — o LLM recebe o
-documento certo no Top-5, mas o *chunk* específico pode estar cortado no meio da
-ideia (divisão estrita por frases) ou fora das primeiras posições (ranqueamento).
-Esta rodada **isola o retrieval** (BM25 + fastembed + RRF), sem LLM, para medir a
-dispersão dos documentos corretos (Recall@5/@10) e a posição deles no ranking (MRR).
+O gargalo da v0.2 não é a recuperação em si, e sim a **qualidade do contexto
+entregue ao LLM**: na medição end-to-end anterior, o Recall@5 estava em **0.812**
+(os documentos certos eram encontrados), mas a **Abstenção Indevida** cravou
+**0.438** — o LLM recebia o documento certo no Top-5, mas o *chunk* específico podia
+estar cortado no meio da ideia (divisão estrita por frases) ou fora das primeiras
+posições (ranqueamento). Esta rodada **isola o retrieval** (BM25 + fastembed + RRF),
+sem LLM, para medir a dispersão (Recall@5/@10) e a ordem (MRR) dos documentos.
 
-### Baseline — antes de ajustes (RRF k=60, chunking ~300 tokens/overlap 50)
+### Resultado — mudança de chunking (frases → parágrafos)
 
-- **Recall@5** (sobre as 16 com `docs_esperados`): **0.812**
-- **Recall@10** (idem): **0.875**
-- **MRR** (idem): **0.790**
+| Métrica | Chunking por frases (anterior) | Chunking por parágrafos 300–1200 chars | Δ |
+|---|---|---|---|
+| Recall@5 | 0.812 | **0.875** | **+0.063** |
+| Recall@10 | 0.875 | **0.938** | **+0.063** |
+| MRR | 0.790 | **0.819** | **+0.029** |
+
+### Baseline atual — chunking por parágrafos 300–1200 chars (RRF k=60)
+
+- **Recall@5** (sobre as 16 com `docs_esperados`): **0.875**
+- **Recall@10** (idem): **0.938**
+- **MRR** (idem): **0.819**
 
 Por estrato:
 
 | Estrato | n | Recall@5 | Recall@10 | MRR |
 |---|---|---|---|---|
-| rotineira | 10 | 0.900 | 0.900 | 0.900 |
+| rotineira | 10 | 0.900 | 1.000 | 0.911 |
 | composta | 4 | 0.750 | 0.750 | 0.625 |
-| negativa | 2 | 0.500 | 1.000 | 0.571 |
+| negativa | 2 | 1.000 | 1.000 | 0.750 |
 
 Detalhes por pergunta em `data/processed/rag/retrieval.json`.
 
-### Após ajustes (pesos do RRF BM25×embeddings e/ou tamanho dos chunks)
+### Próximos ajustes (pesos do RRF BM25×embeddings e/ou tamanho dos chunks)
 
 | Ajuste | Recall@5 | Recall@10 | MRR | Δ MRR vs baseline |
 |---|---|---|---|---|
-| Baseline (BM25+emb, RRF k=60, ~300 tok) | 0.812 | 0.875 | 0.790 | — |
+| Baseline (BM25+emb, RRF k=60, parág. 300–1200 chars) | 0.875 | 0.938 | 0.819 | — |
 | _a definir: ex. RRF k=30 / peso BM25 2x_ | | | | |
-| _a definir: ex. chunks ~150 tokens_ | | | | |
+| _a definir: ex. max_chars=800 / min_chars=200_ | | | | |

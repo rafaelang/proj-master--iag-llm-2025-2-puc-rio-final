@@ -8,7 +8,7 @@ from pathlib import Path
 from loguru import logger
 
 from projeto_final import config
-from projeto_final.rag.chunk import chunk_paginas
+from projeto_final.rag.chunk import chunk_por_fronteira
 from projeto_final.rag.ingest import ingest, salvar_paginas
 from projeto_final.rag.retrieve import recuperar
 from projeto_final import llm as llm_mod
@@ -23,7 +23,7 @@ def carregar_chunks() -> list[dict]:
     logger.info("Chunks nao encontrados. Ingestionando corpus...")
     paginas = ingest(config.RAW_DIR)
     salvar_paginas(paginas, config.RAG_DIR / "paginas.json")
-    chunks = chunk_paginas(paginas)
+    chunks = chunk_por_fronteira(paginas)
     config.RAG_DIR.mkdir(parents=True, exist_ok=True)
     config.RAG_CHUNK_PATH.write_text(json.dumps(chunks, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info("{} chunks salvos em {}", len(chunks), config.RAG_CHUNK_PATH)

@@ -4,7 +4,7 @@ Responda com base nos trechos numerados abaixo.
 Regras obrigatorias:
 1. Cada afirmacao factual DEVE citar a fonte usando o formato EXATO: [N] doc_id
    Onde N e o numero do trecho, doc_id e o identificador do documento.
-   Exemplo de citacao valida: [1] nlp_aula06_rag_avancado_ocr
+   Exemplo de citacao valida: [1] nlp_aula06_rag_avancado_ocr.pdf
 2. Se os trechos NAO tiverem informacao alguma que permita responder a pergunta, responda EXATAMENTE: NAO_SEI
 3. Se a pergunta contiver múltiplos tópicos e o contexto cobrir apenas alguns deles, responda o que for possível citando as fontes e declare explicitamente sobre quais tópicos não há informações no material.
 4. Se múltiplas informações consecutivas vierem da mesma fonte, agrupe a citação no final da frase ou do bloco de ideias. Não repita a mesma citação múltiplas vezes na mesma frase.

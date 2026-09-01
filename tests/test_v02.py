@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from projeto_final import config
 from projeto_final.main import app
-from projeto_final.rag.chunk import chunk_paginas
+from projeto_final.rag.chunk import chunk_por_fronteira
 from projeto_final.rag.ingest import ingest
 from projeto_final.rag.index import construir_indices
 from projeto_final.rag.retrieve import recuperar
@@ -22,14 +22,14 @@ def test_ingest_nao_vazio():
 
 def test_chunk_fronteira_natural():
     paginas = ingest(config.RAW_DIR)
-    chunks = chunk_paginas(paginas)
+    chunks = chunk_por_fronteira(paginas)
     assert len(chunks) > 0
     assert all("id" in c and "doc_id" in c and "texto" in c for c in chunks)
 
 
 def test_indices_constroem():
     paginas = ingest(config.RAW_DIR)
-    chunks = chunk_paginas(paginas)
+    chunks = chunk_por_fronteira(paginas)
     bm25, embeddings, ids = construir_indices(chunks, force=True)
     assert embeddings.shape[0] == len(chunks)
     assert len(ids) == len(chunks)
@@ -37,7 +37,7 @@ def test_indices_constroem():
 
 def test_recupera_chunks():
     paginas = ingest(config.RAW_DIR)
-    chunks = chunk_paginas(paginas)
+    chunks = chunk_por_fronteira(paginas)
     top = recuperar("RAG retrieval augmented generation", chunks, top_k=5)
     assert len(top) == 5
     assert all("doc_id" in c for c in top)
