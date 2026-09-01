@@ -35,6 +35,8 @@ GOLDEN = config.RAG_GOLDEN_SET
 JSON_SAIDA = config.RAG_DIR / "avaliacao_v2.json"
 EVIDENCIA_MD = config.DOCS_DIR / "v02_evidencia.md"
 HISTORICO = config.RAG_DIR / "avaliacao_historico.json"
+# Marcador para preservar secoes manuais em docs/v02_evidencia.md (ex.: Terceira Rodada).
+MARKER = "<!-- ===== SECOES MANUAIS (nao geradas pelos avaliadores) ===== -->"
 
 TOP_K_RECALL = 5    # granularidade de documento, como a v0.2 real (recall@5)
 TOP_K_GERACAO = 10  # blocos de contexto enviados ao LLM na geracao
@@ -413,7 +415,13 @@ def main() -> None:
 
     JSON_SAIDA.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     config.DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    EVIDENCIA_MD.write_text(gerar_evidencia(out, historico), encoding="utf-8")
+    novo_md = gerar_evidencia(out, historico)
+    manual = ""
+    if EVIDENCIA_MD.exists():
+        atual = EVIDENCIA_MD.read_text(encoding="utf-8")
+        if MARKER in atual:
+            manual = atual.split(MARKER, 1)[1]
+    EVIDENCIA_MD.write_text(novo_md + MARKER + "\n\n" + manual, encoding="utf-8")
     print("RESUMO:", json.dumps(out["resumo"], ensure_ascii=False, indent=2))
     print(f"json intermediario: {JSON_SAIDA}")
     print(f"historico de medicoes: {HISTORICO}")

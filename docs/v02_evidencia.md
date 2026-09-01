@@ -227,3 +227,40 @@
 | 2026-08-31T17:41:00 | deepseek-chat | deepseek-v4-pro | rag_sistema.txt (anterior) | 0.812 | 0.600 | 0.650 | 0.438 | 1.000 | 7/2/0 |
 | 2026-08-31T20:06:50 | deepseek-chat | deepseek-v4-pro | rag_sistema.txt#b3a31998 | 0.812 | 0.600 | 0.650 | 0.438 | 1.000 | 7/2/0 |
 
+<!-- ===== SECOES MANUAIS (nao geradas pelos avaliadores) ===== -->
+
+## Terceira Rodada: Otimização Isolada do Retrieval
+
+### Embasamento
+
+O gargalo atual da v0.2 não é a recuperação em si, e sim a **qualidade do contexto
+entregue ao LLM**: o Recall@5 está alto (**0.812** — os documentos certos são
+encontrados), mas a **Abstenção Indevida** cravou **0.438** — o LLM recebe o
+documento certo no Top-5, mas o *chunk* específico pode estar cortado no meio da
+ideia (divisão estrita por frases) ou fora das primeiras posições (ranqueamento).
+Esta rodada **isola o retrieval** (BM25 + fastembed + RRF), sem LLM, para medir a
+dispersão dos documentos corretos (Recall@5/@10) e a posição deles no ranking (MRR).
+
+### Baseline — antes de ajustes (RRF k=60, chunking ~300 tokens/overlap 50)
+
+- **Recall@5** (sobre as 16 com `docs_esperados`): **0.812**
+- **Recall@10** (idem): **0.875**
+- **MRR** (idem): **0.790**
+
+Por estrato:
+
+| Estrato | n | Recall@5 | Recall@10 | MRR |
+|---|---|---|---|---|
+| rotineira | 10 | 0.900 | 0.900 | 0.900 |
+| composta | 4 | 0.750 | 0.750 | 0.625 |
+| negativa | 2 | 0.500 | 1.000 | 0.571 |
+
+Detalhes por pergunta em `data/processed/rag/retrieval.json`.
+
+### Após ajustes (pesos do RRF BM25×embeddings e/ou tamanho dos chunks)
+
+| Ajuste | Recall@5 | Recall@10 | MRR | Δ MRR vs baseline |
+|---|---|---|---|---|
+| Baseline (BM25+emb, RRF k=60, ~300 tok) | 0.812 | 0.875 | 0.790 | — |
+| _a definir: ex. RRF k=30 / peso BM25 2x_ | | | | |
+| _a definir: ex. chunks ~150 tokens_ | | | | |
