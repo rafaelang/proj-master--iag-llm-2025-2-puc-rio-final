@@ -9,19 +9,9 @@ from pathlib import Path
 import numpy as np
 from fastembed import TextEmbedding
 from loguru import logger
-from rank_bm25 import BM25Okapi
 
 from projeto_final import config
-
-
-def _tokenizar(texto: str) -> list[str]:
-    """Tokenizer simples para BM25: minusculas, sem acento, sem pontuacao."""
-    import re
-    import unicodedata
-    t = unicodedata.normalize("NFKD", texto.lower())
-    t = "".join(c for c in t if not unicodedata.combining(c))
-    t = re.sub(r"[^a-z0-9\s]", " ", t)
-    return [tok for tok in t.split() if tok]
+from projeto_final.bm25 import BM25Okapi, normalizar
 
 
 def construir_indices(chunks: list[dict], force: bool = False) -> tuple[BM25Okapi, np.ndarray, list[int]]:
@@ -36,7 +26,7 @@ def construir_indices(chunks: list[dict], force: bool = False) -> tuple[BM25Okap
 
     # BM25
     corpus = [chunk["texto"] for chunk in chunks]
-    tokenizado = [_tokenizar(c) for c in corpus]
+    tokenizado = [normalizar(c) for c in corpus]
     bm25 = BM25Okapi(tokenizado)
     with open(config.RAG_BM25_PATH, "wb") as f:
         pickle.dump(bm25, f)

@@ -6,7 +6,8 @@ import numpy as np
 from loguru import logger
 
 from projeto_final import config
-from projeto_final.rag.index import carregar_indices, construir_indices, _tokenizar
+from projeto_final.bm25 import preparar_query
+from projeto_final.rag.index import carregar_indices, construir_indices
 
 K_RRF = 60  # constante padrao do RRF
 
@@ -19,7 +20,7 @@ def _normalizar(vetores: np.ndarray) -> np.ndarray:
 
 
 def _ranking_bm25(pergunta: str, bm25, chunks: list[dict], top_k: int = 50) -> dict[int, float]:
-    tokens = _tokenizar(pergunta)
+    tokens = preparar_query(pergunta)
     scores = bm25.get_scores(tokens)
     indices = np.argsort(scores)[::-1][:top_k]
     return {chunks[i]["id"]: 1.0 / (rank + 1 + K_RRF) for rank, i in enumerate(indices) if scores[i] > 0}

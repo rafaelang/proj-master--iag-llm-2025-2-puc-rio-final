@@ -263,19 +263,32 @@ A limpeza reduziu o corpus (356 → 347 chunks), mas **não melhorou as métrica
 a pergunta #07 (fine-tuning) perdeu o doc do top-10 e o MRR caiu levemente — o
 ruído de slides não era o gargalo do retrieval.
 
-### Baseline atual — parágrafos 300–1200 chars + limpeza de slides (RRF k=60)
+#### 3. BM25 Okapi próprio (Python puro, stopwords pt-BR na query)
+
+| Métrica | rank_bm25 (anterior) | BM25 próprio | Δ |
+|---|---|---|---|
+| Recall@5 | 0.875 | 0.875 | 0.000 |
+| Recall@10 | 0.875 | **0.938** | **+0.063** |
+| MRR | 0.812 | **0.884** | **+0.072** |
+
+O BM25 próprio (`k1=1.5, b=0.75`, stopwords pt-BR removidas da query, tokens > 1,
+IDF suavizado) foi o **maior ganho da rodada**: #11 (embeddings no RAG) subiu o
+doc esperado para o **top-1** e #12 (prompt eng vs fine-tuning) passou a entrar
+no **top-10** (rank 7).
+
+### Baseline atual — parágrafos + limpeza + BM25 próprio (RRF k=60)
 
 - **Recall@5** (sobre as 16 com `docs_esperados`): **0.875**
-- **Recall@10** (idem): **0.875**
-- **MRR** (idem): **0.812**
+- **Recall@10** (idem): **0.938**
+- **MRR** (idem): **0.884**
 
 Por estrato:
 
 | Estrato | n | Recall@5 | Recall@10 | MRR |
 |---|---|---|---|---|
 | rotineira | 10 | 0.900 | 0.900 | 0.900 |
-| composta | 4 | 0.750 | 0.750 | 0.625 |
-| negativa | 2 | 1.000 | 1.000 | 0.750 |
+| composta | 4 | 0.750 | 1.000 | 0.786 |
+| negativa | 2 | 1.000 | 1.000 | 1.000 |
 
 Detalhes por pergunta em `data/processed/rag/retrieval.json`.
 
@@ -283,6 +296,6 @@ Detalhes por pergunta em `data/processed/rag/retrieval.json`.
 
 | Ajuste | Recall@5 | Recall@10 | MRR | Δ MRR vs baseline |
 |---|---|---|---|---|
-| Baseline (BM25+emb, RRF k=60, parág. + limpeza) | 0.875 | 0.875 | 0.812 | — |
+| Baseline (BM25 próprio, RRF k=60, parág. + limpeza) | 0.875 | 0.938 | 0.884 | — |
 | _a definir: ex. RRF k=30 / peso BM25 2x_ | | | | |
 | _a definir: ex. max_chars=800 / min_chars=200_ | | | | |
