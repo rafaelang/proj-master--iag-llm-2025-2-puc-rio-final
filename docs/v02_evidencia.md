@@ -241,25 +241,39 @@ estar cortado no meio da ideia (divisão estrita por frases) ou fora das primeir
 posições (ranqueamento). Esta rodada **isola o retrieval** (BM25 + fastembed + RRF),
 sem LLM, para medir a dispersão (Recall@5/@10) e a ordem (MRR) dos documentos.
 
-### Resultado — mudança de chunking (frases → parágrafos)
+### Resultados — otimizações aplicadas
 
-| Métrica | Chunking por frases (anterior) | Chunking por parágrafos 300–1200 chars | Δ |
+#### 1. Chunking: frases → parágrafos (300–1200 chars)
+
+| Métrica | Chunking por frases (anterior) | Chunking por parágrafos | Δ |
 |---|---|---|---|
-| Recall@5 | 0.812 | **0.875** | **+0.063** |
-| Recall@10 | 0.875 | **0.938** | **+0.063** |
-| MRR | 0.790 | **0.819** | **+0.029** |
+| Recall@5 | 0.812 | 0.875 | **+0.063** |
+| Recall@10 | 0.875 | 0.938 | **+0.063** |
+| MRR | 0.790 | 0.819 | **+0.029** |
 
-### Baseline atual — chunking por parágrafos 300–1200 chars (RRF k=60)
+#### 2. Limpeza de mobília de slides (ingestão)
+
+| Métrica | Sem limpeza (anterior) | Com limpeza | Δ |
+|---|---|---|---|
+| Recall@5 | 0.875 | 0.875 | 0.000 |
+| Recall@10 | 0.938 | **0.875** | **−0.063** |
+| MRR | 0.819 | 0.812 | −0.007 |
+
+A limpeza reduziu o corpus (356 → 347 chunks), mas **não melhorou as métricas**:
+a pergunta #07 (fine-tuning) perdeu o doc do top-10 e o MRR caiu levemente — o
+ruído de slides não era o gargalo do retrieval.
+
+### Baseline atual — parágrafos 300–1200 chars + limpeza de slides (RRF k=60)
 
 - **Recall@5** (sobre as 16 com `docs_esperados`): **0.875**
-- **Recall@10** (idem): **0.938**
-- **MRR** (idem): **0.819**
+- **Recall@10** (idem): **0.875**
+- **MRR** (idem): **0.812**
 
 Por estrato:
 
 | Estrato | n | Recall@5 | Recall@10 | MRR |
 |---|---|---|---|---|
-| rotineira | 10 | 0.900 | 1.000 | 0.911 |
+| rotineira | 10 | 0.900 | 0.900 | 0.900 |
 | composta | 4 | 0.750 | 0.750 | 0.625 |
 | negativa | 2 | 1.000 | 1.000 | 0.750 |
 
@@ -269,6 +283,6 @@ Detalhes por pergunta em `data/processed/rag/retrieval.json`.
 
 | Ajuste | Recall@5 | Recall@10 | MRR | Δ MRR vs baseline |
 |---|---|---|---|---|
-| Baseline (BM25+emb, RRF k=60, parág. 300–1200 chars) | 0.875 | 0.938 | 0.819 | — |
+| Baseline (BM25+emb, RRF k=60, parág. + limpeza) | 0.875 | 0.875 | 0.812 | — |
 | _a definir: ex. RRF k=30 / peso BM25 2x_ | | | | |
 | _a definir: ex. max_chars=800 / min_chars=200_ | | | | |
