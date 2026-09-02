@@ -1,7 +1,7 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v0.2 · RAG (busca hibrida, citacao e abstencao, golden set medido)
+> **Status:** v0.2 · RAG ✅ **CONCLUÍDA** (busca híbrida BM25 próprio + RRF ponderado, citação e abstenção, golden set medido)
 > **Repositório base de consulta:** `projeto2/` (protótipo de experimentação)
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
@@ -171,17 +171,32 @@ flowchart TB
     I -->|audio/wav| J[Navegador - player]
 ```
 
-### Resultado da v0.2
+### Resultado da v0.2 (concluída)
+
+**RAG end-to-end** (medição final com o retrieval otimizado, juiz `deepseek-v4-pro`):
 
 | Metrica | Valor |
 |---|---|
 | recall@5 (16 com `docs_esperados`) | 0.938 (15/16) |
-| Acuracia end-to-end (20, juiz deepseek-v4-pro) | 0.550 (11/20) |
+| Acuracia end-to-end (20) | 0.550 (11/20) |
 | Abstencao correta (20) | 0.650 (13/20) |
 | Citacao presente (9 nao-abstidas) | 1.000 (9/9) |
+| Auditoria de citacao | fiel 9 · fora 0 · fantasma 0 |
 | Custo de embeddings/recuperacao | US$ 0.00 (local) |
 
-Mais detalhes em `docs/v02_evidencia.md`.
+**Retrieval isolado** (Terceira Rodada — configuração final, sem rerank):
+
+| Metrica | Valor |
+|---|---|
+| Recall@5 (16 com `docs_esperados`) | 0.938 |
+| Recall@10 | 0.938 |
+| MRR | 0.906 |
+
+> O **rerank** (cross-encoder em `rag/rerank.py`) foi testado e **desativado** na
+> configuração final (MRR 0.906→0.865; custo ~40 s/query em CPU). Disponível via
+> `rerank=True`.
+
+Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.
 
 ---
 
@@ -191,7 +206,7 @@ Mais detalhes em `docs/v02_evidencia.md`.
 |---|---|
 | v0.0 · Fundação | ✅ Inicializado com `uv init --app`; README, AGENTS.md, estrutura criados. |
 | v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
-| v0.2 · RAG | ✅ recall@5=0.938; acurácia=0.550 (juiz deepseek-v4-pro); abstenção correta=0.650; BM25 próprio + RRF ponderado; dataset único do projeto2 (20 perguntas). |
+| v0.2 · RAG | ✅ **CONCLUÍDA** — recall@5=0.938; acurácia=0.550 (juiz deepseek-v4-pro); abstenção correta=0.650; BM25 próprio + RRF ponderado; dataset único do projeto2 (20 perguntas); rerank testado e desativado. |
 | v0.3 · Imagem | ⏳ |
 | v0.4 · Agentes | ⏳ |
 | v0.5 · Adaptação | ⏳ |

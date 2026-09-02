@@ -8,11 +8,14 @@ from loguru import logger
 from projeto_final import config
 from projeto_final.bm25 import preparar_query
 from projeto_final.rag.index import carregar_indices, construir_indices
+from projeto_final.rag.rerank import rerank_chunks
 
 K_RRF = 60  # constante padrao do RRF
 # Pesos da fusao RRF: denso pesa mais (semantica ajuda mais em perguntas "o que e X").
 PESO_BM25 = 1.0
 PESO_DENSO = 1.5
+# Candidatos (por lado) buscados antes da fusao + rerank quando o rerank esta ativo.
+POOL_RERANK = 30
 
 
 def _normalizar(vetores: np.ndarray) -> np.ndarray:
@@ -40,16 +43,22 @@ def _ranking_embeddings(pergunta: str, embeddings: np.ndarray, chunk_ids: list[i
     return {chunk_ids[i]: 1.0 / (rank + 1 + K_RRF) for rank, i in enumerate(indices)}
 
 
-def recuperar(pergunta: str, chunks: list[dict], top_k: int = 5) -> list[dict]:
-    """Recupera top-k chunks usando fusao RRF ponderada de BM25 + embeddings.
+def recuperar(pergunta: str, chunks: list[dict], top_k: int = 5, rerank: bool = False) -> list[dict]:
+    """Recupera top-k chunks: busca hibrida BM25 + denso, fusao RRF ponderada e RERANK opcional.
 
-    Over-fetch: cada lado busca top_k * 2 candidatos antes da fusao (top_k=12 -> 24).
-    Pesos: BM25 1.0, denso 1.5 — a semantica pesa mais para perguntas "o que e X".
+    Fluxo:
+      1) BM25 e denso buscam candidatos (over-fetch: POOL_RERANK=30 com rerank,
+         top_k*2 sem rerank) -> RRF ponderado (k=60, BM25 1.0 x denso 1.5);
+      2) RERANK opcional dos candidatos com cross-encoder (rag/rerank.py);
+      3) retorna estritamente top_k (o pipeline usa top_k=5 -> Top-5 definitivo).
+
+    rerank esta DESATIVADO por padrao (medicao: MRR 0.906 -> 0.865 no golden set;
+    custo ~40 s/query em CPU). Use rerank=True para ativa-lo.
     """
     bm25, embeddings, chunk_ids = construir_indices(chunks)
-    candidatos = top_k * 2
-    r_bm25 = _ranking_bm25(pergunta, bm25, chunks, top_k=candidatos)
-    r_emb = _ranking_embeddings(pergunta, embeddings, chunk_ids, chunks, top_k=candidatos)
+    candidatos_n = POOL_RERANK if rerank else top_k * 2
+    r_bm25 = _ranking_bm25(pergunta, bm25, chunks, top_k=candidatos_n)
+    r_emb = _ranking_embeddings(pergunta, embeddings, chunk_ids, chunks, top_k=candidatos_n)
 
     # RRF ponderado
     scores = {}
@@ -57,8 +66,16 @@ def recuperar(pergunta: str, chunks: list[dict], top_k: int = 5) -> list[dict]:
         scores[cid] = PESO_BM25 * r_bm25.get(cid, 0.0) + PESO_DENSO * r_emb.get(cid, 0.0)
 
     ranking = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    top_ids = [cid for cid, _ in ranking[:top_k]]
-    logger.debug("Recuperacao RRF: pergunta='{}' -> top {} ids={}", pergunta, top_k, top_ids)
+    top_ids = [cid for cid, _ in ranking[:candidatos_n]]
+    logger.debug("Recuperacao RRF: pergunta='{}' -> {} candidatos ids={}", pergunta, len(top_ids), top_ids)
 
     chunk_map = {c["id"]: c for c in chunks}
-    return [chunk_map[cid] for cid in top_ids if cid in chunk_map]
+    candidatos = [chunk_map[cid] for cid in top_ids if cid in chunk_map]
+
+    if rerank:
+        candidatos = rerank_chunks(pergunta, candidatos)
+        logger.info("Rerank aplicado: {} candidatos -> top-{}", len(candidatos), top_k)
+    else:
+        logger.debug("Rerank desativado: RRF direto -> top {}", top_k)
+
+    return candidatos[:top_k]

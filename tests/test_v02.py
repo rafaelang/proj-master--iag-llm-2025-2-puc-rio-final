@@ -38,7 +38,8 @@ def test_indices_constroem():
 def test_recupera_chunks():
     paginas = ingest(config.RAW_DIR)
     chunks = chunk_por_fronteira(paginas)
-    top = recuperar("RAG retrieval augmented generation", chunks, top_k=5)
+    # rerank=False: teste basico do RRF, sem baixar o cross-encoder (~1.1 GB)
+    top = recuperar("RAG retrieval augmented generation", chunks, top_k=5, rerank=False)
     assert len(top) == 5
     assert all("doc_id" in c for c in top)
 

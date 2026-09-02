@@ -224,8 +224,6 @@
 
 <!-- ===== SECOES MANUAIS (nao geradas pelos avaliadores) ===== -->
 
-
-
 ## Terceira Rodada: Otimização Isolada do Retrieval
 
 ### Embasamento
@@ -235,8 +233,8 @@ entregue ao LLM**: na medição end-to-end anterior, o Recall@5 estava em **0.81
 (os documentos certos eram encontrados), mas a **Abstenção Indevida** cravou
 **0.438** — o LLM recebia o documento certo no Top-5, mas o *chunk* específico podia
 estar cortado no meio da ideia (divisão estrita por frases) ou fora das primeiras
-posições (ranqueamento). Esta rodada **isola o retrieval** (BM25 + fastembed + RRF),
-sem LLM, para medir a dispersão (Recall@5/@10) e a ordem (MRR) dos documentos.
+posições (ranqueamento). Esta rodada **isola o retrieval** (BM25 + fastembed + RRF
++ rerank) e mede **Recall@5** e **MRR** sobre o top-5 definitivo, sem LLM.
 
 ### Resultados — otimizações aplicadas
 
@@ -245,7 +243,6 @@ sem LLM, para medir a dispersão (Recall@5/@10) e a ordem (MRR) dos documentos.
 | Métrica | Chunking por frases (anterior) | Chunking por parágrafos | Δ |
 |---|---|---|---|
 | Recall@5 | 0.812 | 0.875 | **+0.063** |
-| Recall@10 | 0.875 | 0.938 | **+0.063** |
 | MRR | 0.790 | 0.819 | **+0.029** |
 
 #### 2. Limpeza de mobília de slides (ingestão)
@@ -253,59 +250,60 @@ sem LLM, para medir a dispersão (Recall@5/@10) e a ordem (MRR) dos documentos.
 | Métrica | Sem limpeza (anterior) | Com limpeza | Δ |
 |---|---|---|---|
 | Recall@5 | 0.875 | 0.875 | 0.000 |
-| Recall@10 | 0.938 | **0.875** | **−0.063** |
 | MRR | 0.819 | 0.812 | −0.007 |
 
-A limpeza reduziu o corpus (356 → 347 chunks), mas **não melhorou as métricas**:
-a pergunta #07 (fine-tuning) perdeu o doc do top-10 e o MRR caiu levemente — o
-ruído de slides não era o gargalo do retrieval.
+A limpeza reduziu o corpus (356 → 347 chunks), mas **não melhorou as métricas**;
+foi mantida por higiene de corpus, mas não é o gargalo do retrieval.
 
 #### 3. BM25 Okapi próprio (Python puro, stopwords pt-BR na query)
 
 | Métrica | rank_bm25 (anterior) | BM25 próprio | Δ |
 |---|---|---|---|
 | Recall@5 | 0.875 | 0.875 | 0.000 |
-| Recall@10 | 0.875 | **0.938** | **+0.063** |
 | MRR | 0.812 | **0.884** | **+0.072** |
 
 O BM25 próprio (`k1=1.5, b=0.75`, stopwords pt-BR removidas da query, tokens > 1,
-IDF suavizado) foi o **maior ganho da rodada**: #11 (embeddings no RAG) subiu o
-doc esperado para o **top-1** e #12 (prompt eng vs fine-tuning) passou a entrar
-no **top-10** (rank 7).
+IDF suavizado) foi um grande ganho de ranking: #11 (embeddings no RAG) subiu o doc
+para o **top-1**.
 
-#### 4. RRF ponderado (BM25 1.0 × denso 1.5) + over-fetch 2x
+#### 4. RRF ponderado (BM25 1.0 × denso 1.5)
 
 | Métrica | RRF igual (anterior) | RRF ponderado | Δ |
 |---|---|---|---|
 | Recall@5 | 0.875 | **0.938** | **+0.063** |
-| Recall@10 | 0.938 | 0.938 | 0.000 |
 | MRR | 0.884 | **0.906** | **+0.022** |
 
-O peso maior no denso (`PESO_DENSO=1.5`, over-fetch `top_k*2`) resolveu **#07**
-(fine-tuning), que passou a entrar no **top-5** (rank 2) — recall@5 da rotineira
-chegou a **1.000**. Custo: **#12** (prompt eng vs fine-tuning) saiu do top-10,
-recuando a composta (recall@10 1.000 → 0.750).
+O peso maior no denso (`PESO_DENSO=1.5`) resolveu **#07** (fine-tuning), que passou
+a entrar no **top-5** (rank 2) — a rotineira chegou a recall@5 **1.000**.
 
-### Baseline atual — parágrafos + limpeza + BM25 próprio + RRF ponderado (k=60, denso 1.5x)
+#### 5. Rerank (cross-encoder jina-reranker-v2-base-multilingual, over-fetch 30)
+
+| Métrica | RRF ponderado (anterior) | RRF + Rerank | Δ |
+|---|---|---|---|
+| Recall@5 | 0.938 | 0.938 | +0.000 |
+| MRR | 0.906 | 0.865 | −0.041 |
+
+O rerank foi **testado e desativado por padrão no pipeline** (`rerank=False`): MRR caiu 0.906 → 0.865 (rotineira ficou perfeita, mas #13/#15 regrediram) e o custo é alto (~40 s/query em CPU). O estágio continua disponível em `rag/rerank.py` — basta usar `rerank=True`.
+
+### Baseline atual — parágrafos + limpeza + BM25 próprio + RRF ponderado (sem rerank)
 
 - **Recall@5** (sobre as 16 com `docs_esperados`): **0.938**
-- **Recall@10** (idem): **0.938**
 - **MRR** (idem): **0.906**
 
 Por estrato:
 
-| Estrato | n | Recall@5 | Recall@10 | MRR |
-|---|---|---|---|---|
-| rotineira | 10 | 1.000 | 1.000 | 0.950 |
-| composta | 4 | 0.750 | 0.750 | 0.750 |
-| negativa | 2 | 1.000 | 1.000 | 1.000 |
+| Estrato | n | Recall@5 | MRR |
+|---|---|---|---|
+| rotineira | 10 | 1.000 | 0.950 |
+| composta | 4 | 0.750 | 0.750 |
+| negativa | 2 | 1.000 | 1.000 |
 
 Detalhes por pergunta em `data/processed/rag/retrieval.json`.
 
 ### Próximos ajustes (pesos do RRF BM25×embeddings e/ou tamanho dos chunks)
 
-| Ajuste | Recall@5 | Recall@10 | MRR | Δ MRR vs baseline |
-|---|---|---|---|---|
-| Baseline (RRF k=60, denso 1.5x, BM25 próprio, parág. + limpeza) | 0.938 | 0.938 | 0.906 | — |
-| _a definir: ex. RRF k=30 / peso BM25 2x_ | | | | |
-| _a definir: ex. max_chars=800 / min_chars=200_ | | | | |
+| Ajuste | Recall@5 | MRR | Δ MRR vs baseline |
+|---|---|---|---|
+| Baseline (RRF k=60, denso 1.5x, BM25 próprio, parág. + limpeza) | 0.938 | 0.906 | — |
+| _a definir: ex. RRF k=30 / peso BM25 2x_ | | | |
+| _a definir: ex. max_chars=800 / min_chars=200_ | | | |

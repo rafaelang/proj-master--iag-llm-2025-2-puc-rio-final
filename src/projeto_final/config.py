@@ -40,6 +40,8 @@ RAG_EMBEDDINGS_PATH = RAG_DIR / "embeddings.npy"
 RAG_CHUNK_IDS_PATH = RAG_DIR / "chunk_ids.json"
 RAG_GOLDEN_SET = GOLDEN_SET_DIR / "rag" / "perguntas.json"
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+RERANK_MODEL = os.getenv("RERANK_MODEL", "jinaai/jina-reranker-v2-base-multilingual")
+RERANK_CACHE_DIR = RAG_DIR / "rerank_models"
 
 # LLM
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
