@@ -34,11 +34,50 @@ def _eh_cabecalho_curto(linha: str) -> bool:
     return re.search(r"\bprof\.|professor|p[áa]gin|slide", linha, re.IGNORECASE) is not None
 
 
-def _limpar_pagina(texto: str) -> str:
-    """Remove a 'mobilia' de slides que dilui o sinal do BM25/embedding.
+_CARACTERES_TEXTUAIS = frozenset(
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    "áéíóúâêôãõç "
+)
 
-    Por linha: e-mails, URLs, linhas numericas, cabecalhos curtos
-    (Prof., Professor, Pagina, Slide) e linhas vazias/curtas (len < 3).
+
+def _razao_alfanumerica(linha: str) -> float:
+    """Fracao de caracteres textuais (letras/numeros/acentos pt-BR + espaco) na linha."""
+    if not linha:
+        return 1.0
+    return sum(1 for c in linha if c in _CARACTERES_TEXTUAIS) / len(linha)
+
+
+def _tem_caractere_controle(linha: str) -> bool:
+    """True se a linha tem bytes de controle/binarios (ord < 32 exceto tab/\n/\r)."""
+    return any(ord(c) < 32 and c not in "\t\n\r" for c in linha)
+
+
+def _espacamento_ruim(linha: str) -> bool:
+    """True se a media de caracteres por palavra indica garbage (colada ou letra a letra).
+
+    media = len(linha) / n_palavras (split considera \n como separador).
+    - media > 20: string gigante sem espacos (descartar sempre);
+    - media < 3:  letras isoladas - descartar apenas com >= 5 palavras
+      (evita falso-positivo em linhas curtas como 'O que e?').
+    """
+    palavras = linha.split()
+    if not palavras:
+        return True
+    media = len(linha) / len(palavras)
+    if media > 20:
+        return True
+    if media < 3 and len(palavras) >= 5:
+        return True
+    return False
+
+def _limpar_pagina(texto: str) -> str:
+    """Remove mobilia de slides e GARBAGE de PDF que diluem o sinal do BM25/embedding.
+
+    Por linha, descarta:
+    - e-mails, URLs, linhas numericas, cabecalhos curtos (Prof./Professor/Pagina/Slide);
+    - linhas vazias/curtas (< 3 chars);
+    - garbage de PDF: razao alfanumerica < 70%, caracteres de controle (binarios),
+      ou espacamento medio de palavra > 20 (colada) / < 3 (letra a letra).
     """
     linhas_limpas = []
     for linha in texto.splitlines():
@@ -47,10 +86,15 @@ def _limpar_pagina(texto: str) -> str:
             continue
         if _tem_email(l) or _tem_url(l) or _eh_numerica(l) or _eh_cabecalho_curto(l):
             continue
+        # --- garbage de PDF ---
+        if _tem_caractere_controle(l):
+            continue
+        if _razao_alfanumerica(l) < 0.70:
+            continue
+        if _espacamento_ruim(l):
+            continue
         linhas_limpas.append(l)
     return "\n".join(linhas_limpas)
-
-
 def extrair_texto_pdf(caminho: Path) -> list[dict]:
     """Extrai texto pagina a pagina de um PDF."""
     doc_id = caminho.name  # nome do arquivo COM extensao (ex.: nlp_aula06_rag_avancado_ocr.pdf)

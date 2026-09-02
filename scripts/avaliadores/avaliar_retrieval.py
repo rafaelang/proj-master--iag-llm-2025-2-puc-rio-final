@@ -211,6 +211,31 @@ def gerar_secao(out: dict, rerank: bool = True) -> str:
             "`rag/rerank.py` — basta usar `rerank=True`."
         )
 
+    # Experimentos 6 e 7: chunking final (overlay + filtro micro) e anti-garbage
+    linhas += [
+        "",
+        "#### 6. Overlay (100 chars) + filtro de micro-chunks (>= 100 chars / > 2 palavras)",
+        "",
+        "| Métrica | RRF ponderado (anterior) | + Overlay/filtro micro | Δ |",
+        "|---|---|---|---|",
+        "| Recall@5 | 0.938 | 0.938 | +0.000 |",
+        "| MRR | 0.906 | 0.875 | −0.031 |",
+        "",
+        "O overlay manteve o recall, mas o MRR caiu levemente (#06 OCR rank 1→2). O filtro",
+        "rigoroso removeu os micro-chunks sem densidade semântica (corpus 347 → 279).",
+        "",
+        "#### 7. Filtros anti-garbage de PDF na ingestão (ratio < 70%, controle, espaçamento)",
+        "",
+        "| Métrica | Overlay/filtro micro (anterior) | + Anti-garbage | Δ |",
+        "|---|---|---|---|",
+        "| Recall@5 | 0.938 | **1.000** | **+0.063** |",
+        "| MRR | 0.875 | **0.969** | **+0.094** |",
+        "",
+        "A ingestão passou a descartar linhas com razão alfanumérica < 70%, bytes de controle",
+        "e espaçamento anômalo — removeu chunks corrompidos do `nlp_aula05` (doc das #07/#12),",
+        "**desbloqueando recall@5 = 1.000** (corpus 279 → 272).",
+    ]
+
     linhas += [
         "",
         f"### Baseline atual — parágrafos + limpeza + BM25 próprio + RRF ponderado{'+ rerank' if rerank else ' (sem rerank)'}",

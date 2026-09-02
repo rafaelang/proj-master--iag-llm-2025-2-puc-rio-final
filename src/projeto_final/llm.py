@@ -78,7 +78,10 @@ def responder_com_contexto(pergunta: str, contexto: str, sistema: str | None = N
         {"role": "system", "content": sistema},
         {"role": "user", "content": f"Contexto:\n{contexto}\n\nPergunta: {pergunta}"},
     ]
-    logger.debug("Chamando LLM RAG com contexto de {} chars", len(contexto))
+    # Log do payload ENRIQUECIDO que sera enviado ao LLM (prompt system + contexto/chunks + pergunta)
+    logger.debug("LLM RAG payload enviado ao modelo {} (prompt system + contexto + pergunta):", modelo)
+    for _msg in msgs:
+        logger.debug("  --- role: {} ({} chars) ---\n{}", _msg["role"], len(_msg["content"]), _msg["content"])
     try:
         resp = _cliente().chat.completions.create(
             model=modelo, messages=msgs, max_tokens=MAX_TOKENS_RAG

@@ -1,7 +1,7 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v0.2 · RAG ✅ **CONCLUÍDA** (busca híbrida BM25 próprio + RRF ponderado, citação e abstenção, golden set medido)
+> **Status:** v0.2 · RAG ✅ **CONCLUÍDA** (retrieval Recall@5=1.000/MRR=0.969; ingestão limpa/anti-garbage; BM25 próprio + RRF ponderado; golden set medido)
 > **Repositório base de consulta:** `projeto2/` (protótipo de experimentação)
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
@@ -154,26 +154,41 @@ Mais detalhes em `docs/v01.md`.
 
 ## Arquitetura da v0.2
 
-A v0.2 adiciona RAG ao pipeline de voz:
+Pipeline RAG (ingestão offline + recuperação/geração online):
 
 ```mermaid
 flowchart TB
-    subgraph Entrada
-        A[Navegador - microfone] -->|audio/webm| B[FastAPI POST /chat]
-        C[Texto /rag/perguntar] --> D[RAG pipeline]
+    subgraph INGESTAO["Ingestão (offline)"]
+        A["PDFs/MD (10 docs)"] --> B["_limpar_pagina por linha<br/>mobília de slides + anti-garbage PDF"]
+        B --> C["chunking por parágrafos 300-1200 chars<br/>+ overlay de 100 chars"]
+        C --> D["filtro rigoroso de micro-chunks<br/>(>= 100 chars e > 2 palavras)"]
+        D --> E1["BM25 próprio<br/>(pt-BR, stopwords na query)"]
+        D --> E2["embeddings fastembed 384d (ONNX)"]
     end
-    B --> E[faster-whisper small]
-    E -->|transcricao| D
-    D --> F[BM25 + embeddings fastembed]
-    F -->|RRF top-k| G[Contexto com chunks]
-    G --> H[DeepSeek deepseek-chat]
-    H -->|resposta + citacao| I[piper-tts pt-BR]
-    I -->|audio/wav| J[Navegador - player]
+    subgraph ONLINE["Recuperação + Geração (online)"]
+        P["Pergunta (/rag/perguntar ou voz)"] --> F["preparar_query<br/>normalizar + stopwords"]
+        F --> G["busca híbrida top-30 BM25 + top-30 embeddings"]
+        G --> H["RRF ponderado k=60<br/>BM25 1.0 x denso 1.5"]
+        H --> I["top-5 chunks definitivo"]
+        I --> J["DeepSeek deepseek-chat<br/>resposta com citação [N]"]
+    end
+    E1 --> G
+    E2 --> G
 ```
 
 ### Resultado da v0.2 (concluída)
 
-**RAG end-to-end** (medição final com o retrieval otimizado, juiz `deepseek-v4-pro`):
+**Retrieval isolado** (configuração final — ingestão limpa/anti-garbage, overlay 100,
+filtro micro, BM25 próprio, RRF ponderado; sem rerank):
+
+| Metrica | Valor |
+|---|---|
+| Recall@5 (16 com `docs_esperados`) | **1.000** (16/16) |
+| MRR | **0.969** |
+| Chunks no corpus | 272 |
+
+**RAG end-to-end** (última medição — com o retrieval do experimento 4/RRF ponderado,
+antes do chunking final; juiz `deepseek-v4-pro`):
 
 | Metrica | Valor |
 |---|---|
@@ -184,13 +199,9 @@ flowchart TB
 | Auditoria de citacao | fiel 9 · fora 0 · fantasma 0 |
 | Custo de embeddings/recuperacao | US$ 0.00 (local) |
 
-**Retrieval isolado** (Terceira Rodada — configuração final, sem rerank):
-
-| Metrica | Valor |
-|---|---|
-| Recall@5 (16 com `docs_esperados`) | 0.938 |
-| Recall@10 | 0.938 |
-| MRR | 0.906 |
+> O end-to-end ainda não foi reexecutado com o chunking final (exp. 6–7), que elevou o
+> recall isolado para **1.000**; a acurácia (0.550) é limitada pela geração, não pelo
+> retrieval (ver `docs/v02.md` §5.4).
 
 > O **rerank** (cross-encoder em `rag/rerank.py`) foi testado e **desativado** na
 > configuração final (MRR 0.906→0.865; custo ~40 s/query em CPU). Disponível via
@@ -206,7 +217,7 @@ Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.
 |---|---|
 | v0.0 · Fundação | ✅ Inicializado com `uv init --app`; README, AGENTS.md, estrutura criados. |
 | v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
-| v0.2 · RAG | ✅ **CONCLUÍDA** — recall@5=0.938; acurácia=0.550 (juiz deepseek-v4-pro); abstenção correta=0.650; BM25 próprio + RRF ponderado; dataset único do projeto2 (20 perguntas); rerank testado e desativado. |
+| v0.2 · RAG | ✅ **CONCLUÍDA** — retrieval Recall@5=1.000/MRR=0.969 (272 chunks limpos/anti-garbage); e2e recall@5=0.938/acurácia=0.550 (juiz deepseek-v4-pro); BM25 próprio + RRF ponderado; dataset único do projeto2; rerank testado/desativado. |
 | v0.3 · Imagem | ⏳ |
 | v0.4 · Agentes | ⏳ |
 | v0.5 · Adaptação | ⏳ |
