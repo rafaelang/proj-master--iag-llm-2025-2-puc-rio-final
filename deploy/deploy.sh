@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 #
-# Deploy do projeto para um Space PRIVADO na Hugging Face.
+# Deploy do projeto para um Space na Hugging Face (API PUBLICO + corpus PRIVADO).
 #
-#   Space: <usuario>/assistente-master-iag
-#   SDK:   docker · Hardware: cpu-upgrade · Sleep: 1 h (3600 s)
+#   Space:   <usuario>/assistente-master-iag      -> PUBLICO (codigo + app)
+#   Dataset: <usuario>/assistente-master-iag-dados -> PRIVADO (corpus data/raw
+#            + indices data/processed/rag*), baixado em runtime no boot.
+#   SDK: docker · Hardware: cpu-upgrade · Sleep: 1 h (3600 s)
 #
-# Opcao 1 (recomendada): Space privado + dados do corpus (data/raw + indices)
-# embarcados no repositorio do Space via bundle + push de git. Modelos pesados
-# (whisper/fastembed/piper/rerank) sao baixados em runtime no container.
+# O repositorio publico do Space NAO contem o corpus: o deploy.sh sobe os dados
+# para o dataset privado e o entrypoint do container faz snapshot_download no
+# boot usando o secret HF_TOKEN_READ (token de leitura do dataset).
 #
 # Uso:
 #   cp deploy/.env.example deploy/.env   # preencha HF_TOKEN e DEEPSEEK_API_KEY
@@ -21,6 +23,7 @@ RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$RAIZ/deploy/.env"
 BUILD_DIR="$RAIZ/deploy/build"
 SPACE_NAME="assistente-master-iag"
+DATASET_NAME="assistente-master-iag-dados"
 HARDWARE="cpu-upgrade"
 SLEEP_TIME="3600"
 DRY_RUN="${1:-}"
@@ -35,6 +38,8 @@ if [[ -z "${DEEPSEEK_API_KEY:-}" && -f "$RAIZ/.env" ]]; then
   set -a; # shellcheck disable=SC1090
   source "$RAIZ/.env"; set +a
 fi
+# token de leitura do dataset (se vazio, usa o proprio HF_TOKEN; preferir um read-only)
+HF_TOKEN_READ="${HF_TOKEN_READ:-${HF_TOKEN:-}}"
 
 if [[ "$DRY_RUN" == "--dry-run" ]]; then
   HF_TOKEN="${HF_TOKEN:-dry-run}"   # nao precisa do token real p/ montar o bundle
@@ -59,68 +64,105 @@ if [[ "$DRY_RUN" != "--dry-run" ]]; then
   HF_USER="$("$PY" -c "
 from huggingface_hub import HfApi
 import sys
-api = HfApi()
-print(api.whoami(token=sys.argv[1])['name'])
+print(HfApi().whoami(token=sys.argv[1])['name'])
 " "$HF_TOKEN")"
   SPACE_ID="$HF_USER/$SPACE_NAME"
+  DATASET_ID="$HF_USER/$DATASET_NAME"
   SPACE_URL="https://huggingface.co/spaces/$SPACE_ID"
-  echo ">> Space alvo: $SPACE_ID (hardware=$HARDWARE, sleep=${SLEEP_TIME}s, privado)"
+  echo ">> Space PUBLICO: $SPACE_ID (hardware=$HARDWARE, sleep=${SLEEP_TIME}s)"
+  echo ">> Dataset PRIVADO: $DATASET_ID"
 else
   HF_USER="seu-usuario"
   SPACE_ID="$HF_USER/$SPACE_NAME"
+  DATASET_ID="$HF_USER/$DATASET_NAME"
   SPACE_URL="https://huggingface.co/spaces/$SPACE_ID"
   echo ">> DRY-RUN: so monta o bundle em $BUILD_DIR (nao publica)"
 fi
 
-# ---------------------------------------------------------------- 2. cria space
-if [[ "$DRY_RUN" != "--dry-run" ]]; then
-  echo ">> Criando/atualizando o Space (privado, docker)..."
-  "$PY" - "$HF_TOKEN" "$SPACE_ID" "$HARDWARE" "$SLEEP_TIME" <<'PYEOF'
+# ---------------------------------------------------------------- 2. dataset privado
+if [[ "$DRY_RUN" == "--dry-run" ]]; then
+  :
+elif ! "$PY" - "$HF_TOKEN" "$DATASET_ID" <<'PYEOF'
 from huggingface_hub import HfApi
 import sys
 
-token, repo_id, hardware, sleep_time = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
-api = HfApi()
-api.create_repo(
-    repo_id=repo_id,
-    token=token,
-    repo_type="space",
-    private=True,
-    space_sdk="docker",
-    space_hardware=hardware,
-    space_sleep_time=sleep_time,
-    exist_ok=True,
-)
-print("   space pronto/atualizado:", repo_id)
+api = HfApi(token=sys.argv[1])
+api.create_repo(repo_id=sys.argv[2], repo_type="dataset", private=True, exist_ok=True)
+print("   dataset privado pronto:", sys.argv[2])
 PYEOF
+then
+  exit 1
+fi
 
-  echo ">> Definindo secret DEEPSEEK_API_KEY no Space..."
-  "$PY" - "$HF_TOKEN" "$SPACE_ID" "$DEEPSEEK_API_KEY" <<'PYEOF'
+if [[ "$DRY_RUN" == "--dry-run" ]]; then
+  :
+else
+  echo ">> Enviando corpus e indices para o dataset privado (sem caches de modelo)..."
+  "$PY" - "$HF_TOKEN" "$DATASET_ID" "$RAIZ" <<'PYEOF'
 from huggingface_hub import HfApi
 import sys
 
-token, repo_id, value = sys.argv[1], sys.argv[2], sys.argv[3]
-api = HfApi()
-try:
-    api.add_space_secret(repo_id=repo_id, key="DEEPSEEK_API_KEY", value=value, token=token)
-    print("   secret DEEPSEEK_API_KEY definido.")
-except Exception as e:
-    if "already exists" in str(e).lower():
-        api.delete_space_secret(repo_id=repo_id, key="DEEPSEEK_API_KEY", token=token)
-        api.add_space_secret(repo_id=repo_id, key="DEEPSEEK_API_KEY", value=value, token=token)
-        print("   secret DEEPSEEK_API_KEY atualizado.")
-    else:
-        raise
+api = HfApi(token=sys.argv[1])
+dataset_id = sys.argv[2]
+raiz = sys.argv[3]
+ignora = ["*_models/*", "*_models", "*.log"]
+api.upload_folder(
+    repo_id=dataset_id, repo_type="dataset",
+    folder_path=f"{raiz}/data/raw", path_in_repo="raw",
+)
+api.upload_folder(
+    repo_id=dataset_id, repo_type="dataset",
+    folder_path=f"{raiz}/data/processed/rag", path_in_repo="processed/rag",
+    ignore_patterns=ignora,
+)
+api.upload_folder(
+    repo_id=dataset_id, repo_type="dataset",
+    folder_path=f"{raiz}/data/processed/rag_v3", path_in_repo="processed/rag_v3",
+    ignore_patterns=ignora,
+)
+print("   dataset atualizado com corpus (raw) e indices (processed/rag*, rag_v3)")
 PYEOF
 fi
 
-# ---------------------------------------------------------------- 3. bundle
-echo ">> Montando bundle em $BUILD_DIR ..."
+# ---------------------------------------------------------------- 3. cria/atualiza space + publico + secrets
+if [[ "$DRY_RUN" != "--dry-run" ]]; then
+  echo ">> Criando/atualizando o Space (docker) e tornando PUBLICO..."
+  "$PY" - "$HF_TOKEN" "$SPACE_ID" "$HARDWARE" "$SLEEP_TIME" "$HF_TOKEN_READ" "$DATASET_ID" <<'PYEOF'
+from huggingface_hub import HfApi
+import os
+import sys
+
+token = sys.argv[1]
+repo_id = sys.argv[2]
+hardware, sleep_time = sys.argv[3], int(sys.argv[4])
+hf_read, dataset_id = sys.argv[5], sys.argv[6]
+api = HfApi(token=token)
+api.create_repo(
+    repo_id=repo_id, repo_type="space", private=True,
+    space_sdk="docker", space_hardware=hardware, space_sleep_time=sleep_time, exist_ok=True,
+)
+api.update_repo_settings(repo_id=repo_id, repo_type="space", private=False, token=token)
+print("   space publico pronto:", repo_id)
+
+for key, value in (("DEEPSEEK_API_KEY", os.getenv("DEEPSEEK_API_KEY", "")),
+                   ("HF_TOKEN_READ", hf_read),
+                   ("HF_DATA_REPO", dataset_id)):
+    if not value:
+        continue
+    try:
+        api.add_space_secret(repo_id=repo_id, key=key, value=value, token=token)
+    except Exception:
+        api.delete_space_secret(repo_id=repo_id, key=key, token=token)
+        api.add_space_secret(repo_id=repo_id, key=key, value=value, token=token)
+print("   secrets: DEEPSEEK_API_KEY / HF_TOKEN_READ / HF_DATA_REPO definidos")
+PYEOF
+fi
+
+# ---------------------------------------------------------------- 4. bundle (sem corpus)
+echo ">> Montando bundle em $BUILD_DIR (sem data/ — corpus fica no dataset privado)..."
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
-# copia o repositorio (sem git/venv/caches), incluindo data/raw e os indices processados.
-# Caches de modelos (*_models) ficam de fora — sao baixados em runtime no Space.
 rsync -a \
   --exclude '.git' \
   --exclude '.venv' \
@@ -131,7 +173,7 @@ rsync -a \
   --exclude '*.ses' \
   --exclude 'deploy/build' \
   --exclude 'deploy/.env' \
-  --exclude '*_models' \
+  --exclude 'data' \
   --exclude '*.log' \
   "$RAIZ/" "$BUILD_DIR/"
 
@@ -164,7 +206,7 @@ else:
     print("   metadata YAML ja presente no README.md do bundle")
 PYEOF
 
-# ---------------------------------------------------------------- 4. git + push
+# ---------------------------------------------------------------- 5. git + push
 if [[ "$DRY_RUN" == "--dry-run" ]]; then
   echo ">> DRY-RUN concluido. Para publicar: bash deploy/deploy.sh"
   exit 0
@@ -174,28 +216,15 @@ cd "$BUILD_DIR"
 git init -b main >/dev/null
 git config user.name "deploy"
 git config user.email "deploy@users.noreply.huggingface.co"
-# Git LFS: o hook do HF rejeita binarios sem LFS. Garante git-lfs no PATH.
-if ! command -v git-lfs >/dev/null 2>&1 && [[ -x "$HOME/.local/bin/git-lfs" ]]; then
-  export PATH="$HOME/.local/bin:$PATH"
-fi
-if ! command -v git-lfs >/dev/null 2>&1; then
-  echo "ERRO: git-lfs nao encontrado. Instale (ex.: GitHub releases) e rode de novo." >&2
-  exit 1
-fi
-git lfs install --local >/dev/null
-git lfs track "data/raw/*" "data/processed/**/*.pkl" "data/processed/**/*.npy" \
-             "data/golden_set/**/*.ogg" >/dev/null
 git add -A
-# O .gitignore do projeto ignora data/raw e data/processed: forca a inclusao
-# do corpus e dos indices no repo do Space (a copia do bundle ja exclui modelos).
-git add -f data
-git commit -q -m "deploy v0.3 - Space privado (cpu-upgrade, sleep 1h)"
+git commit -q -m "deploy v0.3 - Space publico (API) + dataset privado (corpus)"
 git remote add origin "https://user:${HF_TOKEN}@huggingface.co/spaces/${SPACE_ID}"
-# O HF inicializa o repo do Space com arquivos gerados (README etc.); como o
-# bundle e a fonte unica da aplicacao, o push substitui o conteudo remoto.
 git fetch --quiet origin main || true
 git push --force origin main
+
 echo ""
 echo ">> Deploy enviado com sucesso!"
+echo ">> Space (publico): $(mask "$SPACE_URL")"
+echo ">> Dataset (privado): https://huggingface.co/datasets/$(mask "$DATASET_ID")"
 echo ">> Acompanhe o build:  $(mask "$SPACE_URL")/settings"
 echo ">> Quando 'Running', abra: $(mask "$SPACE_URL")"

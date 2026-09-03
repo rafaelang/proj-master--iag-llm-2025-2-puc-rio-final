@@ -66,16 +66,15 @@ bash deploy/deploy.sh             # cria/atualiza o Space e publica
 
 ## Deploy (Hugging Face Space)
 
-- **Space:** privado `assistente-master-iag` · SDK `docker` · hardware
-  `cpu-upgrade` · sleep de 1 h (3600 s) — gerenciado por
-  `deploy/deploy.sh` (ver `deploy/README.md`).
+- **API publica:** Space `assistente-master-iag` (SDK `docker`, hardware
+  `cpu-upgrade`, sleep 1 h) — **sem corpus no repo** (nao expor PDFs/LGPD).
+- **Corpus privado:** dataset `assistente-master-iag-dados` carrega `data/raw`
+  + indices em runtime no boot (entrypoint → `snapshot_download`).
 - **Segredos:** `HF_TOKEN` e `DEEPSEEK_API_KEY` em `deploy/.env` (fora do Git);
-  `DEEPSEEK_API_KEY` também é secret do Space. Nunca commitar tokens.
-- **Bundle:** o script monta `deploy/build/` com o código + `data/raw` (corpus)
-  + índices de `data/processed/rag*`, **sem** caches de modelo `*_models`
-  (baixados em runtime no container).
-- O Space é **privado** porque o corpus (PDFs do curso) não pode ir a
-  repositório público (direitos autorais/LGPD).
+  secrets do Space: `DEEPSEEK_API_KEY`, `HF_TOKEN_READ` (leitura do dataset) e
+  `HF_DATA_REPO`. Nunca commitar tokens.
+- **Bundle:** `deploy/deploy.sh` monta `deploy/build/` com o codigo (sem `data/`),
+  sobe o dataset privado e faz push no Space publico (ver `deploy/README.md`).
 
 ## Não fazer
 

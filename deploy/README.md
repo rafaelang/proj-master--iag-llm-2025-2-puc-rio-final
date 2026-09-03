@@ -1,79 +1,58 @@
-# Deploy — Hugging Face Space (`assistente-master-iag`)
+# Deploy — Hugging Face (API pública + corpus privado)
 
-Publica o assistente (v0.3: voz + RAG + imagem) em um **Space privado** da
-Hugging Face com SDK **docker**, hardware **CPU Upgrade** e **sleep de 1 h**.
+Publica o assistente (v0.3: voz + RAG + imagem) em um **Space público** com a
+**API acessível** na internet, mantendo o **corpus privado** fora do repositório
+público (direitos autorais/LGPD).
 
-## Configuração
+## Arquitetura
 
-Space privado **`assistente-master-iag`** (o dono é o usuário do token):
+```
+Internet ──► Space PÚBLICO rafaelang/assistente-master-iag  (código, sem data/)
+                │  boot: snapshot_download do dataset privado
+                ▼            (secret HF_TOKEN_READ)
+            /app/data  ← dataset PRIVADO rafaelang/assistente-master-iag-dados
+                         (data/raw + índices processed/rag*)
+```
 
 | Item | Valor |
 |---|---|
-| SDK | `docker` |
-| Hardware | `cpu-upgrade` (2 vCPU · 8 GB · 50 GB) |
-| Sleep | `3600` s (1 h de inatividade) |
-| Visibilidade | privado (corpus fora de repositório público) |
+| Space (API) | `assistente-master-iag` — **público** · SDK `docker` |
+| Dataset (corpus) | `assistente-master-iag-dados` — **privado** |
+| Hardware / Sleep | `cpu-upgrade` · `3600` s (1 h) |
 
-## 1. Pré-requisitos (uma vez)
-
-- `python` (o script usa `.venv/bin/python` do projeto — tem `huggingface_hub`);
-- `rsync` e `git`;
-- Token da Hugging Face com escopo de **write** em Spaces.
-
-## 2. Segredos
-
-Nunca commitar segredos. Eles ficam em `deploy/.env` (gitignored):
+## Segredos (`deploy/.env`, gitignored)
 
 ```bash
 cp deploy/.env.example deploy/.env
-# preencha:
-#   HF_TOKEN=hf_...
-#   DEEPSEEK_API_KEY=...   (vazio = herda do .env da raiz do projeto)
+# HF_TOKEN=...            (seu token com permissao de write em Spaces/datasets)
+# HF_TOKEN_READ=...       (ideal: token read-only p/ o container baixar o dataset)
+# DEEPSEEK_API_KEY=...    (vazio = herda do .env da raiz)
 chmod 600 deploy/.env
 ```
 
-> ⚠️ O script define `DEEPSEEK_API_KEY` como **secret do Space** (não fica no
-> código). O `HF_TOKEN` é usado apenas localmente para criar o Space e fazer o
-> push.
+Secrets do Space definidos pelo script: `DEEPSEEK_API_KEY`, `HF_TOKEN_READ`,
+`HF_DATA_REPO`. **Nunca commitar tokens.**
 
-## 3. Deploy
+## Deploy
 
 ```bash
-bash deploy/deploy.sh          # publica (cria Space, define secret, envia)
-bash deploy/deploy.sh --dry-run  # apenas monta o bundle (sem publicar)
+bash deploy/deploy.sh --dry-run    # revisa o bundle (código sem data/)
+bash deploy/deploy.sh              # publica
 ```
 
-O que o script faz:
+O script: 1) cria/atualiza o **dataset privado** e envia `data/raw` + índices
+(`processed/rag`, `processed/rag_v3`, sem `*_models`); 2) cria o **Space
+público** (docker, `cpu-upgrade`, sleep 3600s); 3) define os secrets; 4) monta
+`deploy/build/` **sem `data/`** e faz push.
 
-1. carrega `HF_TOKEN`/`DEEPSEEK_API_KEY` de `deploy/.env` (fallback: `.env` da raiz);
-2. cria/atualiza o Space privado (docker, `cpu-upgrade`, `space_sleep_time=3600`);
-3. define o secret `DEEPSEEK_API_KEY`;
-4. monta o **bundle** em `deploy/build/`:
-   - código (`src/`, `static/`, `prompts/`), `Dockerfile`, `deploy/requirements.txt`;
-   - **corpus** `data/raw/` e **índices processados** (`data/processed/rag*`,
-     sem caches de modelo `*_models` — baixados em runtime no Space);
-5. faz `git init` + push da branch `main` para o Space.
+No boot, `deploy/entrypoint.sh` baixa o dataset para `/app/data` e então sobe
+`uvicorn` na porta 7860.
 
-Depois: acompanhe o build em `https://huggingface.co/spaces/<usuario>/assistente-master-iag`.
+## Notas
 
-## 4. Configurações no Space
-
-- **Hardware/sleep**: já aplicados por `create_repo(space_hardware="cpu-upgrade",
-  space_sleep_time=3600)`. Também dá para ajustar em *Settings → Hardware*.
-- **Secret**: `DEEPSEEK_API_KEY` (definido pelo script; edite em *Settings →
-  Variables and secrets*).
-- **Público/privado**: o script cria privado; para mudar, use *Settings → Who
-  can see this Space*.
-
-## 5. Notas
-
-- O app roda `uvicorn src.projeto_final.main:app` na porta **7860**
-  (obrigatória nos Spaces) — ver `Dockerfile` na raiz.
-- A 1ª execução baixa os modelos locais (faster-whisper, fastembed, Piper,
-  OCR) e os cacheia em `data/processed/*_models`; as chamadas seguintes usam o
-  cache do container.
-- O corpus (`data/raw`) e os índices entram no repositório **privado** do Space
-  via bundle (opção 1). Não tornar o Space público sem revisar direitos
-  autorais/LGPD dos PDFs.
-- Para um novo deploy após mudanças: rodar `bash deploy/deploy.sh` de novo
-  (faz push incremental).
+- O corpus **não fica** no repositório público nem no histórico do Space;
+- Modelos locais (whisper/fastembed/piper/OCR) são baixados em runtime;
+- ⚠️ A API pública expõe `/chat` e `/chat/imagem` a qualquer pessoa (consome o
+  `DEEPSEEK_API_KEY`). Recomenda-se criar um token **read-only** para o
+  `HF_TOKEN_READ` e revisar uso/custo. Para restringir acesso no futuro, adicione
+  uma chave de aplicação (ex.: header `X-API-Key`).

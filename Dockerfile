@@ -19,9 +19,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY deploy/requirements.txt deploy/requirements.txt
 RUN pip install --upgrade pip && pip install -r deploy/requirements.txt
 
-# codigo + corpus (data/raw) + indices processados (sem caches de modelo, baixados em runtime)
+# codigo + entrypoint (o corpus vem do dataset privado no boot — nao esta no repo)
 COPY . .
+RUN chmod +x /app/deploy/entrypoint.sh
+
+ENV HF_DATA_REPO=rafaelang/assistente-master-iag-dados
 
 EXPOSE 7860
 
-CMD ["uvicorn", "src.projeto_final.main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["bash", "/app/deploy/entrypoint.sh"]
