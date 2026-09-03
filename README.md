@@ -1,7 +1,7 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v0.2 · RAG ✅ **CONCLUÍDA** (retrieval Recall@5=1.000/MRR=0.969; ingestão limpa/anti-garbage; BM25 próprio + RRF ponderado; golden set medido)
+> **Status:** v0.2 · RAG ✅ **CONCLUÍDA** (retrieval Recall@5=1.000/MRR=0.969; e2e recall@5=1.000/acurácia=0.700; ingestão limpa/anti-garbage; golden set medido)
 > **Repositório base de consulta:** `projeto2/` (protótipo de experimentação)
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
@@ -187,27 +187,23 @@ filtro micro, BM25 próprio, RRF ponderado; sem rerank):
 | MRR | **0.969** |
 | Chunks no corpus | 272 |
 
-**RAG end-to-end** (última medição — com o retrieval do experimento 4/RRF ponderado,
-antes do chunking final; juiz `deepseek-v4-pro`):
+**RAG end-to-end** (medição final reexecutada — 272 chunks, `deepseek-chat`, juiz `deepseek-v4-pro`; 20/20 julgadas):
 
 | Metrica | Valor |
 |---|---|
-| recall@5 (16 com `docs_esperados`) | 0.938 (15/16) |
-| Acuracia end-to-end (20) | 0.550 (11/20) |
-| Abstencao correta (20) | 0.650 (13/20) |
-| Citacao presente (9 nao-abstidas) | 1.000 (9/9) |
-| Auditoria de citacao | fiel 9 · fora 0 · fantasma 0 |
+| recall@5 (16 com `docs_esperados`) | **1.000** (16/16) |
+| Acuracia end-to-end (20) | **0.700** (14/20) |
+| Abstencao correta (20) | **0.800** (16/20) |
+| Citacao presente (12 nao-abstidas) | 1.000 (12/12) |
+| Auditoria de citacao | fiel 10 · fora 2 · fantasma 0 |
+| Alucinacoes (juiz) | 0 |
 | Custo de embeddings/recuperacao | US$ 0.00 (local) |
 
-> O end-to-end ainda não foi reexecutado com o chunking final (exp. 6–7), que elevou o
-> recall isolado para **1.000**; a acurácia (0.550) é limitada pela geração, não pelo
-> retrieval (ver `docs/v02.md` §5.4).
+> Com o retrieval final (recall@5 1.000), a acurácia end-to-end subiu de 0.550 para
+> **0.700** e a abstenção indevida caiu de 0.438 para **0.250** — o gargalo restante é
+> a geração (ver `docs/v02.md` §5.4).
 
-> O **rerank** (cross-encoder em `rag/rerank.py`) foi testado e **desativado** na
-> configuração final (MRR 0.906→0.865; custo ~40 s/query em CPU). Disponível via
-> `rerank=True`.
-
-Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.
+Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.
 
 ---
 
@@ -217,7 +213,7 @@ Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.
 |---|---|
 | v0.0 · Fundação | ✅ Inicializado com `uv init --app`; README, AGENTS.md, estrutura criados. |
 | v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
-| v0.2 · RAG | ✅ **CONCLUÍDA** — retrieval Recall@5=1.000/MRR=0.969 (272 chunks limpos/anti-garbage); e2e recall@5=0.938/acurácia=0.550 (juiz deepseek-v4-pro); BM25 próprio + RRF ponderado; dataset único do projeto2; rerank testado/desativado. |
+| v0.2 · RAG | ✅ **CONCLUÍDA** — retrieval Recall@5=1.000/MRR=0.969 (272 chunks limpos/anti-garbage); e2e recall@5=1.000/acurácia=0.700 (juiz deepseek-v4-pro); BM25 próprio + RRF ponderado; dataset único do projeto2; rerank testado/desativado. |
 | v0.3 · Imagem | ⏳ |
 | v0.4 · Agentes | ⏳ |
 | v0.5 · Adaptação | ⏳ |
