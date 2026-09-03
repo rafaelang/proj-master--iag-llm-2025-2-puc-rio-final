@@ -234,18 +234,57 @@ filtro micro, BM25 próprio, RRF ponderado; sem rerank):
 
 Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.
 
-### Resultado da v0.3 (concluída) — Imagem / OCR local integrado ao RAG
+## Arquitetura da v0.3
 
-A v0.3 extrai as **figuras dos PDFs** (PyMuPDF, dedup por sha1 → 275 imagens
-únicas), lê o **texto embutido** com **RapidOCR local (ONNX/CPU)** e indexa as
-**22 figuras úteis** no mesmo RAG (corpus 272 → **294 chunks**). O /chat e o
-`/rag/perguntar?imagens=true` passam a enxergar o que só existe na figura —
-ex.: o slide pede "implemente o **modelo ao lado**", e o modelo está na imagem.
-O novo endpoint **`/chat/imagem`** (botão "Enviar imagem" na página) extrai
-**assunto + termos-chave** da figura com o modelo de visão
-`deepseek-v4-flash-vision-exp`, monta a consulta do RAG (*"fale sobre: {conteúdo
-da imagem}"*) e exibe ao usuário a **resposta do RAG** (texto + áudio) — a
-mensagem do usuário é a própria imagem.
+A v0.3 tem **duas frentes de "visão"**: (1) **indexação offline** das figuras do
+corpus por OCR local e (2) **chat por imagem** online com modelo multimodal remoto.
+
+```mermaid
+flowchart TB
+    subgraph OFFLINE["Figuras do corpus (offline)"]
+        A["PDFs (data/raw)"] --> B["extração PyMuPDF<br/>dedup sha1 dos pixels (921 → 275)"]
+        B --> C["RapidOCR ONNX/CPU<br/>+ limpeza de linhas"]
+        C --> D["filtros de qualidade<br/>novidade vs página ≥ 0.45 · sinal de domínio ≥ 0.40"]
+        D --> E["22 figuras úteis → chunks<br/>ancorados no título do slide"]
+        E --> F["índice v0.3 separado<br/>272 texto + 22 imagem = 294 chunks"]
+    end
+    subgraph ONLINE["Chat por imagem (online)"]
+        P["Navegador — botão Enviar imagem"] --> Q["POST /chat/imagem"]
+        Q --> R["deepseek-v4-flash-vision-exp<br/>ASSUNTO + TERMOS + SÍNTESE"]
+        R --> S["prompt RAG: \"fale sobre: {conteúdo}\""]
+        S --> T["busca híbrida + RRF<br/>peso 1.15 para chunks de imagem"]
+        T --> U["top-5 → DeepSeek deepseek-chat<br/>resposta com citação [N]"]
+        U --> V["piper-tts → audio/wav + X-Answer"]
+        V --> W["Navegador — resposta do RAG (texto + áudio)"]
+    end
+    F --> T
+```
+
+Componentes:
+
+- **Extração:** `rag/imagem.py` usa PyMuPDF para extrair as figuras dos PDFs e
+  deduplica por **sha1 dos pixels** (921 ocorrências → 275 únicas, mín. 40 px).
+- **OCR local:** **RapidOCR (ONNX, CPU, US$ 0.00)** lê o texto embutido em
+  diagramas/tabelas/slides rasterizados — o que o layer de texto do PDF não tem.
+  Filtros de novidade (≥ 0.45 vs página) e sinal de domínio (≥ 0.40) deixam
+  **22 figuras úteis**.
+- **Índice v0.3 separado:** `data/processed/rag_v3/` (294 chunks) não toca o
+  índice texto-only da v0.2 (`data/processed/rag/`); o RRF dá **peso 1.15** a
+  chunks de imagem para a figura disputar o top-5 com a prosa.
+- **Chat por imagem:** `POST /chat/imagem` — o modelo de visão
+  (`DEEPSEEK_VISION_MODEL`, `deepseek-v4-flash-vision-exp`) extrai
+  **ASSUNTO/TERMOS/SÍNTESE**; o RAG recebe o prompt *"fale sobre: {conteúdo}"* e
+  a **resposta com citação vai ao usuário** (texto + áudio); a mensagem do
+  usuário é a própria imagem.
+- **Endpoints:** `/chat/imagem`, `/rag/perguntar?imagens=true`,
+  `/rag/imagem/analisar`; o `/chat` (voz) usa o corpus v0.3 automaticamente.
+
+### Resultado da v0.3 (concluída)
+
+Sem as figuras o RAG abstém-se (`NAO_SEI`) nas perguntas cuja resposta está
+apenas na imagem; com o OCR indexado, o conteúdo da figura chega ao top-5 e o
+assistente responde com fonte — ex.: o slide pede "implemente o **modelo ao
+lado**", e o modelo (colunas e tipos) só existe na figura.
 
 | Metrica (golden set `data/golden_set/imagem/`, 3 perguntas) | Valor |
 |---|---|
