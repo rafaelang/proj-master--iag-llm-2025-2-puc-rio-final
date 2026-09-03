@@ -140,10 +140,11 @@ du -sh "$BUILD_DIR"
 
 # Repo card do Space: metadata YAML exigida pelo HF no README.md do bundle
 # (nao altera o README do repositorio principal; so a copia do bundle).
-"$PY" - <<'PYEOF'
+"$PY" - "$BUILD_DIR" <<'PYEOF'
+import sys
 from pathlib import Path
 
-p = Path("README.md")
+p = Path(sys.argv[1]) / "README.md"
 texto = p.read_text(encoding="utf-8")
 if not texto.startswith("---"):
     card = (
