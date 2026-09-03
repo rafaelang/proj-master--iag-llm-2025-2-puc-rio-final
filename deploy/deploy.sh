@@ -150,7 +150,7 @@ if not texto.startswith("---"):
     card = (
         "---\n"
         "title: assistente-master-iag\n"
-        "emoji: book\n"
+        "emoji: 🎓\n"
         "colorFrom: indigo\n"
         "colorTo: blue\n"
         "sdk: docker\n"
