@@ -57,6 +57,7 @@ pytest                      # rodar testes
 python -m src.projeto_final # executar módulo principal
 python scripts/avaliadores/avaliar_v1.py  # avaliar v0.1 (WER voz)
 python scripts/avaliadores/avaliar_v2.py  # avaliar v0.2 (RAG)
+python scripts/avaliadores/avaliar_v3.py  # avaliar v0.3 (imagem/OCR; --e2e p/ LLM)
 ```
 
 ## Não fazer

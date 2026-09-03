@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "dominio": "materiais do Master IAG & LLM (PUC-Rio)",
+    "release": "v0.3 - Imagem (OCR local de figuras integrado ao RAG)",
+    "estrategia": "perguntas cuja resposta esta APENAS na figura (OCR), nao no layer de texto",
+    "metricas": "conteudo da figura no top-5 (termos_esperados) com corpus texto-only vs texto+imagem",
+    "evidencia": "1 caso documentado em que a visao (OCR) corrigiu/agregou o texto"
+  },
+  "perguntas": [
+    {
+      "id": 1,
+      "pergunta": "Na figura da tabela cliente (modelo ao lado), quais colunas existem alem do codcliente?",
+      "estrato": "modelo_em_figura",
+      "doc_esperado": "tdp_aula03_sql_ddl.pdf",
+      "pagina_figura": 22,
+      "termos_esperados": ["nomecliente", "dtcadastro"],
+      "resposta_esperada": "nomecliente varchar(30), sexo char(1), estcivil varchar(10), uf char(2), dtcadastro timestamp",
+      "deve_abster": false
+    },
+    {
+      "id": 2,
+      "pergunta": "No exercicio de DDL, o modelo ao lado registra um atributo no relacionamento entre funcionario e projeto. Qual e?",
+      "estrato": "modelo_em_figura",
+      "doc_esperado": "tdp_aula03_sql_ddl.pdf",
+      "pagina_figura": 18,
+      "termos_esperados": ["qtdhoras"],
+      "resposta_esperada": "atributo qtdhoras do relacionamento participa (funcionario-projeto)",
+      "deve_abster": false
+    },
+    {
+      "id": 3,
+      "pergunta": "A figura sobre a nova era da IA lista fatores numerados. Quais sao os cinco fatores apresentados?",
+      "estrato": "figura_explicativa",
+      "doc_esperado": "dpia_aula01_intro_ia.pdf",
+      "pagina_figura": 39,
+      "termos_esperados": ["dados", "comunidade"],
+      "resposta_esperada": "1) dados em maior quantidade e livres; 2) computadores com mais memoria/processamento; 3) redes neurais (modelos maiores); 4) comunidade open-source; 5) empresas adotando IA",
+      "deve_abster": false
+    }
+  ]
+}

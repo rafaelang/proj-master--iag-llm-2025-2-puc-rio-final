@@ -1,4 +1,9 @@
-"""Indexacao BM25 + embeddings para RAG."""
+"""Indexacao BM25 + embeddings para RAG.
+
+A v0.3 (texto + imagem) usa o mesmo tipo de indice em uma PASTA propria
+(RAG_V3_DIR), parametrizada por `base`; sem `base`, o comportamento e identico
+ao da v0.2 (RAG_DIR, somente texto).
+"""
 
 from __future__ import annotations
 
@@ -14,40 +19,54 @@ from projeto_final import config
 from projeto_final.bm25 import BM25Okapi, normalizar
 
 
-def construir_indices(chunks: list[dict], force: bool = False) -> tuple[BM25Okapi, np.ndarray, list[int]]:
+def _caminhos(base: Path | None):
+    """Resolve os caminhos dos artefatos de indice a partir de uma pasta base."""
+    base = base or config.RAG_DIR
+    return {
+        "bm25": base / "bm25.pkl",
+        "embeddings": base / "embeddings.npy",
+        "chunk_ids": base / "chunk_ids.json",
+    }
+
+
+def construir_indices(
+    chunks: list[dict], force: bool = False, base: Path | None = None
+) -> tuple[BM25Okapi, np.ndarray, list[int]]:
     """Constroi BM25 e embeddings para uma lista de chunks.
 
     Retorna (bm25, embeddings, chunk_ids)."""
-    if not force and config.RAG_BM25_PATH.exists() and config.RAG_EMBEDDINGS_PATH.exists():
-        return carregar_indices()
+    cam = _caminhos(base)
+    if not force and cam["bm25"].exists() and cam["embeddings"].exists():
+        return carregar_indices(base)
 
-    logger.info("Construindo indices RAG para {} chunks...", len(chunks))
-    config.RAG_DIR.mkdir(parents=True, exist_ok=True)
+    logger.info("Construindo indices para {} chunks (base={})...", len(chunks), cam["bm25"].parent)
+    cam["bm25"].parent.mkdir(parents=True, exist_ok=True)
 
     # BM25
     corpus = [chunk["texto"] for chunk in chunks]
     tokenizado = [normalizar(c) for c in corpus]
     bm25 = BM25Okapi(tokenizado)
-    with open(config.RAG_BM25_PATH, "wb") as f:
+    with open(cam["bm25"], "wb") as f:
         pickle.dump(bm25, f)
 
     # Embeddings
     model = TextEmbedding(model_name=config.EMBEDDING_MODEL, cache_dir=str(config.RAG_DIR / "embed_models"))
     embeddings = np.array(list(model.embed(corpus)))
-    np.save(config.RAG_EMBEDDINGS_PATH, embeddings)
+    np.save(cam["embeddings"], embeddings)
 
     chunk_ids = [chunk["id"] for chunk in chunks]
-    config.RAG_CHUNK_IDS_PATH.write_text(json.dumps(chunk_ids, ensure_ascii=False), encoding="utf-8")
+    cam["chunk_ids"].write_text(json.dumps(chunk_ids, ensure_ascii=False), encoding="utf-8")
 
-    logger.info("Indices salvos: BM25={}, embeddings shape={}", config.RAG_BM25_PATH, embeddings.shape)
+    logger.info("Indices salvos: BM25={}, embeddings shape={}", cam["bm25"], embeddings.shape)
     return bm25, embeddings, chunk_ids
 
 
-def carregar_indices() -> tuple[BM25Okapi, np.ndarray, list[int]]:
+def carregar_indices(base: Path | None = None) -> tuple[BM25Okapi, np.ndarray, list[int]]:
     """Carrega indices BM25 e embeddings previamente construidos."""
-    logger.debug("Carregando indices RAG de disco...")
-    with open(config.RAG_BM25_PATH, "rb") as f:
+    cam = _caminhos(base)
+    logger.debug("Carregando indices de disco (base={})...", cam["bm25"].parent)
+    with open(cam["bm25"], "rb") as f:
         bm25 = pickle.load(f)
-    embeddings = np.load(config.RAG_EMBEDDINGS_PATH)
-    chunk_ids = json.loads(config.RAG_CHUNK_IDS_PATH.read_text(encoding="utf-8"))
+    embeddings = np.load(cam["embeddings"])
+    chunk_ids = json.loads(cam["chunk_ids"].read_text(encoding="utf-8"))
     return bm25, embeddings, chunk_ids

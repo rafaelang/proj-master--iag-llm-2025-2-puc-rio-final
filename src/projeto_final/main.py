@@ -25,19 +25,26 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Assistente Master IAG & LLM - API de Voz e RAG",
         description="Recebe audio, transcreve, responde via RAG e devolve audio sintetizado.",
-        version="0.2.0",
+        version="0.3.0",
     )
 
     @app.on_event("startup")
     def startup():
-        logger.info("Iniciando API v0.2 em {}", RAIZ)
+        logger.info("Iniciando API v0.3 em {}", RAIZ)
         if not config.DEEPSEEK_API_KEY:
             logger.warning("DEEPSEEK_API_KEY nao configurada — endpoint /chat usara TTS echo se LLM falhar")
         try:
             rag_pipeline.carregar_chunks()
-            logger.info("Chunks RAG carregados com sucesso")
+            logger.info("Chunks RAG (texto) carregados com sucesso")
         except Exception as e:
             logger.warning("RAG ainda nao configurado: {}", e)
+        # v0.3 - imagens (OCR): ativa o corpus combinado se ja processado
+        if config.RAG_V3_CHUNK_PATH.exists():
+            try:
+                chunks_v3 = rag_pipeline.carregar_corpus_v3()
+                logger.info("Corpus v0.3 carregado: {} chunks (texto + imagem)", len(chunks_v3))
+            except Exception as e:
+                logger.warning("Corpus v0.3 indisponivel: {}", e)
 
     @app.get("/", response_class=HTMLResponse)
     def pagina() -> HTMLResponse:
@@ -50,6 +57,14 @@ def create_app() -> FastAPI:
         chunks = []
         try:
             chunks = rag_pipeline.carregar_chunks()
+        except Exception:
+            pass
+        n_img = None
+        corpus_v3 = None
+        try:
+            if config.RAG_V3_CHUNK_PATH.exists():
+                corpus_v3 = rag_pipeline.carregar_corpus_v3()
+                n_img = sum(1 for c in corpus_v3 if c.get("tipo") == "imagem")
         except Exception:
             pass
         return {
@@ -68,6 +83,11 @@ def create_app() -> FastAPI:
             },
             "rag": {
                 "chunks_indexados": len(chunks),
+                "corpus_v3": {
+                    "ativo": corpus_v3 is not None,
+                    "chunks_total": len(corpus_v3) if corpus_v3 else 0,
+                    "chunks_imagem": n_img if n_img is not None else 0,
+                },
                 "corpus_raw": list(config.RAW_DIR.glob("*.*")),
             },
         }
@@ -81,12 +101,34 @@ def create_app() -> FastAPI:
         return saude()["rag"]
 
     @app.post("/rag/perguntar")
-    async def rag_perguntar(pergunta: str) -> dict:
-        logger.info("RAG /rag/perguntar: {}", pergunta)
+    async def rag_perguntar(pergunta: str, imagens: bool = False) -> dict:
+        logger.info("RAG /rag/perguntar: {} (imagens={})", pergunta, imagens)
         try:
+            if imagens:
+                return await run_in_threadpool(rag_pipeline.responder_v3, pergunta)
             return await run_in_threadpool(rag_pipeline.responder, pergunta)
         except Exception as e:
             logger.error("Erro no RAG: {}", e)
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post("/rag/imagem/analisar")
+    async def rag_imagem_analisar(file: UploadFile = File(...)) -> dict:
+        """Analisa uma imagem enviada (OCR local RapidOCR) e retorna o texto.
+
+        A v0.3 integra a visao ao RAG: o OCR de figuras do corpus entra no indice
+        (`/rag/perguntar?imagens=true`). Este endpoint permite analisar imagens
+        avulsas do usuario com a mesma etapa de visao.
+        """
+        from projeto_final.rag.imagem import analisar_imagem_bytes
+
+        logger.info("RAG /rag/imagem/analisar: {}", file.filename)
+        dados = await file.read()
+        if not dados:
+            raise HTTPException(status_code=400, detail="imagem vazia")
+        try:
+            return await run_in_threadpool(analisar_imagem_bytes, dados)
+        except Exception as e:
+            logger.error("Erro ao analisar imagem: {}", e)
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/chat")
@@ -139,7 +181,11 @@ def _pipeline_voz(dados: bytes, ext: str) -> dict:
     try:
         if os.getenv("USE_RAG", "true").lower() == "true":
             logger.debug("Usando RAG para resposta")
-            resultado_rag = rag_pipeline.responder(texto)
+            # v0.3: usa o corpus texto + imagem quando processado; senao cai p/ texto (v0.2)
+            if config.RAG_V3_CHUNK_PATH.exists():
+                resultado_rag = rag_pipeline.responder_v3(texto)
+            else:
+                resultado_rag = rag_pipeline.responder(texto)
             resposta = resultado_rag["resposta"]
             meta_llm = {
                 "modelo": resultado_rag["modelo_llm"],

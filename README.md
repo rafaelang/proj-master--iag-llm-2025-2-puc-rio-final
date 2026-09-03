@@ -1,7 +1,7 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v0.2 · RAG ✅ **CONCLUÍDA** (retrieval Recall@5=1.000/MRR=0.969; e2e recall@5=1.000/acurácia=0.700; ingestão limpa/anti-garbage; golden set medido)
+> **Status:** v0.3 · Imagem ✅ **CONCLUÍDA** (OCR local RapidOCR em 22 figuras; conteúdo da figura no top-5: texto-only 0.000 → texto+imagem 1.000; 3/3 casos em que a visão corrigiu o texto; v0.2 intacta)
 > **Repositório base de consulta:** `projeto2/` (protótipo de experimentação)
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
@@ -203,7 +203,25 @@ filtro micro, BM25 próprio, RRF ponderado; sem rerank):
 > **0.700** e a abstenção indevida caiu de 0.438 para **0.250** — o gargalo restante é
 > a geração (ver `docs/v02.md` §5.4).
 
-Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.
+Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.
+
+### Resultado da v0.3 (concluída) — Imagem / OCR local integrado ao RAG
+
+A v0.3 extrai as **figuras dos PDFs** (PyMuPDF, dedup por sha1 → 275 imagens
+únicas), lê o **texto embutido** com **RapidOCR local (ONNX/CPU)** e indexa as
+**22 figuras úteis** no mesmo RAG (corpus 272 → **294 chunks**). O /chat e o
+`/rag/perguntar?imagens=true` passam a enxergar o que só existe na figura —
+ex.: o slide pede "implemente o **modelo ao lado**", e o modelo está na imagem.
+
+| Metrica (golden set `data/golden_set/imagem/`, 3 perguntas) | Valor |
+|---|---|
+| Conteudo da figura no top-5 — corpus texto-only (contrafactual) | **0.000** (0/3) |
+| Conteudo da figura no top-5 — corpus texto+imagem | **1.000** (3/3) |
+| Casos em que a visao (OCR) corrigiu/agregou o texto | **3** |
+| Respostas LLM: texto-only absteve / texto+imagem acertou | 3/3 · 3/3 |
+| Custo do OCR/figuras | US$ 0.00 (local) |
+
+Mais detalhes em `docs/v03.md` e `docs/v03_evidencia.md`.
 
 ---
 
@@ -214,7 +232,7 @@ Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.Mais detalhes em `docs/
 | v0.0 · Fundação | ✅ Inicializado com `uv init --app`; README, AGENTS.md, estrutura criados. |
 | v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
 | v0.2 · RAG | ✅ **CONCLUÍDA** — retrieval Recall@5=1.000/MRR=0.969 (272 chunks limpos/anti-garbage); e2e recall@5=1.000/acurácia=0.700 (juiz deepseek-v4-pro); BM25 próprio + RRF ponderado; dataset único do projeto2; rerank testado/desativado. |
-| v0.3 · Imagem | ⏳ |
+| v0.3 · Imagem | ✅ **CONCLUÍDA** — OCR local (RapidOCR/ONNX) de figuras extraídas dos PDFs (PyMuPDF; 275 únicas, 22 úteis indexadas); corpus texto+imagem 294 chunks; conteúdo da figura no top-5: 0.000 (texto) → 1.000 (texto+imagem); 3/3 casos em que a visão corrigiu o texto; `/rag/perguntar?imagens=true`, `/rag/imagem/analisar`. |
 | v0.4 · Agentes | ⏳ |
 | v0.5 · Adaptação | ⏳ |
 | v0.6 · Avaliação | ⏳ |

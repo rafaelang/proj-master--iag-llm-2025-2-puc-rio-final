@@ -14,6 +14,9 @@ K_RRF = 60  # constante padrao do RRF
 # Pesos da fusao RRF: denso pesa mais (semantica ajuda mais em perguntas "o que e X").
 PESO_BM25 = 1.0
 PESO_DENSO = 1.5
+# v0.3: peso extra para chunks de IMAGEM no RRF. Sem ele, listas de rotulos OCR
+# (figuras) quase nunca superam a prosa do mesmo slide na disputa pelo top-5.
+PESO_IMAGEM_RRF = 1.15
 # Candidatos (por lado) buscados antes da fusao + rerank quando o rerank esta ativo.
 POOL_RERANK = 30
 
@@ -43,7 +46,13 @@ def _ranking_embeddings(pergunta: str, embeddings: np.ndarray, chunk_ids: list[i
     return {chunk_ids[i]: 1.0 / (rank + 1 + K_RRF) for rank, i in enumerate(indices)}
 
 
-def recuperar(pergunta: str, chunks: list[dict], top_k: int = 5, rerank: bool = False) -> list[dict]:
+def recuperar(
+    pergunta: str,
+    chunks: list[dict],
+    top_k: int = 5,
+    rerank: bool = False,
+    base=None,
+) -> list[dict]:
     """Recupera top-k chunks: busca hibrida BM25 + denso, fusao RRF ponderada e RERANK opcional.
 
     Fluxo:
@@ -52,18 +61,23 @@ def recuperar(pergunta: str, chunks: list[dict], top_k: int = 5, rerank: bool = 
       2) RERANK opcional dos candidatos com cross-encoder (rag/rerank.py);
       3) retorna estritamente top_k (o pipeline usa top_k=5 -> Top-5 definitivo).
 
-    rerank esta DESATIVADO por padrao (medicao: MRR 0.906 -> 0.865 no golden set;
-    custo ~40 s/query em CPU). Use rerank=True para ativa-lo.
+    `base` seleciona a pasta do indice persistido (None = v0.2 texto; a v0.3 usa
+    config.RAG_V3_DIR). rerank esta DESATIVADO por padrao (medicao: MRR 0.906 ->
+    0.865 no golden set; custo ~40 s/query em CPU). Use rerank=True para ativa-lo.
     """
-    bm25, embeddings, chunk_ids = construir_indices(chunks)
+    bm25, embeddings, chunk_ids = construir_indices(chunks, base=base)
     candidatos_n = POOL_RERANK if rerank else top_k * 2
     r_bm25 = _ranking_bm25(pergunta, bm25, chunks, top_k=candidatos_n)
     r_emb = _ranking_embeddings(pergunta, embeddings, chunk_ids, chunks, top_k=candidatos_n)
 
-    # RRF ponderado
+    # RRF ponderado (+ peso de imagem da v0.3, quando o corpus tem figuras)
+    tipo_por_id = {c["id"]: c.get("tipo", "texto") for c in chunks}
     scores = {}
     for cid in set(r_bm25) | set(r_emb):
-        scores[cid] = PESO_BM25 * r_bm25.get(cid, 0.0) + PESO_DENSO * r_emb.get(cid, 0.0)
+        s = PESO_BM25 * r_bm25.get(cid, 0.0) + PESO_DENSO * r_emb.get(cid, 0.0)
+        if tipo_por_id.get(cid) == "imagem":
+            s *= PESO_IMAGEM_RRF
+        scores[cid] = s
 
     ranking = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     top_ids = [cid for cid, _ in ranking[:candidatos_n]]

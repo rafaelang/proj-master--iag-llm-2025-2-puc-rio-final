@@ -39,6 +39,20 @@ RAG_BM25_PATH = RAG_DIR / "bm25.pkl"
 RAG_EMBEDDINGS_PATH = RAG_DIR / "embeddings.npy"
 RAG_CHUNK_IDS_PATH = RAG_DIR / "chunk_ids.json"
 RAG_GOLDEN_SET = GOLDEN_SET_DIR / "rag" / "perguntas.json"
+# v0.3 - Imagem/OCR: indice combinado (texto + imagem) em pasta propria (nao toca a v0.2)
+RAG_V3_DIR = PROCESSED_DIR / "rag_v3"
+RAG_V3_CHUNK_PATH = RAG_V3_DIR / "chunks.json"
+RAG_V3_BM25_PATH = RAG_V3_DIR / "bm25.pkl"
+RAG_V3_EMBEDDINGS_PATH = RAG_V3_DIR / "embeddings.npy"
+RAG_V3_CHUNK_IDS_PATH = RAG_V3_DIR / "chunk_ids.json"
+# v0.3 - imagens do corpus (extracao/OCR)
+IMG_REGISTRO_PATH = RAG_V3_DIR / "imagens_registro.json"
+IMG_OCR_PATH = RAG_V3_DIR / "imagens_ocr.json"
+IMG_CHUNKS_PATH = RAG_V3_DIR / "imagens_chunks.json"
+IMG_PAGINAS_PATH = RAG_V3_DIR / "paginas.json"
+IMAGENS_DIR = PROCESSED_DIR / "imagens"
+RAG_IMG_GOLDEN_SET = GOLDEN_SET_DIR / "imagem" / "perguntas.json"
+IMG_MIN_LADO = int(os.getenv("IMG_MIN_LADO", "40"))  # filtra icones/logos minusculos
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 RERANK_MODEL = os.getenv("RERANK_MODEL", "jinaai/jina-reranker-v2-base-multilingual")
 RERANK_CACHE_DIR = RAG_DIR / "rerank_models"
