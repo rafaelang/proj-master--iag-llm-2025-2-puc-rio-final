@@ -42,3 +42,7 @@ TODO.md
 
 # SQLite in-memory session artifacts
 :memory:.ses
+
+# Deploy (HF Spaces)
+deploy/.env
+deploy/build/

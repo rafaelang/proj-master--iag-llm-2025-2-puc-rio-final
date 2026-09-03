@@ -1,0 +1,3 @@
+# segredos e artefatos de deploy (nao versionar)
+.env
+build/
