@@ -31,6 +31,13 @@ TTS_BACKEND = os.getenv("TTS_BACKEND", "piper")
 PIPER_VOICE = os.getenv("PIPER_VOICE", "pt_BR-faber-medium")
 PIPER_MODEL = os.getenv("PIPER_MODEL")
 PIPER_MODELS_DIR = PROCESSED_DIR / "piper_models"
+# Prosodia do Piper (SynthesisConfig). length_scale > 1.0 desacelera a fala,
+# reduzindo consoantes "atropeladas"/sílabas engolidas (defaults do Piper:
+# length=1.0, noise=0.667, noise_w=0.8, volume=1.0).
+PIPER_LENGTH_SCALE = float(os.getenv("PIPER_LENGTH_SCALE", "1.1"))
+PIPER_NOISE_SCALE = float(os.getenv("PIPER_NOISE_SCALE", "0.667"))
+PIPER_NOISE_W_SCALE = float(os.getenv("PIPER_NOISE_W_SCALE", "0.8"))
+PIPER_VOLUME = float(os.getenv("PIPER_VOLUME", "1.0"))
 
 # RAG
 RAG_DIR = PROCESSED_DIR / "rag"
