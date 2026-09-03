@@ -138,6 +138,31 @@ rsync -a \
 echo ">> Tamanho do bundle:"
 du -sh "$BUILD_DIR"
 
+# Repo card do Space: metadata YAML exigida pelo HF no README.md do bundle
+# (nao altera o README do repositorio principal; so a copia do bundle).
+"$PY" - <<'PYEOF'
+from pathlib import Path
+
+p = Path("README.md")
+texto = p.read_text(encoding="utf-8")
+if not texto.startswith("---"):
+    card = (
+        "---\n"
+        "title: assistente-master-iag\n"
+        "emoji: book\n"
+        "colorFrom: indigo\n"
+        "colorTo: blue\n"
+        "sdk: docker\n"
+        "app_port: 7860\n"
+        "pinned: false\n"
+        "---\n\n"
+    )
+    p.write_text(card + texto, encoding="utf-8")
+    print("   metadata YAML adicionada ao README.md do bundle")
+else:
+    print("   metadata YAML ja presente no README.md do bundle")
+PYEOF
+
 # ---------------------------------------------------------------- 4. git + push
 if [[ "$DRY_RUN" == "--dry-run" ]]; then
   echo ">> DRY-RUN concluido. Para publicar: bash deploy/deploy.sh"
@@ -151,8 +176,10 @@ git config user.email "deploy@users.noreply.huggingface.co"
 git add -A
 git commit -q -m "deploy v0.3 - Space privado (cpu-upgrade, sleep 1h)"
 git remote add origin "https://user:${HF_TOKEN}@huggingface.co/spaces/${SPACE_ID}"
-echo ">> Enviando para o Space ($(mask "$SPACE_URL")) ..."
-git push -u origin main
+# O HF inicializa o repo do Space com arquivos gerados (README etc.); como o
+# bundle e a fonte unica da aplicacao, o push substitui o conteudo remoto.
+git fetch --quiet origin main || true
+git push --force origin main
 echo ""
 echo ">> Deploy enviado com sucesso!"
 echo ">> Acompanhe o build:  $(mask "$SPACE_URL")/settings"

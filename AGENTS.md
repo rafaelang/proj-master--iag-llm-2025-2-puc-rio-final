@@ -58,7 +58,24 @@ python -m src.projeto_final # executar módulo principal
 python scripts/avaliadores/avaliar_v1.py  # avaliar v0.1 (WER voz)
 python scripts/avaliadores/avaliar_v2.py  # avaliar v0.2 (RAG)
 python scripts/avaliadores/avaliar_v3.py  # avaliar v0.3 (imagem/OCR; --e2e p/ LLM)
+
+# Deploy (Hugging Face Space privado 'assistente-master-iag')
+bash deploy/deploy.sh --dry-run   # monta o bundle sem publicar (revisar)
+bash deploy/deploy.sh             # cria/atualiza o Space e publica
 ```
+
+## Deploy (Hugging Face Space)
+
+- **Space:** privado `assistente-master-iag` · SDK `docker` · hardware
+  `cpu-upgrade` · sleep de 1 h (3600 s) — gerenciado por
+  `deploy/deploy.sh` (ver `deploy/README.md`).
+- **Segredos:** `HF_TOKEN` e `DEEPSEEK_API_KEY` em `deploy/.env` (fora do Git);
+  `DEEPSEEK_API_KEY` também é secret do Space. Nunca commitar tokens.
+- **Bundle:** o script monta `deploy/build/` com o código + `data/raw` (corpus)
+  + índices de `data/processed/rag*`, **sem** caches de modelo `*_models`
+  (baixados em runtime no container).
+- O Space é **privado** porque o corpus (PDFs do curso) não pode ir a
+  repositório público (direitos autorais/LGPD).
 
 ## Não fazer
 
