@@ -165,14 +165,15 @@
       <p>
         A partir da v0.2, o assistente usa <strong>Retrieval-Augmented Generation (RAG)</strong>:
         a pergunta (texto ou transcricao de voz) recupera trechos dos PDFs do curso por
-        <strong>busca hibrida</strong> (BM25 lexical + embeddings semanticos, fusionados por RRF).
-        A resposta do DeepSeek e obrigada a citar a fonte com
-        <code>[N] doc_id, pagina X</code> e se abster (<code>NAO_SEI</code>) quando o corpus
-        nao responder.
+        <strong>busca hibrida</strong> (BM25 lexico + embeddings semanticos, fusionados por RRF,
+        com deduplicacao de chunks). A resposta cita as fontes com marcadores <code>[N]</code> no
+        texto e fecha com o <strong>rodape de referencias</strong> no final
+        (<code>[1] arquivo.pdf</code>, <code>[2] ...</code>), abstendo-se (<code>NAO_SEI</code>)
+        quando o corpus nao responder.
       </p>
       <ul class="highlights">
         <li>Embeddings 100% locais com <code>fastembed</code> (CPU, ONNX).</li>
-        <li>10 documentos do corpus indexados em 347 chunks.</li>
+        <li>Corpus limpo (anti-garbage) em <strong>272 chunks</strong> de texto; rerank testado e desativado (piorava o MRR).</li>
         <li>Dataset unico da v0.2: 20 perguntas do projeto2 (rotineiras, compostas, negativas, adversariais).</li>
       </ul>
       <table class="result-table">
@@ -180,11 +181,14 @@
           <tr><th>Metrica</th><th>Valor</th></tr>
         </thead>
         <tbody>
-          <tr><td>recall@5 (16 com docs esperados)</td><td>0.938</td></tr>
-          <tr><td>Acuracia end-to-end (20, juiz deepseek-v4-pro)</td><td>0.550</td></tr>
-          <tr><td>Abstencao correta (20)</td><td>0.650</td></tr>
-          <tr><td>Citacao presente (9 nao-abstidas)</td><td>1.000</td></tr>
-          <tr><td>Chunks indexados</td><td>347</td></tr>
+          <tr><td>Recall@5 (16 com docs esperados)</td><td>1.000</td></tr>
+          <tr><td>MRR</td><td>0.969</td></tr>
+          <tr><td>Acuracia end-to-end (20, juiz deepseek-v4-pro)</td><td>0.700</td></tr>
+          <tr><td>Abstencao correta (20)</td><td>0.800</td></tr>
+          <tr><td>Abstencao indevida (16)</td><td>0.250</td></tr>
+          <tr><td>Citacao presente (12 nao-abstidas)</td><td>1.000</td></tr>
+          <tr><td>Auditoria de citacao (fiel/fora/fantasma)</td><td>10/2/0</td></tr>
+          <tr><td>Chunks indexados (texto)</td><td>272</td></tr>
         </tbody>
       </table>
     </section>
@@ -204,6 +208,7 @@
         <li>Conteudo da figura no top-5: <strong>0.000</strong> (texto-only) -&gt; <strong>1.000</strong> (texto+imagem).</li>
         <li><strong>3/3</strong> casos do golden set em que a visao corrigiu o texto (o texto abstinha-se com NAO_SEI).</li>
         <li>OCR/figuras 100% locais (CPU/ONNX) — custo zero; endpoint <code>/chat/imagem</code> e <code>/rag/perguntar?imagens=true</code>.</li>
+        <li>As respostas terminam com o <strong>rodape de referencias</strong> (<code>[1] doc.pdf</code> ...) e a voz TTS padrao e <code>pt_BR-cadu-medium</code>.</li>
       </ul>
       <table class="result-table">
         <thead>
