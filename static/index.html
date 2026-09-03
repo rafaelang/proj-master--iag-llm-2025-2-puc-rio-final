@@ -427,10 +427,10 @@
             if (!v) return "";
             try { return decodeURIComponent(v); } catch (_) { return v; }
           };
-          const transcription = decode(res.headers.get("X-Transcription"));
           const answer = decode(res.headers.get("X-Answer"));
 
-          addMessage("user", transcription, previewUrl);
+          // A mensagem do usuario e a propria imagem; a resposta exibida e a do RAG.
+          addMessage("user", "", previewUrl);
           addMessage("assistant", answer);
 
           const audioBlob = await res.blob();

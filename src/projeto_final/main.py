@@ -233,19 +233,31 @@ def _pipeline_voz(dados: bytes, ext: str) -> dict:
 
 
 def _pipeline_imagem(dados: bytes, ext: str) -> dict:
-    """Visao multimodal (deepseek-vision) -> descricao -> RAG -> TTS.
+    """Visao multimodal (deepseek-vision) -> prompt RAG -> TTS.
 
-    A descricao gerada pela visao cumpre o papel da "transcricao": vira a
-    pergunta do RAG e o texto exibido no historico (mesmo fluxo do /chat).
+    A visao retorna ASSUNTO/TERMOS/SINTESE da imagem; o RAG recebe um PROMPT
+    ("fale sobre o assunto retratado") — nao a descricao crua como pergunta.
+    A resposta final enviada ao usuario e a do RAG (texto + audio).
     """
     t_visao = time.time()
     mime = MIME_POR_EXT.get(ext, "image/png")
-    descricao, meta_visao = llm.descrever_imagem(dados, mime)
-    if not descricao:
-        logger.warning("Modelo de visao nao retornou descricao")
-        raise HTTPException(status_code=502, detail="O modelo de visao nao retornou descricao")
+    conteudo, meta_visao = llm.descrever_imagem(dados, mime)
+    if not conteudo:
+        logger.warning("Modelo de visao nao retornou conteudo")
+        raise HTTPException(status_code=502, detail="O modelo de visao nao retornou conteudo")
 
-    resultado = _pipeline_resposta(descricao)
+    pergunta_rag = (
+        "O usuário enviou uma imagem. O modelo de visão analisou a imagem e "
+        "identificou o seguinte:\n"
+        f"{conteudo}\n"
+        "Fale sobre o assunto retratado na imagem: explique os conceitos envolvidos "
+        "com base SOMENTE nos trechos do corpus fornecidos (contexto) e cite as "
+        "fontes. Se o contexto não cobrir o assunto, responda exatamente NAO_SEI."
+    )
+
+    resultado = _pipeline_resposta(pergunta_rag)
+    resultado["pergunta_rag"] = pergunta_rag
+    resultado["transcricao"] = conteudo  # visao (nao exibida ao usuario; resposta e a do RAG)
     resultado["latencia_s"]["visao"] = round(time.time() - t_visao, 2)
     resultado["modelo_visao"] = meta_visao.get("modelo")
     return resultado

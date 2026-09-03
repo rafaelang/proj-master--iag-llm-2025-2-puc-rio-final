@@ -212,9 +212,11 @@ A v0.3 extrai as **figuras dos PDFs** (PyMuPDF, dedup por sha1 → 275 imagens
 **22 figuras úteis** no mesmo RAG (corpus 272 → **294 chunks**). O /chat e o
 `/rag/perguntar?imagens=true` passam a enxergar o que só existe na figura —
 ex.: o slide pede "implemente o **modelo ao lado**", e o modelo está na imagem.
-O novo endpoint **`/chat/imagem`** (botão "Enviar imagem" na página) descreve a
-figura com o modelo de visão `deepseek-v4-flash-vision-exp` e consulta o RAG
-com essa descrição — mesmo fluxo de resposta do áudio (voz/fala + texto).
+O novo endpoint **`/chat/imagem`** (botão "Enviar imagem" na página) extrai
+**assunto + termos-chave** da figura com o modelo de visão
+`deepseek-v4-flash-vision-exp`, monta a consulta do RAG (*"fale sobre: {conteúdo
+da imagem}"*) e exibe ao usuário a **resposta do RAG** (texto + áudio) — a
+mensagem do usuário é a própria imagem.
 
 | Metrica (golden set `data/golden_set/imagem/`, 3 perguntas) | Valor |
 |---|---|

@@ -110,16 +110,17 @@ def detectar_abstencao(resposta: str) -> bool:
 
 PROMPT_VISAO = (
     "Você é o módulo de visão do assistente do Master IAG e LLM da PUC-Rio. "
-    "Descreva a imagem recebida em português, de forma direta e objetiva, focando "
-    "APENAS no conteúdo principal: o que a figura/diagrama/tabela/slide mostra, o "
-    "texto legível, rótulos e relações entre elementos (ex.: colunas e tipos em um "
-    "modelo, entidades de um diagrama ER). "
-    "IGNORE ruído visual irrelevante: marcas d'água, logos, URLs de banco de imagens, "
-    "menus/barras de navegador, texto de interface e qualquer elemento fora do "
-    "conteúdo principal. "
-    "Seja fiel à imagem: não invente conteúdo que não esteja visível. "
-    "Responda DIRETAMENTE com a descrição final em texto puro corrido, sem "
-    "preâmbulos e sem raciocínio longo."
+    "Analise a imagem e retorne APENAS o que for útil para um sistema de busca "
+    "em materiais didáticos (RAG), no formato abaixo (texto puro, sem markdown):\n"
+    "ASSUNTO: <frase curta com o tema central da imagem>\n"
+    "TERMOS: <termos-chave separados por vírgula — conceitos, acrônimos, nomes de "
+    "entidades, rótulos e texto legível na imagem>\n"
+    "SINTESE: <1 a 2 frases objetivas sobre o conteúdo principal: tipo de figura, "
+    "relações entre elementos, o que a imagem ensina>\n"
+    "Regras: IGNORE ruído visual (marca d'água, logos, URLs de banco de imagens, "
+    "menus/barras de navegador, texto de interface). Seja fiel ao conteúdo visível: "
+    "não invente termos. Responda DIRETAMENTE com o formato acima, sem preâmbulos "
+    "e sem raciocínio longo."
 )
 
 
