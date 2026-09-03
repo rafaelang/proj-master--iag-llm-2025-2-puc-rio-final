@@ -175,6 +175,9 @@ git init -b main >/dev/null
 git config user.name "deploy"
 git config user.email "deploy@users.noreply.huggingface.co"
 git add -A
+# O .gitignore do projeto ignora data/raw e data/processed: forca a inclusao
+# do corpus e dos indices no repo do Space (a copia do bundle ja exclui modelos).
+git add -f data
 git commit -q -m "deploy v0.3 - Space privado (cpu-upgrade, sleep 1h)"
 git remote add origin "https://user:${HF_TOKEN}@huggingface.co/spaces/${SPACE_ID}"
 # O HF inicializa o repo do Space com arquivos gerados (README etc.); como o
