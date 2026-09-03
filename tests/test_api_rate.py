@@ -34,9 +34,10 @@ def test_429_no_endpoint_rag():
     _rate_limpar()
     try:
         client = TestClient(app)
-        codigos = [client.get("/rag/saude").status_code for _ in range(3)]
+        cab = {"X-Forwarded-For": "203.0.113.7"}
+        codigos = [client.get("/rag/saude", headers=cab).status_code for _ in range(3)]
         assert codigos == [200, 200, 429]
-        resp = client.get("/rag/saude")
+        resp = client.get("/rag/saude", headers=cab)
         assert int(resp.headers["Retry-After"]) >= 1
         assert "429" in resp.text or "Muitas requisicoes" in resp.text
     finally:

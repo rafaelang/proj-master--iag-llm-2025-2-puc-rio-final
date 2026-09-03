@@ -66,6 +66,14 @@ def _grupo_e_limite(path: str) -> tuple[str, int]:
     return "geral", config.RATELIMIT_GERAL_QTD
 
 
+def _ip_cliente(request: Request) -> str:
+    """IP real do cliente: prioriza X-Forwarded-For (proxy do HF/nginx)."""
+    fwd = request.headers.get("x-forwarded-for")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.client.host if request.client else "desconhecido"
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Assistente Master IAG & LLM - API de Voz, Imagem e RAG",
@@ -98,7 +106,7 @@ def create_app() -> FastAPI:
         if not config.RATELIMIT_HABILITADO:
             return await call_next(request)
         grupo, qtd = _grupo_e_limite(request.url.path)
-        ip = request.client.host if request.client else "desconhecido"
+        ip = _ip_cliente(request)
         permitido, espera = _rate_permitir(grupo, ip, qtd, config.RATELIMIT_PERIODO_S)
         if not permitido:
             retry = max(1, int(espera) + 1)
