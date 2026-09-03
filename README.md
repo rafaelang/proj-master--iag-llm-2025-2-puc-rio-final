@@ -8,6 +8,35 @@
 
 ---
 
+## Resumo executivo
+
+Assistente **multimodal** (voz → texto → RAG → resposta citada → áudio), evoluído
+em três releases com **decisões medidas e arquitetura leve** (etapas locais
+ONNX/CPU + LLM remoto DeepSeek):
+
+- **v0.1 · Voz** — decisão: ASR local (`faster-whisper small`) com **vocabulário
+  de domínio** como prompt-guia e TTS local (Piper). Resultado: WER médio
+  **0.2290 → 0.0863** (10 audios do próprio aluno).
+- **v0.2 · RAG** — decisões: ingestão **anti-garbage** (remove e-mails/URLs/
+  mobilia de slides), chunking por parágrafos com **overlay** e filtro micro,
+  **BM25 próprio pt-BR + fastembed + RRF ponderado** (rerank cross-encoder
+  testado e **desativado** — piorava MRR). Resultado: recall@5 **1.000** /
+  MRR **0.969**; end-to-end **acurácia 0.700** (14/20) e abstenção indevida
+  **0.250** com `deepseek-chat`.
+- **v0.3 · Imagem** — decisões: **OCR local (RapidOCR/ONNX)** em vez de VLM
+  remoto para as figuras do corpus (dedup por sha1: 921 → 275 únicas, **22
+  figuras úteis** indexadas após filtros de novidade/sinal de domínio), índice
+  **texto+imagem separado** (272 → 294 chunks) com peso 1.15 para figuras no
+  RRF; e **visão multimodal** (`deepseek-v4-flash-vision-exp`) no chat por
+  imagem, que extrai ASSUNTO/TERMOS e pergunta ao RAG *"fale sobre"*. Resultado:
+  conteúdo da figura no top-5 **0.000 → 1.000** e **3/3** casos em que a visão
+  corrigiu o texto (o RAG só-texto abstinha-se com `NAO_SEI`).
+
+Cada release fecha com **evidência medida** em `docs/` (`v0X.md` +
+`v0X_evidencia.md`), testes `pytest` e tag no Git. Próxima: **v0.4 · Agentes**.
+
+---
+
 ## 1. Objetivo
 
 Construir, **do zero e de forma incremental**, um assistente generativo completo sobre os materiais didáticos do próprio curso. O projeto segue o roadmap oficial da disciplina (v0.1 → v1.0) e cada release é reimplementada, testada manualmente e aprovada antes de avançar para a próxima.
