@@ -251,7 +251,7 @@ flowchart TB
     subgraph ONLINE["Chat por imagem (online)"]
         P["Navegador — botão Enviar imagem"] --> Q["POST /chat/imagem"]
         Q --> R["deepseek-v4-flash-vision-exp<br/>ASSUNTO + TERMOS + SÍNTESE"]
-        R --> S["prompt RAG: &quot;fale sobre: &#123;conteudo da imagem&#125;&quot;"]
+        R --> S["prompt RAG: fale sobre o assunto da imagem"]
         S --> T["busca híbrida + RRF<br/>peso 1.15 para chunks de imagem"]
         T --> U["top-5 → DeepSeek deepseek-chat<br/>resposta com citação [N]"]
         U --> V["piper-tts → audio/wav + X-Answer"]
