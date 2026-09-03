@@ -64,7 +64,12 @@ DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 JUIZ_MODEL = os.getenv("JUIZ_MODEL", "deepseek-v4-pro")
 # v0.3 - visao multimodal (descricao de imagens enviadas no chat)
 DEEPSEEK_VISION_MODEL = os.getenv("DEEPSEEK_VISION_MODEL", "deepseek-v4-flash-vision-exp")
-DEEPSEEK_VISION_MAX_TOKENS = int(os.getenv("DEEPSEEK_VISION_MAX_TOKENS", "500"))
+# O modelo de visao e "reasoning": o max_tokens limita raciocinio + resposta juntos.
+# Imagens complexas podem gastar muito no raciocinio; default generoso evita
+# respostas vazias (finish_reason='length' com content='').
+DEEPSEEK_VISION_MAX_TOKENS = int(os.getenv("DEEPSEEK_VISION_MAX_TOKENS", "2000"))
+# Tentativa de retry com orcamento maior quando a 1a chamada esgota sem responder.
+DEEPSEEK_VISION_MAX_TOKENS_RETRY = int(os.getenv("DEEPSEEK_VISION_MAX_TOKENS_RETRY", "6000"))
 
 def ler_prompt(caminho_relativo: str) -> str | None:
     """Le um prompt versionado em prompts/ por caminho relativo."""

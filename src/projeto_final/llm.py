@@ -110,20 +110,25 @@ def detectar_abstencao(resposta: str) -> bool:
 
 PROMPT_VISAO = (
     "Você é o módulo de visão do assistente do Master IAG e LLM da PUC-Rio. "
-    "Descreva a imagem recebida em português, de forma objetiva e completa: "
-    "1) o que a imagem mostra (figura, diagrama, tabela, slide, foto); "
-    "2) todo texto legível, termos, rótulos e relações entre elementos "
-    "(ex.: colunas e tipos em um modelo, entidades de um diagrama ER); "
-    "3) contexto visual relevante (cores, setas, hierarquia, partes numeradas). "
+    "Descreva a imagem recebida em português, de forma direta e objetiva, focando "
+    "APENAS no conteúdo principal: o que a figura/diagrama/tabela/slide mostra, o "
+    "texto legível, rótulos e relações entre elementos (ex.: colunas e tipos em um "
+    "modelo, entidades de um diagrama ER). "
+    "IGNORE ruído visual irrelevante: marcas d'água, logos, URLs de banco de imagens, "
+    "menus/barras de navegador, texto de interface e qualquer elemento fora do "
+    "conteúdo principal. "
     "Seja fiel à imagem: não invente conteúdo que não esteja visível. "
-    "Sem formatação markdown, sem listas com marcadores; texto puro corrido."
+    "Responda DIRETAMENTE com a descrição final em texto puro corrido, sem "
+    "preâmbulos e sem raciocínio longo."
 )
 
 
 def descrever_imagem(dados: bytes, mime: str) -> tuple[str, dict]:
     """Envia uma imagem ao modelo de visao (DeepSeek) e retorna a descricao.
 
-    A descricao vira a "transcricao" da imagem no chat e a pergunta do RAG.
+    O modelo de visao e do tipo "reasoning": se a 1a chamada esgotar o orcamento
+    de tokens so pensando (finish_reason='length' com content vazio), tenta uma
+    segunda vez com orcamento maior antes de desistir.
     """
     import base64
 
@@ -136,7 +141,6 @@ def descrever_imagem(dados: bytes, mime: str) -> tuple[str, dict]:
     b64 = base64.b64encode(dados).decode("ascii")
     data_url = f"data:{mime};base64,{b64}"
 
-    t0 = time.time()
     msgs = [
         {"role": "system", "content": PROMPT_VISAO},
         {
@@ -147,21 +151,49 @@ def descrever_imagem(dados: bytes, mime: str) -> tuple[str, dict]:
             ],
         },
     ]
-    logger.debug("Chamando modelo de visao {} ({} bytes em base64)", modelo, len(b64))
-    try:
-        resp = _cliente().chat.completions.create(
-            model=modelo, messages=msgs, max_tokens=config.DEEPSEEK_VISION_MAX_TOKENS
+
+    def _chamar(budget: int):
+        logger.debug("Chamando modelo de visao {} (orcamento {} tokens)", modelo, budget)
+        return _cliente().chat.completions.create(
+            model=modelo, messages=msgs, max_tokens=budget
         )
-    except Exception as e:
-        logger.error("Erro na chamada do modelo de visao: {}", e)
+
+    t0 = time.time()
+    try:
+        resp = _chamar(config.DEEPSEEK_VISION_MAX_TOKENS)
+        texto = (resp.choices[0].message.content or "").strip()
+        fin = resp.choices[0].finish_reason
+        retry = False
+
+        # Retry: raciocinou demais e nao respondeu (comum em imagens complexas).
+        if not texto and fin == "length":
+            logger.warning(
+                "Visao esgotou {} tokens sem responder (finish_reason=length). "
+                "Tentando com orcamento maior ({} tokens)...",
+                config.DEEPSEEK_VISION_MAX_TOKENS, config.DEEPSEEK_VISION_MAX_TOKENS_RETRY,
+            )
+            resp = _chamar(config.DEEPSEEK_VISION_MAX_TOKENS_RETRY)
+            texto = (resp.choices[0].message.content or "").strip()
+            fin = resp.choices[0].finish_reason
+            retry = True
+
+        if not texto:
+            raise RuntimeError(
+                "o modelo de visao nao retornou descricao (finish_reason="
+                f"{fin!r}). Aumente DEEPSEEK_VISION_MAX_TOKENS e/ou "
+                "DEEPSEEK_VISION_MAX_TOKENS_RETRY no .env"
+            )
+    except Exception:
         raise
-    texto = (resp.choices[0].message.content or "").strip()
+
     uso = None
     if resp.usage is not None:
+        detalhes = getattr(resp.usage, "completion_tokens_details", None)
         uso = {
             "prompt_tokens": resp.usage.prompt_tokens,
             "completion_tokens": resp.usage.completion_tokens,
+            "reasoning_tokens": getattr(detalhes, "reasoning_tokens", None) if detalhes else None,
         }
     latencia = time.time() - t0
-    logger.debug("Visao resposta: {} chars em {} s", len(texto), round(latencia, 2))
-    return texto, {"modelo": modelo, "uso": uso, "latencia_s": round(latencia, 2)}
+    logger.debug("Visao resposta: {} chars em {} s (retry={})", len(texto), round(latencia, 2), retry)
+    return texto, {"modelo": modelo, "uso": uso, "latencia_s": round(latencia, 2), "retry": retry}
