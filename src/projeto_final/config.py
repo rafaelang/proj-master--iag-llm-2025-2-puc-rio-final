@@ -63,6 +63,9 @@ IMG_MIN_LADO = int(os.getenv("IMG_MIN_LADO", "40"))  # filtra icones/logos minus
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 RERANK_MODEL = os.getenv("RERANK_MODEL", "jinaai/jina-reranker-v2-base-multilingual")
 RERANK_CACHE_DIR = RAG_DIR / "rerank_models"
+# Rerank cross-encoder: DESATIVADO por padrao (decisao medida na v0.2: MRR 0.906
+# -> 0.865 e ~40 s/query em CPU). Para testar/ativar: RAG_RERANK=true.
+RAG_RERANK = os.getenv("RAG_RERANK", "false").lower() == "true"
 
 # LLM
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")

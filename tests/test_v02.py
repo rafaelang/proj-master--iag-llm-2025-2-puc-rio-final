@@ -35,6 +35,23 @@ def test_indices_constroem():
     assert len(ids) == len(chunks)
 
 
+def test_recuperar_dedup_chunks():
+    """Chunks duplicados/sobrepostos da mesma pagina nao entram 2x no resultado."""
+    from projeto_final.rag.retrieve import _deduplicar
+
+    texto = "O RAG une a recuperação de trechos com a geração de respostas."
+    quase_dup = texto + " (mesma ideia repetida no mesmo slide)"
+    chunks = [
+        {"id": 1, "doc_id": "a.pdf", "pagina": 1, "texto": texto},
+        {"id": 2, "doc_id": "a.pdf", "pagina": 1, "texto": texto},          # exata
+        {"id": 3, "doc_id": "a.pdf", "pagina": 1, "texto": quase_dup},      # quase-dup
+        {"id": 4, "doc_id": "a.pdf", "pagina": 2, "texto": "Conteúdo distinto da pagina seguinte."},
+        {"id": 5, "doc_id": "b.pdf", "pagina": 1, "texto": texto},          # mesmo texto, outro doc: mantem
+    ]
+    saida = _deduplicar(chunks)
+    assert [c["id"] for c in saida] == [1, 4, 5]
+
+
 def test_recupera_chunks():
     paginas = ingest(config.RAW_DIR)
     chunks = chunk_por_fronteira(paginas)

@@ -91,7 +91,7 @@ def _responder(pergunta: str, top_k: int, base: Path | None, usar_imagens: bool)
         chunks = carregar_corpus_v3()
     else:
         chunks = carregar_chunks()
-    recuperados = recuperar(pergunta, chunks, top_k=top_k, base=base)
+    recuperados = recuperar(pergunta, chunks, top_k=top_k, base=base, rerank=config.RAG_RERANK)
     contexto = _formatar_contexto(recuperados)
     sistema = config.ler_prompt("v0.2/rag_sistema.txt")
     resposta, meta_llm = llm_mod.responder_com_contexto(pergunta, contexto, sistema=sistema)

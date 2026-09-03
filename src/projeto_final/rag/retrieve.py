@@ -6,7 +6,7 @@ import numpy as np
 from loguru import logger
 
 from projeto_final import config
-from projeto_final.bm25 import preparar_query
+from projeto_final.bm25 import normalizar, preparar_query
 from projeto_final.rag.index import carregar_indices, construir_indices
 from projeto_final.rag.rerank import rerank_chunks
 
@@ -19,6 +19,54 @@ PESO_DENSO = 1.5
 PESO_IMAGEM_RRF = 1.15
 # Candidatos (por lado) buscados antes da fusao + rerank quando o rerank esta ativo.
 POOL_RERANK = 30
+# Dedup: Jaccard minimo entre dois chunks da MESMA pagina/doc para tratar como
+# duplicata (overlay de chunking e prefixos de imagem duplicam conteudo).
+DEDUP_JACCARD = 0.85
+
+
+def _deduplicar(candidatos: list[dict]) -> list[dict]:
+    """Remove chunks duplicados e quase-duplicados do retriever.
+
+    - duplicata EXATA: mesmo documento e mesmo texto normalizado (slides/trechos
+      repetidos no mesmo PDF);
+    - quase-duplicata: mesmo documento+pagina em que um chunk esta (quase)
+      contido no outro (>= DEDUP_JACCARD de sobreposicao via contencao) — caso
+      tipico do overlay de chunking e do prefixo de pagina nos chunks de imagem.
+
+    Mantem o chunk de maior score (primeiro da lista, ordenada pelo RRF/rerank).
+    Chunks identicos em documentos DIFERENTES sao mantidos (cada um e uma fonte).
+    """
+    saida: list[dict] = []
+    chaves_exatas: set[tuple] = set()
+    for c in candidatos:
+        doc = c.get("doc_id")
+        toks = tuple(normalizar(c["texto"]))
+        chave = (doc, toks)
+        if chave in chaves_exatas:
+            continue
+        descartar = False
+        if doc is not None and toks:
+            conjunto = set(toks)
+            for aceito in saida:
+                if aceito.get("doc_id") != doc:
+                    continue
+                aceito_toks = set(normalizar(aceito["texto"]))
+                if not aceito_toks:
+                    continue
+                # contencao: fracao do menor conjunto que esta no maior
+                inter = len(conjunto & aceito_toks)
+                contencao = inter / min(len(conjunto), len(aceito_toks))
+                mesma_pagina = aceito.get("pagina") == c.get("pagina")
+                if mesma_pagina and contencao >= DEDUP_JACCARD:
+                    descartar = True
+                    break
+        if not descartar:
+            chaves_exatas.add(chave)
+            saida.append(c)
+    removidos = len(candidatos) - len(saida)
+    if removidos:
+        logger.debug("Dedup: {} candidatos duplicados removidos", removidos)
+    return saida
 
 
 def _normalizar(vetores: np.ndarray) -> np.ndarray:
@@ -85,11 +133,14 @@ def recuperar(
 
     chunk_map = {c["id"]: c for c in chunks}
     candidatos = [chunk_map[cid] for cid in top_ids if cid in chunk_map]
+    # Dedup antes do rerank/entrega: remove duplicatas de texto e quase-duplicatas
+    # (mesma pagina/doc com alta sobreposicao) mantendo o chunk de maior score.
+    candidatos = _deduplicar(candidatos)
 
     if rerank:
         candidatos = rerank_chunks(pergunta, candidatos)
         logger.info("Rerank aplicado: {} candidatos -> top-{}", len(candidatos), top_k)
     else:
-        logger.debug("Rerank desativado: RRF direto -> top {}", top_k)
+        logger.debug("Rerank desativado: RRF direto -> top {}\n", top_k)
 
     return candidatos[:top_k]
