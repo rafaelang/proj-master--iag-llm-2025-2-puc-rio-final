@@ -174,6 +174,17 @@ cd "$BUILD_DIR"
 git init -b main >/dev/null
 git config user.name "deploy"
 git config user.email "deploy@users.noreply.huggingface.co"
+# Git LFS: o hook do HF rejeita binarios sem LFS. Garante git-lfs no PATH.
+if ! command -v git-lfs >/dev/null 2>&1 && [[ -x "$HOME/.local/bin/git-lfs" ]]; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+if ! command -v git-lfs >/dev/null 2>&1; then
+  echo "ERRO: git-lfs nao encontrado. Instale (ex.: GitHub releases) e rode de novo." >&2
+  exit 1
+fi
+git lfs install --local >/dev/null
+git lfs track "data/raw/*" "data/processed/**/*.pkl" "data/processed/**/*.npy" \
+             "data/golden_set/**/*.ogg" >/dev/null
 git add -A
 # O .gitignore do projeto ignora data/raw e data/processed: forca a inclusao
 # do corpus e dos indices no repo do Space (a copia do bundle ja exclui modelos).
