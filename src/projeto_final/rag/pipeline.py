@@ -83,6 +83,54 @@ def responder_v3(pergunta: str, top_k: int = 5) -> dict:
     return _responder(pergunta, top_k=top_k, base=config.RAG_V3_DIR, usar_imagens=True)
 
 
+# ------------------------------------------------------------- referencias
+
+def _formatar_referencias(resposta: str, chunks: list[dict]) -> dict:
+    """Renumera os marcadores [N] da resposta e monta o rodape de referencias.
+
+    Abordagem deterministica (anti-alucinacao):
+    - remove rodape que o modelo por ventura tenha escrito (linhas "[N] arquivo.pdf");
+    - mantem apenas marcadores validos (indices do contexto, 1..len(chunks));
+    - renumera em [1], [2], ... na ordem de primeira aparicao;
+    - monta o rodape "[n] doc_id" e uma variante limpa para o TTS (sem rodape e
+      sem marcadores).
+    """
+    import re as _re
+
+    corpo = "\n".join(
+        linha for linha in resposta.splitlines()
+        if not _re.match(r"^\[\d+\]\s+[A-Za-z0-9_\-.]*\.pdf\b", linha.strip())
+    )
+    validos = {i + 1: chunks[i] for i in range(len(chunks))}
+    ordem: list[tuple[int, dict]] = []
+    vistos: set[int] = set()
+
+    def _sub(m: _re.Match) -> str:
+        idx = int(m.group(1))
+        if idx not in validos:
+            return ""  # marcador fora do contexto (alucinado): remove
+        if idx not in vistos:
+            vistos.add(idx)
+            ordem.append((idx, validos[idx]))
+        return f"[{len(ordem)}]"
+
+    texto_marcado = _re.sub(r"\[(\d+)\]", _sub, corpo)
+    texto_marcado = _re.sub(r"[ \t]{2,}", " ", texto_marcado).strip()
+    rodape = "\n".join(f"[{i}] {c['doc_id']}" for i, (_idx, c) in enumerate(ordem, 1))
+    resposta_final = f"{texto_marcado}\n\n{rodape}" if rodape else texto_marcado
+    resposta_tts = _re.sub(r"\[\d+\]", " ", texto_marcado).strip()
+    referencias = [
+        {"n": i, "doc_id": c["doc_id"], "pagina": c.get("pagina")}
+        for i, (_idx, c) in enumerate(ordem, 1)
+    ]
+    return {
+        "resposta": resposta_final,
+        "resposta_tts": resposta_tts,
+        "referencias": referencias,
+        "texto_marcado": texto_marcado,
+    }
+
+
 def _responder(pergunta: str, top_k: int, base: Path | None, usar_imagens: bool) -> dict:
     import time
 
@@ -95,11 +143,14 @@ def _responder(pergunta: str, top_k: int, base: Path | None, usar_imagens: bool)
     contexto = _formatar_contexto(recuperados)
     sistema = config.ler_prompt("v0.2/rag_sistema.txt")
     resposta, meta_llm = llm_mod.responder_com_contexto(pergunta, contexto, sistema=sistema)
+    refs = _formatar_referencias(resposta, recuperados)
     abstencao = llm_mod.detectar_abstencao(resposta)
     logger.info("RAG: pergunta='{}' abstencao={} chunks={} imagens={}", pergunta, abstencao, len(recuperados), usar_imagens)
     return {
         "pergunta": pergunta,
-        "resposta": resposta,
+        "resposta": refs["resposta"],          # texto + rodapé de referências
+        "resposta_tts": refs["resposta_tts"],  # só o conteúdo (para o TTS)
+        "referencias": refs["referencias"],
         "abstencao": abstencao,
         "chunks": recuperados,
         "contexto": contexto,

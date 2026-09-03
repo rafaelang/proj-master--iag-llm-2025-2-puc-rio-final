@@ -28,7 +28,7 @@ PROMPT_VOCABULARIO = PROMPTS_DIR / "v0.1" / "vocabulario_voz.txt"
 
 # TTS
 TTS_BACKEND = os.getenv("TTS_BACKEND", "piper")
-PIPER_VOICE = os.getenv("PIPER_VOICE", "pt_BR-faber-medium")
+PIPER_VOICE = os.getenv("PIPER_VOICE", "pt_BR-cadu-medium")
 PIPER_MODEL = os.getenv("PIPER_MODEL")
 PIPER_MODELS_DIR = PROCESSED_DIR / "piper_models"
 # Prosodia do Piper (SynthesisConfig). length_scale > 1.0 desacelera a fala,

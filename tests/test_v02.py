@@ -52,6 +52,34 @@ def test_recuperar_dedup_chunks():
     assert [c["id"] for c in saida] == [1, 4, 5]
 
 
+def test_formatar_referencias_renumera_e_monta_rodape():
+    """Marcadores viram [1],[2],... na ordem de aparicao + rodape no final."""
+    from projeto_final.rag.pipeline import _formatar_referencias
+
+    chunks = [
+        {"id": 10, "doc_id": "nlp_aula06.pdf", "pagina": 5},
+        {"id": 20, "doc_id": "pai_aula07.pdf", "pagina": 9},
+        {"id": 30, "doc_id": "tdp_aula03.pdf", "pagina": 2},
+    ]
+    resposta = "O RAG enriquece o contexto [3]. Ele pode usar FastAPI [1]. (invalido [9])"
+    out = _formatar_referencias(resposta, chunks)
+
+    # renumeração pela ordem de primeira aparição: [3]->[1], [1]->[2]
+    assert "O RAG enriquece o contexto [1]" in out["resposta"]
+    assert "usar FastAPI [2]" in out["resposta"]
+    assert "[9]" not in out["resposta"]
+    # rodapé sequencial com os doc_ids corretos
+    assert "tdp_aula03.pdf" in out["resposta"] and "nlp_aula06.pdf" in out["resposta"]
+    assert "[1] tdp_aula03.pdf" in out["resposta"]
+    assert "[2] nlp_aula06.pdf" in out["resposta"]
+    # variante TTS sem marcadores/rodapé
+    assert "[" not in out["resposta_tts"]
+    assert out["referencias"] == [
+        {"n": 1, "doc_id": "tdp_aula03.pdf", "pagina": 2},
+        {"n": 2, "doc_id": "nlp_aula06.pdf", "pagina": 5},
+    ]
+
+
 def test_recupera_chunks():
     paginas = ingest(config.RAW_DIR)
     chunks = chunk_por_fronteira(paginas)

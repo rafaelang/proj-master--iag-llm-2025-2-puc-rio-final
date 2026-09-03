@@ -15,12 +15,19 @@ def test_normalizar():
 
 
 def test_normalizar_texto_tts():
-    """A camada de normalizacao p/ voz remove citacoes/ruido e expande NAO_SEI."""
+    """A camada de normalizacao p/ voz remove marcadores/rodape e nao truncada."""
     from projeto_final.tts import _normalizar_texto_tts
 
-    # citação RAG é removida para leitura
-    saida = _normalizar_texto_tts("RAG une recuperacao e geracao. [1] nlp_aula06_rag_avancado_ocr.pdf")
-    assert "nlp_aula06" not in saida and "[1]" not in saida
+    # resposta completa (marcadores inline + rodapé) -> le apenas o conteudo
+    resposta = (
+        "O RAG enriquece o contexto [1] e pode usar FastAPI [2].\n"
+        "\n"
+        "[1] nlp_aula06_rag_avancado_ocr.pdf\n"
+        "[2] pai_aula07_deploy_fastapi.pdf"
+    )
+    saida = _normalizar_texto_tts(resposta)
+    assert "nlp_aula06" not in saida and "pai_aula07" not in saida
+    assert "O RAG enriquece o contexto e pode usar FastAPI." in saida  # texto completo
     # abstenção pura vira frase natural
     assert "Não sei responder" in _normalizar_texto_tts("NAO_SEI")
     assert "Não sei responder" in _normalizar_texto_tts("Não sei")
@@ -30,11 +37,12 @@ def test_normalizar_texto_tts():
 
 
 def test_tts_vozes_alternativas():
-    """As vozes pt-BR alternativas ficam disponiveis via VOZES."""
+    """As vozes pt-BR alternativas ficam disponiveis via VOZES (padrao: cadu)."""
     from projeto_final import config
     from projeto_final.tts import VOZES, VOZ_PADRAO
 
-    assert VOZ_PADRAO == "pt_BR-faber-medium"
+    assert VOZ_PADRAO == "pt_BR-cadu-medium"
+    assert config.PIPER_VOICE in VOZES
     for alternativa in ("pt_BR-cadu-medium", "pt_BR-jeff-medium", "pt_BR-edresson-low"):
         assert alternativa in VOZES
         assert VOZES[alternativa]["base"].startswith("https://huggingface.co/rhasspy/piper-voices")

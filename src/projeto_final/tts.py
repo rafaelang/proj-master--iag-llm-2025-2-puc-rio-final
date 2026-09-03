@@ -36,7 +36,7 @@ VOZES = {
     "pt_BR-jeff-medium": {"base": _base_url_voz("jeff", "medium"), "exts": (".onnx", ".onnx.json")},
     "pt_BR-edresson-low": {"base": _base_url_voz("edresson", "low"), "exts": (".onnx", ".onnx.json")},
 }
-VOZ_PADRAO = "pt_BR-faber-medium"
+VOZ_PADRAO = "pt_BR-cadu-medium"
 SAMPLE_RATE = 22050
 
 _voice_cache: dict = {}
@@ -67,14 +67,19 @@ def _normalizar_texto_tts(texto: str) -> str:
     if re.fullmatch(r"nao sei(?:[.!]?)", sem):
         return "Não sei responder com base nos materiais do curso."
 
-    # citacoes RAG: "[1] arquivo.pdf, pagina 5" (ate o fim da linha ou prox. [N])
-    t = re.sub(r"\s*\[\d+\][^\n\[]*", " ", t)
+    # rodape de referencias ("[1] arquivo.pdf" no fim da resposta): remove as linhas
+    # ANTES de remover os marcadores (senao a linha perde o padrao "^[n]")
+    t = re.sub(r"(?m)^\s*\[\d+\]\s+[\w.\-]+\.pdf.*$", " ", t)
+    # marcadores numericos inline "[N]": remove apenas o marcador, SEM engolir o
+    # restante do texto (bug anterior truncava o audio na primeira referencia)
+    t = re.sub(r"\[\d+\]", " ", t)
     # URLs e e-mails
     t = re.sub(r"https?://\S+|www\.\S+|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", " ", t)
     # marcacao residual: * _ # ` > | e barras de separacao de rotulo OCR
     t = re.sub(r"[\u0000-\u001f*_#`>|]", " ", t)
-    # colapsa espacos e sinais de pontuacao repetidos
+    # colapsa espacos e sinais de pontuacao repetidos; remove espaco antes de pontuacao
     t = re.sub(r"\s+", " ", t).strip()
+    t = re.sub(r"\s+([.,;:!?])", r"\1", t)
     return t
 
 

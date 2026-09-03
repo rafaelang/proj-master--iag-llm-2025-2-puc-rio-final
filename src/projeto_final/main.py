@@ -265,6 +265,8 @@ def _pipeline_imagem(dados: bytes, ext: str) -> dict:
 
 def _pipeline_resposta(texto: str, lat_asr: float | None = None) -> dict:
     """Texto -> (RAG/LLM) -> TTS. Compartilhado pelos fluxos de voz e imagem."""
+    resposta = ""
+    resultado_rag = None
     try:
         if os.getenv("USE_RAG", "true").lower() == "true":
             logger.debug("Usando RAG para resposta")
@@ -286,7 +288,11 @@ def _pipeline_resposta(texto: str, lat_asr: float | None = None) -> dict:
         resposta = "Desculpe, nao consegui consultar o modelo agora. Tente novamente."
         meta_llm = {"modelo": config.DEEPSEEK_MODEL, "uso": None, "latencia_s": 0.0}
 
-    audio, lat_tts = tts.sintetizar(resposta)
+    # TTS le apenas o conteudo (sem rodape de referencias nem marcadores [N]).
+    tts_texto = resposta
+    if isinstance(resultado_rag, dict):
+        tts_texto = resultado_rag.get("resposta_tts") or resposta
+    audio, lat_tts = tts.sintetizar(tts_texto)
 
     return {
         "transcricao": texto,
