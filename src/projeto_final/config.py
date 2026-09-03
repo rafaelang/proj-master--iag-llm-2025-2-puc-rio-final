@@ -81,6 +81,12 @@ DEEPSEEK_VISION_MAX_TOKENS = int(os.getenv("DEEPSEEK_VISION_MAX_TOKENS", "2000")
 # Tentativa de retry com orcamento maior quando a 1a chamada esgota sem responder.
 DEEPSEEK_VISION_MAX_TOKENS_RETRY = int(os.getenv("DEEPSEEK_VISION_MAX_TOKENS_RETRY", "6000"))
 
+# Rate limiting (por IP do cliente, janela deslizante em memoria)
+RATELIMIT_HABILITADO = os.getenv("RATELIMIT_HABILITADO", "true").lower() == "true"
+RATELIMIT_RAG_QTD = int(os.getenv("RATELIMIT_RAG_QTD", "4"))       # /rag/* e /chat* (geram LLM/custo)
+RATELIMIT_GERAL_QTD = int(os.getenv("RATELIMIT_GERAL_QTD", "300"))  # "/" (pagina) e demais
+RATELIMIT_PERIODO_S = int(os.getenv("RATELIMIT_PERIODO_S", "60"))
+
 def ler_prompt(caminho_relativo: str) -> str | None:
     """Le um prompt versionado em prompts/ por caminho relativo."""
     p = PROMPTS_DIR / caminho_relativo

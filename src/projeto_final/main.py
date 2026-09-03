@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import os
 import tempfile
+import threading
 import time
+from collections import deque
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse, Response
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from loguru import logger
 from starlette.concurrency import run_in_threadpool
 from urllib.parse import quote
@@ -27,6 +29,41 @@ MIME_POR_EXT = {
     "gif": "image/gif", "webp": "image/webp", "bmp": "image/bmp",
     "tif": "image/tiff", "tiff": "image/tiff",
 }
+
+# ------------------------------------------------------- rate limiting (in-memory)
+_janelas: dict[tuple[str, str], deque] = {}
+_janelas_lock = threading.Lock()
+
+
+def _rate_permitir(grupo: str, chave: str, qtd: int, periodo: int) -> tuple[bool, float]:
+    """Janela deslizante por (grupo, chave): permite <= qtd a cada periodo s.
+
+    Retorna (permitido, espera_ate_proxima_s)."""
+    agora = time.monotonic()
+    k = (grupo, chave)
+    with _janelas_lock:
+        fila = _janelas.setdefault(k, deque())
+        while fila and agora - fila[0] >= periodo:
+            fila.popleft()
+        if len(fila) < qtd:
+            fila.append(agora)
+            return True, 0.0
+        espera = periodo - (agora - fila[0])
+        return False, max(espera, 0.0)
+
+
+def _rate_limpar() -> None:
+    """Limpa o estado do rate limit (usado em testes)."""
+    with _janelas_lock:
+        _janelas.clear()
+
+
+def _grupo_e_limite(path: str) -> tuple[str, int]:
+    """Endpoint generativo (LLM/custo): /rag/* e /chat* -> 4/min. Pagina e
+    demais rotas -> limite alto (padrao 300/min)."""
+    if path.startswith("/rag/") or path.startswith("/chat"):
+        return "rag", config.RATELIMIT_RAG_QTD
+    return "geral", config.RATELIMIT_GERAL_QTD
 
 
 def create_app() -> FastAPI:
@@ -53,6 +90,25 @@ def create_app() -> FastAPI:
                 logger.info("Corpus v0.3 carregado: {} chunks (texto + imagem)", len(chunks_v3))
             except Exception as e:
                 logger.warning("Corpus v0.3 indisponivel: {}", e)
+
+    @app.middleware("http")
+    async def _throttling(request: Request, call_next):
+        """Rate limit por IP: '/rag/*' e '/chat*' (geram LLM) -> 4/min;
+        '/' (pagina) e demais rotas -> limite alto (configuravel)."""
+        if not config.RATELIMIT_HABILITADO:
+            return await call_next(request)
+        grupo, qtd = _grupo_e_limite(request.url.path)
+        ip = request.client.host if request.client else "desconhecido"
+        permitido, espera = _rate_permitir(grupo, ip, qtd, config.RATELIMIT_PERIODO_S)
+        if not permitido:
+            retry = max(1, int(espera) + 1)
+            logger.warning("Rate limit {}: {} excedido por {}", grupo, qtd, ip)
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Muitas requisicoes. Aguarde e tente novamente."},
+                headers={"Retry-After": str(retry)},
+            )
+        return await call_next(request)
 
     @app.get("/", response_class=HTMLResponse)
     def pagina() -> HTMLResponse:
