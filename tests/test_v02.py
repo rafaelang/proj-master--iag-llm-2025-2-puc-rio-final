@@ -68,3 +68,34 @@ def test_abstencao_negativa():
     assert res.status_code == 200
     data = res.json()
     assert data["abstencao"] is True
+
+
+def test_prompt_rag_acentuacao_e_abstencao_estrita():
+    """O prompt de sistema deve estar acentuado e exigir NAO_SEI isolado."""
+    from projeto_final import llm
+
+    sistema = config.ler_prompt("v0.2/rag_sistema.txt")
+    assert sistema
+    assert "não" in sistema and "informação" in sistema and "NAO_SEI" in sistema
+    assert "Voce" not in sistema and "Nao" not in sistema  # sem versoes sem acento
+    assert "SOMENTE com o token exato NAO_SEI" in sistema
+
+    tts_prompt = llm.PROMPT_TTS
+    assert "não" in tts_prompt and "acentuação" in tts_prompt
+
+
+def test_detectar_abstencao_variantes():
+    from projeto_final import llm
+
+    for r in (
+        "NAO_SEI",
+        "NÃO_SEI",
+        "Não sei",
+        "não sei",
+        "O contexto não cobre isso. NAO_SEI",
+        "não há informações suficientes",
+        "não tenho informações sobre isso",
+    ):
+        assert llm.detectar_abstencao(r) is True, r
+    for r in ("O RAG une recuperação e geração.", "", "RAG é a sigla de Retrieval-Augmented Generation."):
+        assert llm.detectar_abstencao(r) is False, r

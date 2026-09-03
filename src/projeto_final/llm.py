@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import re
 import time
+import unicodedata
 
 from loguru import logger
 from openai import OpenAI
@@ -18,7 +20,8 @@ NAO_SEI = "NAO_SEI"
 
 PROMPT_TTS = (
     "Você é um assistente do Master IAG e LLM da PUC-Rio. "
-    "Responda em português, em texto puro, SEM formatação: sem negrito, sem itálico, "
+    "Responda em português com a acentuação correta (ex.: não, informação, é), "
+    "em texto puro, SEM formatação: sem negrito, sem itálico, "
     "sem títulos, sem listas, sem marcadores, sem símbolos e sem emojis — "
     "apenas frases prontas para serem lidas em voz alta. "
     f"Seja direto e objetivo. Sua resposta deve ter no máximo {MAX_PALAVRAS} palavras "
@@ -102,8 +105,26 @@ def responder_com_contexto(pergunta: str, contexto: str, sistema: str | None = N
 
 
 def detectar_abstencao(resposta: str) -> bool:
-    """Retorna True se a resposta indica abstenção (NAO_SEI)."""
-    return NAO_SEI in resposta
+    """Retorna True se a resposta indica abstenção.
+
+    Insensível a acento/caixa e a variantes do token (NAO_SEI, NÃO_SEI,
+    "não sei", "não há informações", "não tenho informações"). O token pode
+    aparecer sozinho ou misturado com texto explicativo — qualquer ocorrência
+    marca a abstenção.
+    """
+    if not resposta:
+        return False
+    r = unicodedata.normalize("NFKD", resposta.lower())
+    r = "".join(c for c in r if not unicodedata.combining(c))
+    r = r.replace("_", " ").replace("-", " ")
+    r = re.sub(r"\s+", " ", r)
+    if "nao sei" in r:
+        return True
+    return bool(
+        re.search(r"\bnao (ha|tenho|existem?) informa", r)
+        or "nao ha informacoes" in r
+        or "nao tenho informacoes" in r
+    )
 
 
 # ------------------------------------------------------------- v0.3 - visao multimodal
