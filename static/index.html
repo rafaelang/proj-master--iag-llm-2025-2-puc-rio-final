@@ -56,6 +56,12 @@
     }
     #chat li.user { align-self: flex-end; background: var(--user); border-bottom-right-radius: 4px; }
     #chat li.assistant { align-self: flex-start; background: var(--assistant); border-bottom-left-radius: 4px; }
+    .msg-img {
+      display: block; max-width: 100%; max-height: 220px;
+      border-radius: 10px; margin-bottom: 8px;
+      object-fit: contain; border: 1px solid var(--border);
+    }
+    #chat li .msg-text { white-space: pre-wrap; word-break: break-word; }
     #chat li.system {
       align-self: center; background: transparent; border: 1px solid var(--error);
       color: var(--error); font-size: 0.9rem;
@@ -90,20 +96,22 @@
 </head>
 <body>
   <div class="app">
-    <h1>Chat por voz</h1>
+    <h1>Chat por voz e imagem</h1>
 
     <div class="controls">
       <button id="record" type="button">Gravar</button>
       <button id="stop" type="button" disabled>Enviar</button>
+      <button id="image" type="button">Enviar imagem</button>
+      <input id="imageInput" type="file" accept="image/*" hidden>
     </div>
 
-    <div id="status">Clique em "Gravar" e fale. Depois clique em "Enviar".</div>
+    <div id="status">Clique em "Gravar" e fale, ou envie uma imagem. Depois clique em "Enviar".</div>
 
     <audio id="player" controls></audio>
 
     <ul id="chat" aria-label="Historico da conversa"></ul>
 
-    <div class="hint">A transcrição da sua fala e a resposta do assistente aparecem aqui.</div>
+    <div class="hint">A transcricao da sua fala (ou a descricao da imagem) e a resposta do assistente aparecem aqui.</div>
 
     <section class="about">
       <h2>Sobre o projeto e a avaliacao (v0.1)</h2>
@@ -180,6 +188,37 @@
         </tbody>
       </table>
     </section>
+
+    <section class="about">
+      <h2>Sobre a v0.3 - Imagem (visao + OCR local)</h2>
+      <p>
+        Na v0.3 o assistente passou a <strong>ler imagens</strong>. Figuras dos PDFs do
+        curso (diagramas, modelos e slides) sao extraidas com PyMuPDF, deduplicadas
+        por sha1 (275 unicas) e lidas por <strong>OCR local RapidOCR (ONNX/CPU)</strong>;
+        as 22 figuras uteis entram no indice RAG (corpus texto+imagem com
+        <strong>294 chunks</strong>). Neste chat, o botao "Enviar imagem" usa o modelo de
+        visao <code>deepseek-v4-flash-vision-exp</code> para descrever a figura, envia a
+        descricao ao RAG e devolve a resposta falada — mesmo fluxo do audio.
+      </p>
+      <ul class="highlights">
+        <li>Conteudo da figura no top-5: <strong>0.000</strong> (texto-only) -&gt; <strong>1.000</strong> (texto+imagem).</li>
+        <li><strong>3/3</strong> casos do golden set em que a visao corrigiu o texto (o texto abstinha-se com NAO_SEI).</li>
+        <li>OCR/figuras 100% locais (CPU/ONNX) — custo zero; endpoint <code>/chat/imagem</code> e <code>/rag/perguntar?imagens=true</code>.</li>
+      </ul>
+      <table class="result-table">
+        <thead>
+          <tr><th>Metrica</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Figuras unicas extraidas (dedup sha1)</td><td>275</td></tr>
+          <tr><td>Figuras uteis indexadas</td><td>22</td></tr>
+          <tr><td>Corpus texto+imagem</td><td>294 chunks</td></tr>
+          <tr><td>Conteudo da figura no top-5 (texto-only)</td><td>0.000</td></tr>
+          <tr><td>Conteudo da figura no top-5 (texto+imagem)</td><td>1.000</td></tr>
+          <tr><td>Casos em que a visao corrigiu o texto</td><td>3/3</td></tr>
+        </tbody>
+      </table>
+    </section>
   </div>
 
   <script>
@@ -188,6 +227,8 @@
 
       const recordBtn = document.getElementById("record");
       const stopBtn = document.getElementById("stop");
+      const imageBtn = document.getElementById("image");
+      const imageInput = document.getElementById("imageInput");
       const statusEl = document.getElementById("status");
       const player = document.getElementById("player");
       const chatEl = document.getElementById("chat");
@@ -207,11 +248,23 @@
         statusEl.classList.toggle("error", Boolean(isError));
       }
 
-      function addMessage(role, text) {
-        if (!text) return;
+      function addMessage(role, text, imgSrc) {
+        if (!text && !imgSrc) return;
         const li = document.createElement("li");
         li.className = role;
-        li.textContent = text;
+        if (imgSrc) {
+          const img = document.createElement("img");
+          img.className = "msg-img";
+          img.src = imgSrc;
+          img.alt = "Imagem enviada pelo usuario";
+          li.appendChild(img);
+        }
+        if (text) {
+          const span = document.createElement("div");
+          span.className = "msg-text";
+          span.textContent = text;
+          li.appendChild(span);
+        }
         chatEl.insertBefore(li, chatEl.firstChild);
         chatEl.scrollTop = 0;
       }
@@ -224,6 +277,7 @@
       function resetButtons(recordingState) {
         recordBtn.disabled = recordingState;
         stopBtn.disabled = !recordingState;
+        imageBtn.disabled = recordingState;
         recordBtn.classList.toggle("record-on", recordingState);
       }
 
@@ -261,6 +315,7 @@
         resetButtons(false);
         recordBtn.disabled = true;
         stopBtn.disabled = true;
+        imageBtn.disabled = true;
 
         const startTime = Date.now();
         let timerId = setInterval(() => {
@@ -272,6 +327,7 @@
           clearInterval(timerId);
           setStatus(msg, !ok);
           recordBtn.disabled = false;
+          imageBtn.disabled = false;
         }
 
         const type = mediaRecorder.mimeType || "audio/webm";
@@ -320,8 +376,82 @@
         }
       }
 
+      async function sendImage(file) {
+        if (!file) return;
+        if (!/^image\//.test(file.type || "")) {
+          setStatus("Arquivo enviado nao e uma imagem.", true);
+          return;
+        }
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          setStatus("Finalize a gravacao de audio antes de enviar uma imagem.", true);
+          return;
+        }
+
+        recordBtn.disabled = true;
+        stopBtn.disabled = true;
+        imageBtn.disabled = true;
+
+        const previewUrl = URL.createObjectURL(file);
+        const startTime = Date.now();
+        let timerId = setInterval(() => {
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          setStatus("Enviando imagem para o assistente... " + elapsed + "s");
+        }, 100);
+
+        function cleanup(ok, msg) {
+          clearInterval(timerId);
+          setStatus(msg, !ok);
+          recordBtn.disabled = false;
+          imageBtn.disabled = false;
+          imageInput.value = "";
+        }
+
+        const formData = new FormData();
+        formData.append("file", file, file.name || "imagem.png");
+
+        try {
+          const res = await fetch("/chat/imagem", { method: "POST", body: formData });
+
+          if (!res.ok) {
+            let detail = "Erro " + res.status;
+            try {
+              const data = await res.json();
+              if (data && data.detail) detail = data.detail;
+            } catch (_) {}
+            addMessage("system", detail);
+            cleanup(false, detail);
+            return;
+          }
+
+          const decode = (v) => {
+            if (!v) return "";
+            try { return decodeURIComponent(v); } catch (_) { return v; }
+          };
+          const transcription = decode(res.headers.get("X-Transcription"));
+          const answer = decode(res.headers.get("X-Answer"));
+
+          addMessage("user", transcription, previewUrl);
+          addMessage("assistant", answer);
+
+          const audioBlob = await res.blob();
+          const url = URL.createObjectURL(audioBlob);
+          player.src = url;
+          player.classList.add("visible");
+          await player.play();
+
+          cleanup(true, "Imagem analisada; resposta recebida e reproduzida.");
+        } catch (err) {
+          cleanup(false, "Falha ao enviar a imagem: " + err.message);
+        }
+      }
+
       recordBtn.addEventListener("click", startRecording);
       stopBtn.addEventListener("click", stopRecording);
+      imageBtn.addEventListener("click", () => imageInput.click());
+      imageInput.addEventListener("change", () => {
+        const file = imageInput.files && imageInput.files[0];
+        if (file) sendImage(file);
+      });
     })();
   </script>
 </body>

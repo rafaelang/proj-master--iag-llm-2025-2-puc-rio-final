@@ -212,6 +212,9 @@ A v0.3 extrai as **figuras dos PDFs** (PyMuPDF, dedup por sha1 → 275 imagens
 **22 figuras úteis** no mesmo RAG (corpus 272 → **294 chunks**). O /chat e o
 `/rag/perguntar?imagens=true` passam a enxergar o que só existe na figura —
 ex.: o slide pede "implemente o **modelo ao lado**", e o modelo está na imagem.
+O novo endpoint **`/chat/imagem`** (botão "Enviar imagem" na página) descreve a
+figura com o modelo de visão `deepseek-v4-flash-vision-exp` e consulta o RAG
+com essa descrição — mesmo fluxo de resposta do áudio (voz/fala + texto).
 
 | Metrica (golden set `data/golden_set/imagem/`, 3 perguntas) | Valor |
 |---|---|
@@ -232,7 +235,7 @@ Mais detalhes em `docs/v03.md` e `docs/v03_evidencia.md`.
 | v0.0 · Fundação | ✅ Inicializado com `uv init --app`; README, AGENTS.md, estrutura criados. |
 | v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
 | v0.2 · RAG | ✅ **CONCLUÍDA** — retrieval Recall@5=1.000/MRR=0.969 (272 chunks limpos/anti-garbage); e2e recall@5=1.000/acurácia=0.700 (juiz deepseek-v4-pro); BM25 próprio + RRF ponderado; dataset único do projeto2; rerank testado/desativado. |
-| v0.3 · Imagem | ✅ **CONCLUÍDA** — OCR local (RapidOCR/ONNX) de figuras extraídas dos PDFs (PyMuPDF; 275 únicas, 22 úteis indexadas); corpus texto+imagem 294 chunks; conteúdo da figura no top-5: 0.000 (texto) → 1.000 (texto+imagem); 3/3 casos em que a visão corrigiu o texto; `/rag/perguntar?imagens=true`, `/rag/imagem/analisar`. |
+| v0.3 · Imagem | ✅ **CONCLUÍDA** — OCR local (RapidOCR/ONNX) de figuras extraídas dos PDFs (PyMuPDF; 275 únicas, 22 úteis indexadas); corpus texto+imagem 294 chunks; conteúdo da figura no top-5: 0.000 (texto) → 1.000 (texto+imagem); 3/3 casos em que a visão corrigiu o texto; chat por imagem (`/chat/imagem` + deepseek-vision), `/rag/perguntar?imagens=true`, `/rag/imagem/analisar`. |
 | v0.4 · Agentes | ⏳ |
 | v0.5 · Adaptação | ⏳ |
 | v0.6 · Avaliação | ⏳ |

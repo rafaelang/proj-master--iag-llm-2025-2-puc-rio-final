@@ -62,6 +62,9 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 JUIZ_MODEL = os.getenv("JUIZ_MODEL", "deepseek-v4-pro")
+# v0.3 - visao multimodal (descricao de imagens enviadas no chat)
+DEEPSEEK_VISION_MODEL = os.getenv("DEEPSEEK_VISION_MODEL", "deepseek-v4-flash-vision-exp")
+DEEPSEEK_VISION_MAX_TOKENS = int(os.getenv("DEEPSEEK_VISION_MAX_TOKENS", "500"))
 
 def ler_prompt(caminho_relativo: str) -> str | None:
     """Le um prompt versionado em prompts/ por caminho relativo."""

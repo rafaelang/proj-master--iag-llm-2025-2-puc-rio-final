@@ -1,4 +1,4 @@
-"""FastAPI — v0.2 (RAG + voz)."""
+"""FastAPI — v0.3 (RAG texto+imagem + voz + visao multimodal)."""
 
 from __future__ import annotations
 
@@ -19,12 +19,20 @@ from projeto_final.rag import pipeline as rag_pipeline
 RAIZ = config.RAIZ
 STATIC_INDEX = RAIZ / "static" / "index.html"
 CHAT_EXTS = (*voz.AUDIO_EXTS,)
+# v0.3 - imagens no chat (visao multimodal -> descricao -> RAG -> TTS)
+IMAGEM_EXTS = {"jpg", "jpeg", "png", "gif", "webp", "bmp", "tif", "tiff"}
+
+MIME_POR_EXT = {
+    "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+    "gif": "image/gif", "webp": "image/webp", "bmp": "image/bmp",
+    "tif": "image/tiff", "tiff": "image/tiff",
+}
 
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Assistente Master IAG & LLM - API de Voz e RAG",
-        description="Recebe audio, transcreve, responde via RAG e devolve audio sintetizado.",
+        title="Assistente Master IAG & LLM - API de Voz, Imagem e RAG",
+        description="Recebe audio ou imagem, transcreve/descreve, responde via RAG e devolve audio sintetizado.",
         version="0.3.0",
     )
 
@@ -159,11 +167,54 @@ def create_app() -> FastAPI:
             },
         )
 
+    @app.post("/chat/imagem")
+    async def chat_imagem(file: UploadFile = File(...)) -> Response:
+        """Chat por imagem: visao multimodal -> descricao -> RAG -> TTS.
+
+        Mesmo contrato do /chat (audio/wav + X-Transcription/X-Answer):
+        X-Transcription carrega a descricao gerada pelo modelo de visao, que e
+        a pergunta enviada ao RAG.
+        """
+        logger.info("Recebendo imagem: {}", file.filename)
+        ext = (file.filename or "").rsplit(".", 1)[-1].lower()
+        if ext not in IMAGEM_EXTS:
+            logger.warning("Extensao de imagem nao suportada: {}", ext)
+            raise HTTPException(
+                status_code=415,
+                detail=f"Extensao nao suportada: .{ext} (aceitas: {', '.join(sorted(IMAGEM_EXTS))})",
+            )
+
+        dados = await file.read()
+        if not dados:
+            raise HTTPException(status_code=400, detail="imagem vazia")
+
+        t_total = time.time()
+        try:
+            p = await run_in_threadpool(_pipeline_imagem, dados, ext)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Erro no pipeline de imagem: {}", e)
+            raise HTTPException(status_code=502, detail=f"Falha ao processar a imagem: {e}")
+        logger.info(
+            "Pipeline de imagem finalizado em {} s (visao={})",
+            round(time.time() - t_total, 2), p.get("modelo_visao"),
+        )
+
+        return Response(
+            content=p["audio"],
+            media_type="audio/wav",
+            headers={
+                "X-Transcription": quote(p["transcricao"]),
+                "X-Answer": quote(p["resposta"]),
+            },
+        )
+
     return app
 
 
 def _pipeline_voz(dados: bytes, ext: str) -> dict:
-    """ASR -> LLM -> TTS em thread separada."""
+    """ASR -> texto -> (RAG -> TTS). Em thread separada."""
     prompt = config.ler_prompt_vocabulario()
 
     with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False) as tmp:
@@ -178,6 +229,30 @@ def _pipeline_voz(dados: bytes, ext: str) -> dict:
         logger.warning("Transcricao vazia")
         raise HTTPException(status_code=422, detail="Nao foi possivel transcrever o audio")
 
+    return _pipeline_resposta(texto, lat_asr=lat_asr)
+
+
+def _pipeline_imagem(dados: bytes, ext: str) -> dict:
+    """Visao multimodal (deepseek-vision) -> descricao -> RAG -> TTS.
+
+    A descricao gerada pela visao cumpre o papel da "transcricao": vira a
+    pergunta do RAG e o texto exibido no historico (mesmo fluxo do /chat).
+    """
+    t_visao = time.time()
+    mime = MIME_POR_EXT.get(ext, "image/png")
+    descricao, meta_visao = llm.descrever_imagem(dados, mime)
+    if not descricao:
+        logger.warning("Modelo de visao nao retornou descricao")
+        raise HTTPException(status_code=502, detail="O modelo de visao nao retornou descricao")
+
+    resultado = _pipeline_resposta(descricao)
+    resultado["latencia_s"]["visao"] = round(time.time() - t_visao, 2)
+    resultado["modelo_visao"] = meta_visao.get("modelo")
+    return resultado
+
+
+def _pipeline_resposta(texto: str, lat_asr: float | None = None) -> dict:
+    """Texto -> (RAG/LLM) -> TTS. Compartilhado pelos fluxos de voz e imagem."""
     try:
         if os.getenv("USE_RAG", "true").lower() == "true":
             logger.debug("Usando RAG para resposta")
@@ -206,7 +281,7 @@ def _pipeline_voz(dados: bytes, ext: str) -> dict:
         "resposta": resposta,
         "audio": audio,
         "latencia_s": {
-            "asr": round(lat_asr, 2),
+            "asr": round(lat_asr or 0.0, 2),
             "llm": meta_llm["latencia_s"],
             "tts": round(lat_tts, 2),
         },

@@ -104,3 +104,64 @@ def responder_com_contexto(pergunta: str, contexto: str, sistema: str | None = N
 def detectar_abstencao(resposta: str) -> bool:
     """Retorna True se a resposta indica abstenção (NAO_SEI)."""
     return NAO_SEI in resposta
+
+
+# ------------------------------------------------------------- v0.3 - visao multimodal
+
+PROMPT_VISAO = (
+    "Você é o módulo de visão do assistente do Master IAG e LLM da PUC-Rio. "
+    "Descreva a imagem recebida em português, de forma objetiva e completa: "
+    "1) o que a imagem mostra (figura, diagrama, tabela, slide, foto); "
+    "2) todo texto legível, termos, rótulos e relações entre elementos "
+    "(ex.: colunas e tipos em um modelo, entidades de um diagrama ER); "
+    "3) contexto visual relevante (cores, setas, hierarquia, partes numeradas). "
+    "Seja fiel à imagem: não invente conteúdo que não esteja visível. "
+    "Sem formatação markdown, sem listas com marcadores; texto puro corrido."
+)
+
+
+def descrever_imagem(dados: bytes, mime: str) -> tuple[str, dict]:
+    """Envia uma imagem ao modelo de visao (DeepSeek) e retorna a descricao.
+
+    A descricao vira a "transcricao" da imagem no chat e a pergunta do RAG.
+    """
+    import base64
+
+    if not dados:
+        raise ValueError("imagem vazia")
+    modelo = config.DEEPSEEK_VISION_MODEL
+    if not modelo:
+        raise RuntimeError("DEEPSEEK_VISION_MODEL nao configurado")
+    mime = mime or "image/png"
+    b64 = base64.b64encode(dados).decode("ascii")
+    data_url = f"data:{mime};base64,{b64}"
+
+    t0 = time.time()
+    msgs = [
+        {"role": "system", "content": PROMPT_VISAO},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Descreva esta imagem:"},
+                {"type": "image_url", "image_url": {"url": data_url}},
+            ],
+        },
+    ]
+    logger.debug("Chamando modelo de visao {} ({} bytes em base64)", modelo, len(b64))
+    try:
+        resp = _cliente().chat.completions.create(
+            model=modelo, messages=msgs, max_tokens=config.DEEPSEEK_VISION_MAX_TOKENS
+        )
+    except Exception as e:
+        logger.error("Erro na chamada do modelo de visao: {}", e)
+        raise
+    texto = (resp.choices[0].message.content or "").strip()
+    uso = None
+    if resp.usage is not None:
+        uso = {
+            "prompt_tokens": resp.usage.prompt_tokens,
+            "completion_tokens": resp.usage.completion_tokens,
+        }
+    latencia = time.time() - t0
+    logger.debug("Visao resposta: {} chars em {} s", len(texto), round(latencia, 2))
+    return texto, {"modelo": modelo, "uso": uso, "latencia_s": round(latencia, 2)}

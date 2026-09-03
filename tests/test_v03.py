@@ -62,6 +62,40 @@ def test_analisar_imagem_vazia_erro():
     assert res.status_code == 400
 
 
+def test_config_modelo_visao_definido():
+    """A constante do modelo de visao (deepseek-vision) existe em config."""
+    from projeto_final import config as cfg
+
+    assert cfg.DEEPSEEK_VISION_MODEL
+    assert cfg.DEEPSEEK_VISION_MAX_TOKENS >= 100
+
+
+def test_chat_imagem_extensao_invalida():
+    client = TestClient(app)
+    res = client.post("/chat/imagem", files={"file": ("nota.txt", b"texto", "text/plain")})
+    assert res.status_code == 415
+
+
+def test_chat_imagem_vazia_erro():
+    client = TestClient(app)
+    res = client.post("/chat/imagem", files={"file": ("vazia.png", b"", "image/png")})
+    assert res.status_code == 400
+
+
+@pytest.mark.skipif(
+    not config.DEEPSEEK_API_KEY or not config.DEEPSEEK_VISION_MODEL,
+    reason="requer DEEPSEEK_API_KEY e modelo de visao configurados",
+)
+def test_descrever_imagem_integracao():
+    """Smoke de integracao: modelo de visao descreve uma imagem de teste."""
+    from projeto_final import llm
+
+    descricao, meta = llm.descrever_imagem(_test_img_bytes(), "image/png")
+    assert isinstance(descricao, str) and descricao.strip()
+    assert meta["modelo"] == config.DEEPSEEK_VISION_MODEL
+
+
+
 @pytest.mark.skipif(
     not config.RAG_V3_CHUNK_PATH.exists(),
     reason="corpus v0.3 (texto+imagem) ainda nao processado — rode scripts/avaliadores/avaliar_v3.py",
