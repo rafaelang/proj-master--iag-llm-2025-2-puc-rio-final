@@ -136,8 +136,10 @@ def _gerar_api(pergunta: str, chunks: list[dict], modelo: str, top_k: int = 5) -
         return _abstido("sem evidencia recuperada")
     contexto = _formatar_contexto(recuperados)
     sistema = config.ler_prompt("v0.2/rag_sistema.txt")
+    # pro e modelo de raciocinio: orcamento maior evita resposta vazia (length)
+    max_tokens = config.AGENTE_PRO_MAX_TOKENS if modelo == config.AGENTE_MODELO_PRO else None
     texto, meta = llm_mod.responder_com_contexto(
-        pergunta, contexto, sistema=sistema, modelo=modelo
+        pergunta, contexto, sistema=sistema, modelo=modelo, max_tokens=max_tokens
     )
     return {
         "resposta": texto, "chunks": recuperados, "contexto": contexto,

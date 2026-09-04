@@ -110,6 +110,9 @@ AGENTE_MODELO_PRO = os.getenv("AGENTE_MODELO_PRO", JUIZ_MODEL)
 AGENTE_ROTEADOR = os.getenv("AGENTE_ROTEADOR", "slm")
 AGENTE_SIMPLES = os.getenv("AGENTE_SIMPLES", "slm")
 AGENTE_COMPLEXA = os.getenv("AGENTE_COMPLEXA", "pro")
+# deepseek-v4-pro e "reasoning": o max_tokens limita raciocinio + resposta juntos.
+# Orcamento generoso evita resposta vazia (finish_reason='length') no gerador pro.
+AGENTE_PRO_MAX_TOKENS = int(os.getenv("AGENTE_PRO_MAX_TOKENS", "1500"))
 
 def ler_prompt(caminho_relativo: str) -> str | None:
     """Le um prompt versionado em prompts/ por caminho relativo."""

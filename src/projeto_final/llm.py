@@ -72,14 +72,17 @@ def responder(pergunta: str, sistema: str | None = None) -> tuple[str, dict]:
 
 
 def responder_com_contexto(pergunta: str, contexto: str, sistema: str | None = None,
-                           modelo: str | None = None) -> tuple[str, dict]:
+                           modelo: str | None = None,
+                           max_tokens: int | None = None) -> tuple[str, dict]:
     """Envia pergunta + contexto ao LLM e retorna (resposta, metadados).
 
     `modelo` permite escolher o modelo por chamada (usado pelos agentes da v0.4:
-    flash/pro); padrao = config.DEEPSEEK_MODEL (deepseek-chat).
+    flash/pro); padrao = config.DEEPSEEK_MODEL (deepseek-chat). `max_tokens`
+    permite dar orcamento maior a modelos de raciocinio (ex.: pro na v0.4).
     """
     t0 = time.time()
     modelo = modelo or config.DEEPSEEK_MODEL
+    max_tokens = max_tokens or MAX_TOKENS_RAG
     if sistema is None:
         sistema = config.ler_prompt("v0.2/rag_sistema.txt") or ""
     msgs = [
@@ -92,7 +95,7 @@ def responder_com_contexto(pergunta: str, contexto: str, sistema: str | None = N
         logger.debug("  --- role: {} ({} chars) ---\n{}", _msg["role"], len(_msg["content"]), _msg["content"])
     try:
         resp = _cliente().chat.completions.create(
-            model=modelo, messages=msgs, max_tokens=MAX_TOKENS_RAG
+            model=modelo, messages=msgs, max_tokens=max_tokens
         )
     except Exception as e:
         logger.error("Erro na chamada LLM RAG: {}", e)
