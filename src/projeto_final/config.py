@@ -11,6 +11,11 @@ RAIZ = Path(__file__).resolve().parent.parent.parent
 
 # Carrega variaveis de ambiente do .env (se existir)
 load_dotenv(RAIZ / ".env")
+# Se o ambiente herdou a variavel vazia (ex.: shell com DEEPSEEK_API_KEY=), o
+# python-dotenv nao sobrescreve por padrao — recarrega com override para garantir
+# que o .env local (fonte canonica em dev) tenha precedencia quando o valor e vazio.
+if not os.getenv("DEEPSEEK_API_KEY"):
+    load_dotenv(RAIZ / ".env", override=True)
 
 # Diretorios
 DATA_DIR = RAIZ / "data"

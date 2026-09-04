@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Rafael Garcia", email = "rafa.informatica@gmail.com" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.141.1",
     "fastembed>=0.8.0",
