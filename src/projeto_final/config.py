@@ -103,10 +103,10 @@ SLM_MAX_TOKENS = int(os.getenv("SLM_MAX_TOKENS", "400"))
 SLM_TEMPERATURE = float(os.getenv("SLM_TEMPERATURE", "0.2"))
 
 # v0.4 - Agentes (roteador SIMPLES/COMPLEXA + geradores com fallback).
-# Mapeamento: slm = local · flash = DEEPSEEK_MODEL (deepseek-chat, usado na v0.3) ·
-# pro = JUIZ_MODEL (deepseek-v4-pro, usado na v0.3). Modelos escolhiveis por env/CLI.
-AGENTE_MODELO_FLASH = os.getenv("AGENTE_MODELO_FLASH", DEEPSEEK_MODEL)
-AGENTE_MODELO_PRO = os.getenv("AGENTE_MODELO_PRO", JUIZ_MODEL)
+# Mapeamento: slm = local · flash = deepseek-v4-flash (API, texto) ·
+# pro = deepseek-v4-pro (API). Modelos escolhiveis por env/CLI.
+AGENTE_MODELO_FLASH = os.getenv("AGENTE_MODELO_FLASH", "deepseek-v4-flash")
+AGENTE_MODELO_PRO = os.getenv("AGENTE_MODELO_PRO", "deepseek-v4-pro")
 AGENTE_ROTEADOR = os.getenv("AGENTE_ROTEADOR", "slm")
 AGENTE_SIMPLES = os.getenv("AGENTE_SIMPLES", "slm")
 AGENTE_COMPLEXA = os.getenv("AGENTE_COMPLEXA", "pro")

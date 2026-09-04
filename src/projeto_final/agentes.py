@@ -8,9 +8,9 @@ Modelos parametrizaveis (env/CLI, nao fixos no codigo):
   --simples  {slm,flash,pro}    gerador da rota simples (padrao: slm)
   --complexa {slm,flash,pro}    gerador da rota complexa (padrao: pro)
 
-Mapeamento (confirmado, modelos ja usados na v0.3):
+Mapeamento:
   slm   = Qwen2.5-1.5B-Instruct local (GGUF Q4_K_M, CPU, custo zero)
-  flash = config.AGENTE_MODELO_FLASH  (deepseek-chat)
+  flash = config.AGENTE_MODELO_FLASH  (deepseek-v4-flash)
   pro   = config.AGENTE_MODELO_PRO    (deepseek-v4-pro)
 
 Falha (excecao/resposta vazia) -> fallback para a outra rota; se ambas falharem,

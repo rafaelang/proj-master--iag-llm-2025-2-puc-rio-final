@@ -344,7 +344,9 @@ Componentes:
   SIMPLES. O Qwen 1.5B sem few-shot tendia a 19/20 COMPLEXA; com o prompt
   versionado a distribuição ficou **13 simples / 7 complexas**.
 - **Geradores e mapeamento:** rota simples → SLM local · rota complexa →
-  `deepseek-v4-pro` · opção `flash` → `deepseek-chat` (ambos já usados na v0.3).
+  `deepseek-v4-pro` · opção `flash` → `deepseek-v4-flash`
+  (`AGENTE_MODELO_FLASH`/`AGENTE_MODELO_PRO` com defaults próprios, independentes
+  de `DEEPSEEK_MODEL`/`JUIZ_MODEL`).
   Escolha **parametrizável por env/CLI** (`AGENTE_ROTEADOR/SIMPLES/COMPLEXA` e
   `--roteador {slm,flash}`, `--simples/--complexa {slm,flash,pro}`); função nova
   que usa `flash` chama o modelo mapeado explicitamente.
