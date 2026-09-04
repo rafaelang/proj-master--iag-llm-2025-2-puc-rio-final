@@ -24,7 +24,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY deploy/requirements.txt deploy/requirements.txt
 # --ignore-requires-python: rapidocr-onnxruntime==1.4.4 declara <3.13 no metadata,
 # mas roda em 3.14 (validado pela suite pytest); os demais pins aceitam 3.14.
-RUN pip install --upgrade pip && pip install --ignore-requires-python -r deploy/requirements.txt
+# CMAKE_BUILD_PARALLEL_LEVEL/MAX_JOBS=-j2: compilar o llama.cpp com paralelismo total
+# estoura a memoria do build do Space (OOMKilled, exit 137).
+RUN pip install --upgrade pip \
+ && CMAKE_BUILD_PARALLEL_LEVEL=2 MAX_JOBS=2 MAKEFLAGS=-j2 \
+    pip install --ignore-requires-python -r deploy/requirements.txt
 
 # codigo + entrypoint (o corpus vem do dataset privado no boot — nao esta no repo)
 COPY . .
