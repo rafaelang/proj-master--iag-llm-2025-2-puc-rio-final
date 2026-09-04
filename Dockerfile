@@ -1,6 +1,7 @@
 # Hugging Face Space (SDK docker) — assistente-master-iag
 # Deploy: ver deploy/README.md (bash deploy/deploy.sh)
-FROM python:3.12-slim
+# v0.4: Python 3.14 + toolchain p/ compilar o llama-cpp-python (sdist, CPU).
+FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -9,11 +10,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# opencv/onnxruntime (rapidocr) e libs de audio precisam de libs de sistema
+# opencv/onnxruntime (rapidocr) e libs de audio precisam de libs de sistema;
+# build-essential/cmake/git compilam o llama-cpp-python (Qwen2.5-1.5B local).
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libgl1 \
         libglib2.0-0 \
         libgomp1 \
+        build-essential \
+        cmake \
+        git \
     && rm -rf /var/lib/apt/lists/*
 
 COPY deploy/requirements.txt deploy/requirements.txt

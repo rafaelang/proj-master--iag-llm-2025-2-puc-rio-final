@@ -120,7 +120,13 @@ api.upload_folder(
     folder_path=f"{raiz}/data/processed/rag_v3", path_in_repo="processed/rag_v3",
     ignore_patterns=ignora,
 )
-print("   dataset atualizado com corpus (raw) e indices (processed/rag*, rag_v3)")
+# v0.4 - SLM local (GGUF ~1,1 GB) vai para o dataset privado (nao para o Space)
+api.upload_folder(
+    repo_id=dataset_id, repo_type="dataset",
+    folder_path=f"{raiz}/data/processed/slm_models", path_in_repo="processed/slm_models",
+    ignore_patterns=["*.log"],
+)
+print("   dataset atualizado com corpus (raw) + indices (processed/rag*, rag_v3, slm_models)")
 PYEOF
 fi
 
@@ -217,7 +223,7 @@ git init -b main >/dev/null
 git config user.name "deploy"
 git config user.email "deploy@users.noreply.huggingface.co"
 git add -A
-git commit -q -m "deploy v0.3 - Space publico (API) + dataset privado (corpus)"
+git commit -q -m "deploy v0.4 - Space publico (API + agentes) + dataset privado (corpus + SLM)"
 git remote add origin "https://user:${HF_TOKEN}@huggingface.co/spaces/${SPACE_ID}"
 git fetch --quiet origin main || true
 git push --force origin main

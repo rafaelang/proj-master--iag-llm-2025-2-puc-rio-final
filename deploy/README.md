@@ -51,7 +51,9 @@ No boot, `deploy/entrypoint.sh` baixa o dataset para `/app/data` e então sobe
 ## Notas
 
 - O corpus **não fica** no repositório público nem no histórico do Space;
-- Modelos locais (whisper/fastembed/piper/OCR) são baixados em runtime;
+- Modelos locais (whisper/fastembed/piper/OCR) são baixados em runtime; o GGUF
+  do SLM (v0.4, `processed/slm_models/*`) vem do **dataset privado** no boot
+  junto com o corpus;
 - ⚠️ A API pública expõe `/chat` e `/chat/imagem` a qualquer pessoa (consome o
   `DEEPSEEK_API_KEY`). Recomenda-se criar um token **read-only** para o
   `HF_TOKEN_READ` e revisar uso/custo. Para restringir acesso no futuro, adicione

@@ -23,6 +23,7 @@ snapshot_download(
         "raw/*",
         "processed/rag/*",
         "processed/rag_v3/*",
+        "processed/slm_models/*",
     ],
 )
 PYEOF

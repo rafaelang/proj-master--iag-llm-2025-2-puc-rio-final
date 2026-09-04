@@ -76,9 +76,9 @@ def _ip_cliente(request: Request) -> str:
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Assistente Master IAG & LLM - API de Voz, Imagem e RAG",
-        description="Recebe audio ou imagem, transcreve/descreve, responde via RAG e devolve audio sintetizado.",
-        version="0.3.0",
+        title="Assistente Master IAG & LLM - API de Voz, Imagem, RAG e Agentes",
+        description="Recebe audio ou imagem, transcreve/descreve, responde via RAG/multiagentes e devolve audio sintetizado.",
+        version="0.4.0",
     )
 
     @app.on_event("startup")
