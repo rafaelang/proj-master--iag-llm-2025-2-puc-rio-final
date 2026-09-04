@@ -173,9 +173,17 @@ def create_app() -> FastAPI:
         return saude()["rag"]
 
     @app.post("/rag/perguntar")
-    async def rag_perguntar(pergunta: str, imagens: bool = False) -> dict:
-        logger.info("RAG /rag/perguntar: {} (imagens={})", pergunta, imagens)
+    async def rag_perguntar(pergunta: str, imagens: bool = False,
+                            agentes: bool = False) -> dict:
+        logger.info("RAG /rag/perguntar: {} (imagens={}, agentes={})",
+                    pergunta, imagens, agentes)
         try:
+            if agentes:
+                # v0.4 - fluxo multiagente (roteador + geradores com fallback);
+                # sempre usa o corpus texto+imagem (v0.3).
+                from projeto_final import agentes as agentes_mod
+
+                return await run_in_threadpool(agentes_mod.responder_agentes, pergunta)
             if imagens:
                 return await run_in_threadpool(rag_pipeline.responder_v3, pergunta)
             return await run_in_threadpool(rag_pipeline.responder, pergunta)

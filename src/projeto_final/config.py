@@ -92,6 +92,25 @@ RATELIMIT_RAG_QTD = int(os.getenv("RATELIMIT_RAG_QTD", "4"))       # /rag/* e /c
 RATELIMIT_GERAL_QTD = int(os.getenv("RATELIMIT_GERAL_QTD", "300"))  # "/" (pagina) e demais
 RATELIMIT_PERIODO_S = int(os.getenv("RATELIMIT_PERIODO_S", "60"))
 
+# v0.4 - SLM local (rota simples dos agentes): Qwen2.5-1.5B-Instruct GGUF Q4_K_M (~1,1 GB)
+SLM_DIR = PROCESSED_DIR / "slm_models"
+SLM_MODELO_PATH = os.getenv(
+    "SLM_MODELO_PATH", str(SLM_DIR / "qwen2.5-1.5b-instruct-q4_k_m.gguf")
+)
+SLM_N_THREADS = int(os.getenv("SLM_N_THREADS", "8"))
+SLM_N_CTX = int(os.getenv("SLM_N_CTX", "4096"))
+SLM_MAX_TOKENS = int(os.getenv("SLM_MAX_TOKENS", "400"))
+SLM_TEMPERATURE = float(os.getenv("SLM_TEMPERATURE", "0.2"))
+
+# v0.4 - Agentes (roteador SIMPLES/COMPLEXA + geradores com fallback).
+# Mapeamento: slm = local · flash = DEEPSEEK_MODEL (deepseek-chat, usado na v0.3) ·
+# pro = JUIZ_MODEL (deepseek-v4-pro, usado na v0.3). Modelos escolhiveis por env/CLI.
+AGENTE_MODELO_FLASH = os.getenv("AGENTE_MODELO_FLASH", DEEPSEEK_MODEL)
+AGENTE_MODELO_PRO = os.getenv("AGENTE_MODELO_PRO", JUIZ_MODEL)
+AGENTE_ROTEADOR = os.getenv("AGENTE_ROTEADOR", "slm")
+AGENTE_SIMPLES = os.getenv("AGENTE_SIMPLES", "slm")
+AGENTE_COMPLEXA = os.getenv("AGENTE_COMPLEXA", "pro")
+
 def ler_prompt(caminho_relativo: str) -> str | None:
     """Le um prompt versionado em prompts/ por caminho relativo."""
     p = PROMPTS_DIR / caminho_relativo

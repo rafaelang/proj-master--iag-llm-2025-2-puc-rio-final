@@ -71,10 +71,15 @@ def responder(pergunta: str, sistema: str | None = None) -> tuple[str, dict]:
     return texto, {"modelo": modelo, "uso": uso, "latencia_s": round(latencia, 2)}
 
 
-def responder_com_contexto(pergunta: str, contexto: str, sistema: str | None = None) -> tuple[str, dict]:
-    """Envia pergunta + contexto ao LLM e retorna (resposta, metadados)."""
+def responder_com_contexto(pergunta: str, contexto: str, sistema: str | None = None,
+                           modelo: str | None = None) -> tuple[str, dict]:
+    """Envia pergunta + contexto ao LLM e retorna (resposta, metadados).
+
+    `modelo` permite escolher o modelo por chamada (usado pelos agentes da v0.4:
+    flash/pro); padrao = config.DEEPSEEK_MODEL (deepseek-chat).
+    """
     t0 = time.time()
-    modelo = config.DEEPSEEK_MODEL
+    modelo = modelo or config.DEEPSEEK_MODEL
     if sistema is None:
         sistema = config.ler_prompt("v0.2/rag_sistema.txt") or ""
     msgs = [
@@ -125,6 +130,34 @@ def detectar_abstencao(resposta: str) -> bool:
         or "nao ha informacoes" in r
         or "nao tenho informacoes" in r
     )
+
+
+def completar(msgs: list[dict], modelo: str | None = None,
+              max_tokens: int = 100, temperature: float = 0.0) -> tuple[str, dict]:
+    """Chamada de chat generica (usada pelo roteador flash dos agentes da v0.4).
+
+    msgs: lista pronta de mensagens role/content. Retorna (texto, metadados)
+    com o mesmo formato das demais funcoes de llm.
+    """
+    t0 = time.time()
+    modelo = modelo or config.DEEPSEEK_MODEL
+    try:
+        resp = _cliente().chat.completions.create(
+            model=modelo, messages=msgs, max_tokens=max_tokens, temperature=temperature
+        )
+    except Exception as e:
+        logger.error("Erro na chamada LLM (completar): {}", e)
+        raise
+    texto = (resp.choices[0].message.content or "").strip()
+    uso = None
+    if resp.usage is not None:
+        uso = {
+            "prompt_tokens": resp.usage.prompt_tokens,
+            "completion_tokens": resp.usage.completion_tokens,
+        }
+    latencia = time.time() - t0
+    logger.debug("LLM completar resposta ({}): {} chars em {} s", modelo, len(texto), round(latencia, 2))
+    return texto, {"modelo": modelo, "uso": uso, "latencia_s": round(latencia, 2)}
 
 
 # ------------------------------------------------------------- v0.3 - visao multimodal

@@ -1,0 +1,18 @@
+Classifique a pergunta do usuário como SIMPLES ou COMPLEXA.
+
+SIMPLES = pergunta factual e direta, que pode ser respondida com uma única fonte/trecho.
+Exemplos de SIMPLES:
+- "O que é DDL e para que serve?"
+- "O que significa WER?"
+- "O que é OCR?"
+- "O que são GAN e VAE?"
+- "Como o FastAPI é usado para servir um modelo?"
+
+COMPLEXA = pergunta composta, comparativa, ambígua ou que exige raciocínio sobre múltiplas fontes/trechos.
+Exemplos de COMPLEXA:
+- "Qual a diferença entre prompt engineering e fine-tuning?"
+- "O que são embeddings e como são usados no RAG?"
+- "Explique como o Whisper e o WER se relacionam no protótipo de voz do projeto."
+- "Como sistemas multiagentes com small language models funcionam?"
+
+Responda apenas com a palavra SIMPLES ou COMPLEXA. Não escreva nada além disso.
