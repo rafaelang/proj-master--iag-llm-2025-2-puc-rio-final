@@ -248,11 +248,13 @@
           <tr><th>Metrica</th><th>Valor</th></tr>
         </thead>
         <tbody>
-          <tr><td>Abstencao correta (20)</td><td>0.950</td></tr>
+          <tr><td>Abstencao correta (20) — roteador R1 (slm)</td><td>0.950</td></tr>
+          <tr><td>Abstencao correta (20) — default cascade (R2→R1)</td><td>0.850</td></tr>
+          <tr><td>Roteador padrao</td><td>cascade (TF-IDF char_wb+XGB decide; INDETERMINADO -&gt; SLM; θ=0.60)</td></tr>
           <tr><td>Rotas</td><td>13 simples (SLM local) + 7 complexas (pro)</td></tr>
           <tr><td>Agentes usados</td><td>gerador-slm 13 · gerador-pro 7</td></tr>
           <tr><td>Fallbacks</td><td>0</td></tr>
-          <tr><td>Latencia media</td><td>64.96 s</td></tr>
+          <tr><td>Latencia media (geradores)</td><td>64.96 s (R1) / 66.16 s (cascade)</td></tr>
           <tr><td>Custo das rotas simples</td><td>US$ 0.00 (local)</td></tr>
           <tr><td>SLM local</td><td>Qwen2.5-1.5B-Instruct (GGUF Q4_K_M, CPU)</td></tr>
         </tbody>

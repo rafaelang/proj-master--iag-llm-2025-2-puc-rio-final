@@ -1,7 +1,7 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v0.4 · Agentes ✅ **CONCLUÍDA** (fluxo heterogêneo: roteador SLM local + SLM local na rota simples + `deepseek-v4-pro` na complexa; abstenção correta 0.950 (19/20), rotas 13/7, fallbacks 0, latência média 64,96 s; v0.1–v0.3 intactas)
+> **Status:** v0.4 · Agentes ✅ **CONCLUÍDA** (fluxo heterogêneo: roteador **`cascade`** — R2 TF-IDF+XGB decide ~85%; `INDETERMINADO` → SLM few-shot, θ=0.60 — + SLM local na rota simples + `deepseek-v4-pro` na complexa; E2E do default **0.850** por decisão de custo; R1/SLM media **0.950** — docs/v04.md §11; v0.1–v0.3 intactas)
 > **Repositório base de consulta:** `projeto2/` (protótipo de experimentação)
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens, roteamento simples/complexo entre SLM local e LLM remoto, e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
