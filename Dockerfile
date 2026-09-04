@@ -26,8 +26,9 @@ COPY deploy/requirements.txt deploy/requirements.txt
 # mas roda em 3.14 (validado pela suite pytest); os demais pins aceitam 3.14.
 # CMAKE_BUILD_PARALLEL_LEVEL/MAX_JOBS=-j2: compilar o llama.cpp com paralelismo total
 # estoura a memoria do build do Space (OOMKilled, exit 137).
+# CMAKE_ARGS=-DGGML_NATIVE=OFF: sem -march=native do host (SIGILL/exit 132 no CPU do Space).
 RUN pip install --upgrade pip \
- && CMAKE_BUILD_PARALLEL_LEVEL=2 MAX_JOBS=2 MAKEFLAGS=-j2 \
+ && CMAKE_ARGS="-DGGML_NATIVE=OFF" CMAKE_BUILD_PARALLEL_LEVEL=2 MAX_JOBS=2 MAKEFLAGS=-j2 \
     pip install --ignore-requires-python -r deploy/requirements.txt
 
 # codigo + entrypoint (o corpus vem do dataset privado no boot — nao esta no repo)

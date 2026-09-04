@@ -152,7 +152,12 @@ print("   space publico pronto:", repo_id)
 
 for key, value in (("DEEPSEEK_API_KEY", os.getenv("DEEPSEEK_API_KEY", "")),
                    ("HF_TOKEN_READ", hf_read),
-                   ("HF_DATA_REPO", dataset_id)):
+                   ("HF_DATA_REPO", dataset_id),
+                   # Public demo: roteador/simples via flash (deepseek-chat) para
+                   # latencia baixa no gateway; o SLM local fica p/ uso local/CLI.
+                   ("AGENTE_ROTEADOR", "flash"),
+                   ("AGENTE_SIMPLES", "flash"),
+                   ("AGENTE_COMPLEXA", "pro")):
     if not value:
         continue
     try:
