@@ -172,44 +172,9 @@ def create_app() -> FastAPI:
     def saude_rag() -> dict:
         return saude()["rag"]
 
-    @app.post("/rag/perguntar")
-    async def rag_perguntar(pergunta: str, imagens: bool = False,
-                            agentes: bool = False) -> dict:
-        logger.info("RAG /rag/perguntar: {} (imagens={}, agentes={})",
-                    pergunta, imagens, agentes)
-        try:
-            if agentes:
-                # v0.4 - fluxo multiagente (roteador + geradores com fallback);
-                # sempre usa o corpus texto+imagem (v0.3).
-                from projeto_final import agentes as agentes_mod
-
-                return await run_in_threadpool(agentes_mod.responder_agentes, pergunta)
-            if imagens:
-                return await run_in_threadpool(rag_pipeline.responder_v3, pergunta)
-            return await run_in_threadpool(rag_pipeline.responder, pergunta)
-        except Exception as e:
-            logger.error("Erro no RAG: {}", e)
-            raise HTTPException(status_code=500, detail=str(e))
-
-    @app.post("/rag/imagem/analisar")
-    async def rag_imagem_analisar(file: UploadFile = File(...)) -> dict:
-        """Analisa uma imagem enviada (OCR local RapidOCR) e retorna o texto.
-
-        A v0.3 integra a visao ao RAG: o OCR de figuras do corpus entra no indice
-        (`/rag/perguntar?imagens=true`). Este endpoint permite analisar imagens
-        avulsas do usuario com a mesma etapa de visao.
-        """
-        from projeto_final.rag.imagem import analisar_imagem_bytes
-
-        logger.info("RAG /rag/imagem/analisar: {}", file.filename)
-        dados = await file.read()
-        if not dados:
-            raise HTTPException(status_code=400, detail="imagem vazia")
-        try:
-            return await run_in_threadpool(analisar_imagem_bytes, dados)
-        except Exception as e:
-            logger.error("Erro ao analisar imagem: {}", e)
-            raise HTTPException(status_code=500, detail=str(e))
+    # v0.4: os endpoints JSON /rag/perguntar e /rag/imagem/analisar foram
+    # REMOVIDOS (nao usados pelo index.html) — o fluxo RAG/multiagente roda nos
+    # endpoints /chat (voz) e /chat/imagem abaixo.
 
     @app.post("/chat")
     async def chat(file: UploadFile = File(...)) -> Response:
@@ -335,16 +300,35 @@ def _pipeline_imagem(dados: bytes, ext: str) -> dict:
     return resultado
 
 
-def _pipeline_resposta(texto: str, lat_asr: float | None = None) -> dict:
-    """Texto -> (RAG/LLM) -> TTS. Compartilhado pelos fluxos de voz e imagem."""
+def _pipeline_resposta(texto: str, lat_asr: float | None = None,
+                       usar_agentes: bool | None = None) -> dict:
+    """Texto -> (RAG/agentes) -> TTS. Compartilhado pelos fluxos de voz e imagem.
+
+    v0.4: com AGENTES_HABILITADO (default true), a resposta passa pelo
+    orquestrador multiagente (roteador SIMPLES/COMPLEXA + geradores com fallback)
+    sempre no corpus texto+imagem (v0.3). Desligue com AGENTES_HABILITADO=false
+    ou passar usar_agentes=False (volta ao RAG v0.3 de modelo unico).
+    """
+    if usar_agentes is None:
+        usar_agentes = config.AGENTES_HABILITADO
     resposta = ""
     resultado_rag = None
     try:
         if os.getenv("USE_RAG", "true").lower() == "true":
-            logger.debug("Usando RAG para resposta")
-            # v0.3: usa o corpus texto + imagem quando processado; senao cai p/ texto (v0.2)
+            logger.debug("Gerando resposta (agentes={}, corpus v0.3={})",
+                         usar_agentes, config.RAG_V3_CHUNK_PATH.exists())
+            # v0.3/v0.4: usa o corpus texto + imagem quando processado; senao cai p/ texto (v0.2)
             if config.RAG_V3_CHUNK_PATH.exists():
-                resultado_rag = rag_pipeline.responder_v3(texto)
+                if usar_agentes:
+                    # v0.4 - fluxo multiagente (roteador + geradores com fallback)
+                    from projeto_final import agentes as agentes_mod
+
+                    resultado_rag = agentes_mod.responder_agentes(texto)
+                    logger.info("Multiagente (chat): rota={} agente={} fallback={}",
+                                resultado_rag.get("rota"), resultado_rag.get("agente"),
+                                resultado_rag.get("fallback"))
+                else:
+                    resultado_rag = rag_pipeline.responder_v3(texto)
             else:
                 resultado_rag = rag_pipeline.responder(texto)
             resposta = resultado_rag["resposta"]

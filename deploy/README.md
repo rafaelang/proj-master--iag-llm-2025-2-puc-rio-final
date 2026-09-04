@@ -50,9 +50,11 @@ No boot, `deploy/entrypoint.sh` baixa o dataset para `/app/data` e então sobe
 
 Secrets adicionais de configuração da v0.4: `AGENTE_ROTEADOR=flash`,
 `AGENTE_SIMPLES=flash`, `AGENTE_COMPLEXA=pro` — na API pública o fluxo
-`/rag/perguntar?agentes=true` usa modelos remotos (latência compatível com o
-gateway); o **SLM local** (Qwen 2.5-1.5B) roda em ambiente local/CLI
-(padrão do código) e é compilado portável (`GGML_NATIVE=OFF`) para o Space.
+`/chat` (voz) e `/chat/imagem` (agentes habilitados por padrão) usa modelos
+remotos (latência compatível com o gateway); o **SLM local** (Qwen 2.5-1.5B)
+roda em ambiente local/CLI (padrão do código) e é compilado portável
+(`GGML_NATIVE=OFF`) para o Space. Os endpoints `/rag/perguntar` e
+`/rag/imagem/analisar` foram removidos (não usados pelo front-end).
 
 ## Notas
 

@@ -358,8 +358,8 @@ def chunks_de_imagem(force: bool = False) -> list[dict]:
 def analisar_imagem_bytes(dados: bytes) -> dict:
     """OCR local (RapidOCR) de uma imagem enviada pelo usuario (bytes).
 
-    Usado pelo endpoint `POST /rag/imagem/analisar` — mesma etapa de "visao"
-    que indexa as figuras do corpus, agora sobre imagem avulsa.
+    Usado pela etapa de "visao" que indexa as figuras do corpus (v0.3) e pelos
+    testes — mesma funcao de OCR sobre imagem avulsa.
     """
     import cv2
     from rapidocr_onnxruntime import RapidOCR

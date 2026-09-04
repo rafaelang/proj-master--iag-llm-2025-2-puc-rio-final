@@ -9,10 +9,8 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from fastapi.testclient import TestClient
 
 from projeto_final import agentes, config
-from projeto_final.main import app
 
 CHUNK_FAKE = [{"id": 1, "doc_id": "nlp_aula06_rag_avancado_ocr.pdf", "pagina": 1,
                "tipo": "texto", "texto": "RAG recupera trechos e o modelo responde."}]
@@ -124,7 +122,14 @@ def test_gerador_desconhecido_erro():
 
 # ---------------------------------------------------------------- API
 
-def test_perguntar_agentes_true():
+def test_pipeline_resposta_usa_agentes():
+    """v0.4: /chat (voz) e /chat/imagem usam o orquestrador multiagente.
+
+    `_pipeline_resposta` (compartilhado por voz e imagem) chama
+    agentes.responder_agentes quando AGENTES_HABILITADO (default true).
+    """
+    from projeto_final.main import _pipeline_resposta
+
     fake = {
         "pergunta": "O que e RAG?", "resposta": "RAG ... [1]", "resposta_tts": "RAG ...",
         "referencias": [{"n": 1, "doc_id": "nlp_aula06_rag_avancado_ocr.pdf", "pagina": 1}],
@@ -134,16 +139,13 @@ def test_perguntar_agentes_true():
         "roteador": "slm", "config": {"simples": "slm", "complexa": "pro"},
         "fallback": False, "erros": [], "motivo": None,
     }
-    with patch("projeto_final.agentes.responder_agentes", return_value=fake) as ra:
-        client = TestClient(app)
-        resp = client.post("/rag/perguntar", params={"pergunta": "O que e RAG?", "agentes": "true"})
-    assert resp.status_code == 200
-    corpo = resp.json()
-    assert corpo["rota"] == "simples"
-    assert corpo["agente"] == "gerador-slm"
-    assert corpo["fallback"] is False
+    with patch("projeto_final.agentes.responder_agentes", return_value=fake) as ra, \
+         patch("projeto_final.main.tts.sintetizar", return_value=(b"RIFF....", 0.1)):
+        out = _pipeline_resposta("O que e RAG?", usar_agentes=True)
     ra.assert_called_once()
     assert ra.call_args.args[0] == "O que e RAG?"
+    assert out["resposta"] == fake["resposta"]
+    assert out["audio"] == b"RIFF...."
 
 
 # ---------------------------------------------------------------- SLM (local)

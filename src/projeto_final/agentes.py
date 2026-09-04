@@ -249,7 +249,7 @@ def resposta_multiagente(
 
 
 def responder_agentes(pergunta: str, top_k: int = 5) -> dict:
-    """Wrapper usado pela API (`/rag/perguntar?agentes=true`)."""
+    """Wrapper usado pelos fluxos de voz/imagem da API (`/chat` e `/chat/imagem`)."""
     logger.info("Multiagente (API): '{}' (roteador={}, simples={}, complexa={})",
                 pergunta, config.AGENTE_ROTEADOR, config.AGENTE_SIMPLES,
                 config.AGENTE_COMPLEXA)

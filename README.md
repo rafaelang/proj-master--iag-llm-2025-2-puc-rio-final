@@ -38,7 +38,8 @@ ONNX/CPU + LLM remoto DeepSeek + SLM local):
   env/CLI) com **fallback cruzado sob falha** (falha/rota → outra rota; ambas
   falham → abstenção com motivo). Resultado: **abstenção correta 0.950** (19/20),
   rotas **13/7**, **0 fallbacks**, latência média **64,96 s** (SLM ~40–140 s ×
-  pro ~9–28 s) e rota simples a custo zero. API: `/rag/perguntar?agentes=true`.
+  pro ~9–28 s) e rota simples a custo zero. API: `/chat` e `/chat/imagem` usam o
+  fluxo multiagente por padrão (`AGENTES_HABILITADO=true`).
 
 Cada release fecha com **evidência medida** em `docs/` (`v0X.md` +
 `v0X_evidencia.md`), testes `pytest` e tag no Git. Próxima: **v0.5 · Adaptação**.
@@ -203,7 +204,7 @@ flowchart TB
         D --> E2["embeddings fastembed 384d (ONNX)"]
     end
     subgraph ONLINE["Recuperação + Geração (online)"]
-        P["Pergunta (/rag/perguntar ou voz)"] --> F["preparar_query<br/>normalizar + stopwords"]
+        P["Pergunta (voz, imagem ou texto)"] --> F["preparar_query<br/>normalizar + stopwords"]
         F --> G["busca híbrida top-30 BM25 + top-30 embeddings"]
         G --> H["RRF ponderado k=60<br/>BM25 1.0 x denso 1.5"]
         H --> I["top-5 chunks definitivo"]
@@ -284,8 +285,9 @@ Componentes:
   **ASSUNTO/TERMOS/SÍNTESE**; o RAG recebe o prompt *"fale sobre: {conteúdo}"* e
   a **resposta com citação vai ao usuário** (texto + áudio); a mensagem do
   usuário é a própria imagem.
-- **Endpoints:** `/chat/imagem`, `/rag/perguntar?imagens=true`,
-  `/rag/imagem/analisar`; o `/chat` (voz) usa o corpus v0.3 automaticamente.
+- **Endpoints:** `/chat` (voz) e `/chat/imagem` usam o corpus texto+imagem
+  automaticamente (na v0.4, os endpoints JSON `/rag/perguntar` e
+  `/rag/imagem/analisar` foram removidos — não eram usados pelo front-end).
 
 ### Resultado da v0.3 (concluída)
 
@@ -353,9 +355,10 @@ Componentes:
 - **Prompts:** `prompts/v0.4/roteador_sistema.txt` (few-shot) e
   `prompts/v0.4/rag_sistema_slm.txt` (regras curtas p/ o 1.5B: só o contexto,
   `NAO_SEI` isolado, citação `[N]`).
-- **API/CLI:** `POST /rag/perguntar?agentes=true` (opt-in — o fluxo padrão,
-  `/chat` de voz e `/chat/imagem` continuam intactos na v0.3) e
-  `python -m projeto_final.agentes perguntar|avaliar`.
+- **API/CLI:** `/chat` (voz) e `/chat/imagem` passam pelo fluxo multiagente por
+  padrão (`AGENTES_HABILITADO=true`, desligável por env) e o `index.html` usa
+  esses endpoints (os JSON `/rag/perguntar`/`/rag/imagem/analisar` foram
+  removidos); CLI: `python -m projeto_final.agentes perguntar|avaliar`.
 
 ### Resultado da v0.4 (concluída)
 
@@ -392,8 +395,8 @@ Mais detalhes em `docs/v04.md` e `docs/v04_evidencia.md`.
 | v0.0 · Fundação | ✅ Inicializado com `uv init --app`; README, AGENTS.md, estrutura criados. |
 | v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
 | v0.2 · RAG | ✅ **CONCLUÍDA** — retrieval Recall@5=1.000/MRR=0.969 (272 chunks limpos/anti-garbage); e2e recall@5=1.000/acurácia=0.700 (juiz deepseek-v4-pro); BM25 próprio + RRF ponderado; dataset único do projeto2; rerank testado/desativado. |
-| v0.3 · Imagem | ✅ **CONCLUÍDA** — OCR local (RapidOCR/ONNX) de figuras extraídas dos PDFs (PyMuPDF; 275 únicas, 22 úteis indexadas); corpus texto+imagem 294 chunks; conteúdo da figura no top-5: 0.000 (texto) → 1.000 (texto+imagem); 3/3 casos em que a visão corrigiu o texto; chat por imagem (`/chat/imagem` + deepseek-vision), `/rag/perguntar?imagens=true`, `/rag/imagem/analisar`. |
-| v0.4 · Agentes | ✅ **CONCLUÍDA** — fluxo heterogêneo (roteador SIMPLES/COMPLEXA + SLM local Qwen2.5-1.5B na rota simples + deepseek-v4-pro na complexa; fallback cruzado); abstenção correta 0.950, rotas 13/7, 0 fallbacks, latência média 64,96 s; Python 3.14 + llama-cpp-python; API `?agentes=true`. |
+| v0.3 · Imagem | ✅ **CONCLUÍDA** — OCR local (RapidOCR/ONNX) de figuras extraídas dos PDFs (PyMuPDF; 275 únicas, 22 úteis indexadas); corpus texto+imagem 294 chunks; conteúdo da figura no top-5: 0.000 (texto) → 1.000 (texto+imagem); 3/3 casos em que a visão corrigiu o texto; chat por imagem (`/chat/imagem` + deepseek-vision). *(Na v0.4, os endpoints JSON `/rag/perguntar` e `/rag/imagem/analisar` foram removidos.)* |
+| v0.4 · Agentes | ✅ **CONCLUÍDA** — fluxo heterogêneo (roteador SIMPLES/COMPLEXA + SLM local Qwen2.5-1.5B na rota simples + deepseek-v4-pro na complexa; fallback cruzado); abstenção correta 0.950, rotas 13/7, 0 fallbacks, latência média 64,96 s; Python 3.14 + llama-cpp-python; `/chat` e `/chat/imagem` usam os agentes por padrão (`AGENTES_HABILITADO`); endpoints `/rag/perguntar` e `/rag/imagem/analisar` removidos. |
 | v0.5 · Adaptação | ⏳ |
 | v0.6 · Avaliação | ⏳ |
 | v1.0 · Produção | ⏳ |

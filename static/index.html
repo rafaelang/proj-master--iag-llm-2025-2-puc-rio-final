@@ -207,7 +207,7 @@
       <ul class="highlights">
         <li>Conteudo da figura no top-5: <strong>0.000</strong> (texto-only) -&gt; <strong>1.000</strong> (texto+imagem).</li>
         <li><strong>3/3</strong> casos do golden set em que a visao corrigiu o texto (o texto abstinha-se com NAO_SEI).</li>
-        <li>OCR/figuras 100% locais (CPU/ONNX) — custo zero; endpoint <code>/chat/imagem</code> e <code>/rag/perguntar?imagens=true</code>.</li>
+        <li>OCR/figuras 100% locais (CPU/ONNX) — custo zero; o <code>/chat/imagem</code> (e o <code>/chat</code> de voz) usam o corpus texto+imagem.</li>
         <li>As respostas terminam com o <strong>rodape de referencias</strong> (<code>[1] doc.pdf</code> ...) e a voz TTS padrao e <code>pt_BR-cadu-medium</code>.</li>
       </ul>
       <table class="result-table">
@@ -233,7 +233,8 @@
         respondida por um <strong>SLM local de verdade</strong> (Qwen2.5-1.5B-Instruct, GGUF Q4_K_M,
         100% CPU, custo zero) via RAG v0.3, e a rota complexa pelo LLM remoto
         <code>deepseek-v4-pro</code> — com <strong>fallback cruzado</strong> sob falha e abstencao
-        com motivo. A flag <code>/rag/perguntar?agentes=true</code> ativa o fluxo na API.
+        com motivo. O fluxo roda na API nos endpoints <code>/chat</code> (voz) e <code>/chat/imagem</code>,
+        ativo por padrao (<code>AGENTES_HABILITADO=true</code>).
       </p>
       <ul class="highlights">
         <li>Roteador SLM com <strong>few-shot pt-BR</strong>: 13 simples / 7 complexas no golden set (sem few-shot, o Qwen 1.5B tendia a 19/20 COMPLEXA).</li>

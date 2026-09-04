@@ -44,22 +44,25 @@ def test_limpar_linhas_ocr_descarta_garbage():
     assert saida == "nome\nCPF"
 
 
-def test_analisar_imagem_endpoint():
-    """POST /rag/imagem/analisar retorna o contrato (OCR) para uma imagem."""
-    client = TestClient(app)
-    res = client.post(
-        "/rag/imagem/analisar",
-        files={"file": ("branco.png", _test_img_bytes(), "image/png")},
-    )
-    assert res.status_code == 200
-    data = res.json()
+def test_analisar_imagem_bytes():
+    """OCR local (bytes) — contrato {linhas,texto,chars,conf_media}.
+
+    v0.4: o endpoint /rag/imagem/analisar foi removido; a funcao
+    analisar_imagem_bytes (usada pela pipeline v0.3) continua coberta direto.
+    """
+    from projeto_final.rag.imagem import analisar_imagem_bytes
+
+    data = analisar_imagem_bytes(_test_img_bytes())
     assert set(data) == {"linhas", "texto", "chars", "conf_media"}
 
 
-def test_analisar_imagem_vazia_erro():
-    client = TestClient(app)
-    res = client.post("/rag/imagem/analisar", files={"file": ("vazio.png", b"", "image/png")})
-    assert res.status_code == 400
+def test_analisar_imagem_bytes_vazia_erro():
+    import cv2
+
+    from projeto_final.rag.imagem import analisar_imagem_bytes
+
+    with pytest.raises((ValueError, cv2.error)):
+        analisar_imagem_bytes(b"")
 
 
 def test_config_modelo_visao_definido():

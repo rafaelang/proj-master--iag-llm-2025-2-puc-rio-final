@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from projeto_final import config
 from projeto_final.main import app
+from projeto_final.rag import pipeline as rag_pipeline
 from projeto_final.rag.chunk import chunk_por_fronteira
 from projeto_final.rag.ingest import ingest
 from projeto_final.rag.index import construir_indices
@@ -97,22 +98,29 @@ def test_rag_saude():
     assert "chunks_indexados" in data
 
 
-def test_rag_perguntar():
-    client = TestClient(app)
-    res = client.post("/rag/perguntar?pergunta=O+que+e+RAG?")
-    assert res.status_code == 200
-    data = res.json()
+def test_rag_responder_pipeline():
+    """Pipeline RAG (chamada direta): contrato resposta/abstencao/chunks.
+
+    v0.4: o endpoint /rag/perguntar foi removido — o RAG roda em /chat e
+    /chat/imagem; o contrato continua coberto por esta chamada de pipeline.
+    """
+    data = rag_pipeline.responder("O que e RAG?")
     assert "resposta" in data
     assert "abstencao" in data
     assert "chunks" in data
 
 
 def test_abstencao_negativa():
-    client = TestClient(app)
-    res = client.post("/rag/perguntar?pergunta=Quem+foi+o+primeiro+presidente+do+Brasil?")
-    assert res.status_code == 200
-    data = res.json()
+    """Fora do corpus -> abstencao True (mesma heuristica da v0.2)."""
+    data = rag_pipeline.responder("Quem foi o primeiro presidente do Brasil?")
     assert data["abstencao"] is True
+
+
+def test_rag_perguntar_endpoint_removido():
+    """v0.4: /rag/perguntar e /rag/imagem/analisar foram removidos (404)."""
+    client = TestClient(app)
+    assert client.post("/rag/perguntar?pergunta=O+que+e+RAG?").status_code == 404
+    assert client.post("/rag/imagem/analisar").status_code == 404
 
 
 def test_prompt_rag_acentuacao_e_abstencao_estrita():
