@@ -224,6 +224,37 @@
         </tbody>
       </table>
     </section>
+
+    <section class="about">
+      <h2>Sobre a v0.4 - Agentes (SLM local + LLM remoto)</h2>
+      <p>
+        A v0.4 implementa um <strong>fluxo heterogeneo de agentes</strong>: um <strong>roteador</strong>
+        (SLM local Qwen2.5-1.5B) classifica a pergunta como SIMPLES ou COMPLEXA; a rota simples e
+        respondida por um <strong>SLM local de verdade</strong> (Qwen2.5-1.5B-Instruct, GGUF Q4_K_M,
+        100% CPU, custo zero) via RAG v0.3, e a rota complexa pelo LLM remoto
+        <code>deepseek-v4-pro</code> — com <strong>fallback cruzado</strong> sob falha e abstencao
+        com motivo. A flag <code>/rag/perguntar?agentes=true</code> ativa o fluxo na API.
+      </p>
+      <ul class="highlights">
+        <li>Roteador SLM com <strong>few-shot pt-BR</strong>: 13 simples / 7 complexas no golden set (sem few-shot, o Qwen 1.5B tendia a 19/20 COMPLEXA).</li>
+        <li>Modelos parametrizaveis (CLI/env): roteador <code>{slm,flash}</code> e geradores <code>{slm,flash,pro}</code> (flash=deepseek-chat, pro=deepseek-v4-pro).</li>
+        <li>Comportamento sob falha testado sem API (6 cenarios com mock): falha no gerador cai para a outra rota; ambas falham -&gt; abstencao.</li>
+      </ul>
+      <table class="result-table">
+        <thead>
+          <tr><th>Metrica</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Abstencao correta (20)</td><td>0.950</td></tr>
+          <tr><td>Rotas</td><td>13 simples (SLM local) + 7 complexas (pro)</td></tr>
+          <tr><td>Agentes usados</td><td>gerador-slm 13 · gerador-pro 7</td></tr>
+          <tr><td>Fallbacks</td><td>0</td></tr>
+          <tr><td>Latencia media</td><td>64.96 s</td></tr>
+          <tr><td>Custo das rotas simples</td><td>US$ 0.00 (local)</td></tr>
+          <tr><td>SLM local</td><td>Qwen2.5-1.5B-Instruct (GGUF Q4_K_M, CPU)</td></tr>
+        </tbody>
+      </table>
+    </section>
   </div>
 
   <script>

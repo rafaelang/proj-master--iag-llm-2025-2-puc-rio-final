@@ -58,6 +58,7 @@ python -m src.projeto_final # executar módulo principal
 python scripts/avaliadores/avaliar_v1.py  # avaliar v0.1 (WER voz)
 python scripts/avaliadores/avaliar_v2.py  # avaliar v0.2 (RAG)
 python scripts/avaliadores/avaliar_v3.py  # avaliar v0.3 (imagem/OCR; --e2e p/ LLM)
+python scripts/avaliadores/avaliar_v4.py  # avaliar v0.4 (multiagentes; --roteador/--simples/--complexa)
 
 # Deploy (Hugging Face Space privado 'assistente-master-iag')
 bash deploy/deploy.sh --dry-run   # monta o bundle sem publicar (revisar)

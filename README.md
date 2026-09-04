@@ -1,18 +1,18 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v0.3 · Imagem ✅ **CONCLUÍDA** (OCR local RapidOCR em 22 figuras; conteúdo da figura no top-5: texto-only 0.000 → texto+imagem 1.000; 3/3 casos em que a visão corrigiu o texto; v0.2 intacta)
+> **Status:** v0.4 · Agentes ✅ **CONCLUÍDA** (fluxo heterogêneo: roteador SLM local + SLM local na rota simples + `deepseek-v4-pro` na complexa; abstenção correta 0.950 (19/20), rotas 13/7, fallbacks 0, latência média 64,96 s; v0.1–v0.3 intactas)
 > **Repositório base de consulta:** `projeto2/` (protótipo de experimentação)
 
-**Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
+**Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens, roteamento simples/complexo entre SLM local e LLM remoto, e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
 
 ---
 
 ## Resumo executivo
 
 Assistente **multimodal** (voz → texto → RAG → resposta citada → áudio), evoluído
-em três releases com **decisões medidas e arquitetura leve** (etapas locais
-ONNX/CPU + LLM remoto DeepSeek):
+em quatro releases com **decisões medidas e arquitetura leve** (etapas locais
+ONNX/CPU + LLM remoto DeepSeek + SLM local):
 
 - **v0.1 · Voz** — decisão: ASR local (`faster-whisper small`) com **vocabulário
   de domínio** como prompt-guia e TTS local (Piper). Resultado: WER médio
@@ -31,9 +31,17 @@ ONNX/CPU + LLM remoto DeepSeek):
   imagem, que extrai ASSUNTO/TERMOS e pergunta ao RAG *"fale sobre"*. Resultado:
   conteúdo da figura no top-5 **0.000 → 1.000** e **3/3** casos em que a visão
   corrigiu o texto (o RAG só-texto abstinha-se com `NAO_SEI`).
+- **v0.4 · Agentes** — decisões: **SLM local de verdade** (Qwen2.5-1.5B-Instruct
+  GGUF Q4_K_M via llama-cpp-python, 100% CPU, US$ 0.00) na rota simples, LLM
+  remoto (`deepseek-v4-pro`) na rota complexa, e **roteador SIMPLES/COMPLEXA**
+  (SLM local com few-shot pt-BR; `flash`/`pro`/`slm` parametrizáveis por
+  env/CLI) com **fallback cruzado sob falha** (falha/rota → outra rota; ambas
+  falham → abstenção com motivo). Resultado: **abstenção correta 0.950** (19/20),
+  rotas **13/7**, **0 fallbacks**, latência média **64,96 s** (SLM ~40–140 s ×
+  pro ~9–28 s) e rota simples a custo zero. API: `/rag/perguntar?agentes=true`.
 
 Cada release fecha com **evidência medida** em `docs/` (`v0X.md` +
-`v0X_evidencia.md`), testes `pytest` e tag no Git. Próxima: **v0.4 · Agentes**.
+`v0X_evidencia.md`), testes `pytest` e tag no Git. Próxima: **v0.5 · Adaptação**.
 
 ---
 
@@ -306,7 +314,7 @@ Mais detalhes em `docs/v03.md` e `docs/v03_evidencia.md`.
 | v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
 | v0.2 · RAG | ✅ **CONCLUÍDA** — retrieval Recall@5=1.000/MRR=0.969 (272 chunks limpos/anti-garbage); e2e recall@5=1.000/acurácia=0.700 (juiz deepseek-v4-pro); BM25 próprio + RRF ponderado; dataset único do projeto2; rerank testado/desativado. |
 | v0.3 · Imagem | ✅ **CONCLUÍDA** — OCR local (RapidOCR/ONNX) de figuras extraídas dos PDFs (PyMuPDF; 275 únicas, 22 úteis indexadas); corpus texto+imagem 294 chunks; conteúdo da figura no top-5: 0.000 (texto) → 1.000 (texto+imagem); 3/3 casos em que a visão corrigiu o texto; chat por imagem (`/chat/imagem` + deepseek-vision), `/rag/perguntar?imagens=true`, `/rag/imagem/analisar`. |
-| v0.4 · Agentes | ⏳ |
+| v0.4 · Agentes | ✅ **CONCLUÍDA** — fluxo heterogêneo (roteador SIMPLES/COMPLEXA + SLM local Qwen2.5-1.5B na rota simples + deepseek-v4-pro na complexa; fallback cruzado); abstenção correta 0.950, rotas 13/7, 0 fallbacks, latência média 64,96 s; Python 3.14 + llama-cpp-python; API `?agentes=true`. |
 | v0.5 · Adaptação | ⏳ |
 | v0.6 · Avaliação | ⏳ |
 | v1.0 · Produção | ⏳ |
