@@ -306,6 +306,85 @@ Mais detalhes em `docs/v03.md` e `docs/v03_evidencia.md`.
 
 ---
 
+## Arquitetura da v0.4 (Agentes)
+
+A v0.4 implementa um **fluxo heterogêneo ponta a ponta** com três papéis —
+**roteador**, **gerador da rota simples** e **gerador da rota complexa** —
+reutilizando o **índice RAG v0.3** (294 chunks: 272 texto + 22 imagem; não
+recria retrieval). A rota simples é respondida por um **SLM local de verdade**
+(Qwen2.5-1.5B) e a complexa por um **LLM remoto maior**, com **fallback cruzado**
+sob falha e abstenção com motivo.
+
+```mermaid
+flowchart TD
+    U["Usuário: pergunta"] --> RT["Agente Roteador<br/>SLM Qwen2.5-1.5B local<br/>SIMPLES | COMPLEXA"]
+    RT -->|SIMPLES| GS["Gerador SIMPLES<br/>SLM local via RAG v0.3<br/>custo zero"]
+    RT -->|COMPLEXA| GC["Gerador COMPLEXA<br/>deepseek-v4-pro via RAG v0.3"]
+    GS --> F["Pos-processamento:<br/>rodapé de referências + NAO_SEI"]
+    GC --> F
+    F --> R["Resposta + citação [n] | NAO_SEI"]
+    RT -. falha .-> SIMPLES
+    GS -. falha .-> GC
+    GC -. falha .-> GS
+    GS -. resposta vazia .-> GC
+    GC -. resposta vazia .-> GS
+    GS -. ambas falham .-> A["Abstenção: falha em ambas as rotas"]
+    GC -. ambas falham .-> A
+```
+
+Componentes:
+
+- **SLM local de verdade:** `src/projeto_final/slm.py` carrega
+  **Qwen2.5-1.5B-Instruct** (GGUF Q4_K_M, ~1,1 GB) via `llama-cpp-python`
+  (compilado do sdist, Python 3.14), **100% CPU, US$ 0.00**, com carga *lazy*.
+- **Roteador SIMPLES/COMPLEXA:** `agentes.classificar_rota` — SLM local (padrão)
+  com **few-shot pt-BR** (`prompts/v0.4/roteador_sistema.txt`); em falha assume
+  SIMPLES. O Qwen 1.5B sem few-shot tendia a 19/20 COMPLEXA; com o prompt
+  versionado a distribuição ficou **13 simples / 7 complexas**.
+- **Geradores e mapeamento:** rota simples → SLM local · rota complexa →
+  `deepseek-v4-pro` · opção `flash` → `deepseek-chat` (ambos já usados na v0.3).
+  Escolha **parametrizável por env/CLI** (`AGENTE_ROTEADOR/SIMPLES/COMPLEXA` e
+  `--roteador {slm,flash}`, `--simples/--complexa {slm,flash,pro}`); função nova
+  que usa `flash` chama o modelo mapeado explicitamente.
+- **Fallback cruzado:** exceção ou resposta vazia no gerador da rota escolhida →
+  tenta a outra rota; ambas falham → **abstenção (`NAO_SEI`) com
+  `motivo`/`erros[]`**. 6 cenários cobertos em `tests/test_v04.py` com mock
+  (sem API/LLM/GGUF).
+- **Prompts:** `prompts/v0.4/roteador_sistema.txt` (few-shot) e
+  `prompts/v0.4/rag_sistema_slm.txt` (regras curtas p/ o 1.5B: só o contexto,
+  `NAO_SEI` isolado, citação `[N]`).
+- **API/CLI:** `POST /rag/perguntar?agentes=true` (opt-in — o fluxo padrão,
+  `/chat` de voz e `/chat/imagem` continuam intactos na v0.3) e
+  `python -m projeto_final.agentes perguntar|avaliar`.
+
+### Resultado da v0.4 (concluída)
+
+| Metrica (golden set `data/golden_set/rag/perguntas.json`, 20 perguntas) | Valor |
+|---|---|
+| **Abstenção correta (20)** | **0.950** (19/20) |
+| Rotas | 13 simples (SLM local) + 7 complexas (pro) |
+| Agentes | gerador-slm 13 · gerador-pro 7 |
+| Fallbacks | **0** |
+| Latência média | **64.96 s** (simples ~40–140 s CPU · complexas ~9–28 s API) |
+| Tokens API (rotas pagas) | prompt 10 003 · completion 3 650 |
+| Custo das rotas simples | **US$ 0.00** (local) |
+
+Ajustes honestos documentados: o few-shot corrigiu o viés do roteador (19/20 →
+13/7) e o orçamento `AGENTE_PRO_MAX_TOKENS=1500` eliminou as respostas **vazias**
+do `deepseek-v4-pro` (raciocínio consumindo 400 tokens na 1ª rodada — 0.900 → a
+rodada final 0.950, 0 fallbacks). Único erro final: **#12** ("diferença entre
+prompt engineering e fine-tuning") — o `pro` abstém-se mesmo com fontes.
+
+> **No deploy público** (Space `cpu-upgrade`, 2 vCPU) os secrets definem
+> `AGENTE_ROTEADOR=flash` / `AGENTE_SIMPLES=flash` / `AGENTE_COMPLEXA=pro`: a
+> rota SLM síncrona levaria minutos em 2 vCPU e estouraria o gateway — o SLM
+> local roda em ambiente **local/CLI** (padrão do código), e o `llama-cpp-python`
+> do container é compilado portável (`GGML_NATIVE=OFF`).
+
+Mais detalhes em `docs/v04.md` e `docs/v04_evidencia.md`.
+
+---
+
 ## 6. Status
 
 | Release | Status |
