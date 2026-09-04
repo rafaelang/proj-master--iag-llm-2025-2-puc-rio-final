@@ -4,14 +4,17 @@ Fluxo heterogeneo ponta a ponta com roteador SIMPLES/COMPLEXA, gerador SLM local
 (rota simples) e gerador remoto (rota complexa), com fallback cruzado sob falha.
 
 Modelos parametrizaveis (env/CLI, nao fixos no codigo):
-  --roteador {slm,flash}        roteador (padrao: slm = Qwen2.5-1.5B local)
+  --roteador {slm,flash,tfidf,cascade}  roteador (padrao: cascade@0.60 — R2 decide
+                                       pela confianca; INDETERMINADO sobe ao R1/slm)
   --simples  {slm,flash,pro}    gerador da rota simples (padrao: slm)
   --complexa {slm,flash,pro}    gerador da rota complexa (padrao: pro)
 
 Mapeamento:
-  slm   = Qwen2.5-1.5B-Instruct local (GGUF Q4_K_M, CPU, custo zero)
-  flash = config.AGENTE_MODELO_FLASH  (deepseek-v4-flash)
-  pro   = config.AGENTE_MODELO_PRO    (deepseek-v4-pro)
+  slm     = Qwen2.5-1.5B-Instruct local (GGUF Q4_K_M, CPU, custo zero)
+  flash   = config.AGENTE_MODELO_FLASH  (deepseek-v4-flash)
+  pro     = config.AGENTE_MODELO_PRO    (deepseek-v4-pro)
+  tfidf   = roteador classico local (TF-IDF char_wb 3-5 + XGBoost, <1 ms, ~10 MB)
+  cascade = R3: tfidf decide; INDETERMINADO (baixa margem) -> R1 slm decide
 
 Falha (excecao/resposta vazia) -> fallback para a outra rota; se ambas falharem,
 abstencao com motivo registrado. Diagrama e comportamento sob falha: docs/v04.md.
@@ -65,6 +68,14 @@ def _sistema_slm() -> str:
 def classificar_rota(pergunta: str, roteador: str | None = None) -> str:
     """Roteador SIMPLES/COMPLEXA. Padrao seguro: SIMPLES em qualquer falha."""
     roteador = roteador or config.AGENTE_ROTEADOR
+    if roteador == "tfidf":
+        # R2 (estudo v0.4): classificador classico local, sem llama.cpp/torch.
+        from projeto_final import roteador_tfidf
+
+        return roteador_tfidf.classificar(pergunta)
+    if roteador == "cascade":
+        # R3 (estudo v0.4): R2 decide com confianca; INDETERMINADO -> R1 (slm).
+        return classificar_cascade(pergunta)[0]
     sistema = _sistema_roteador()
     if roteador == "flash":
         try:
@@ -94,6 +105,20 @@ def classificar_rota(pergunta: str, roteador: str | None = None) -> str:
     except Exception as e:
         logger.warning("Roteador SLM falhou ({}); assume SIMPLES", e)
         return "SIMPLES"
+
+
+def classificar_cascade(pergunta: str) -> tuple[str, bool]:
+    """R3 (estudo v0.4): R2 decide se confiante; INDETERMINADO -> R1 (slm).
+
+    Retorna (rotulo, escalou_para_r1). A margem de confianca vem de
+    config.AGENTE_CASCADE_LIMIAR (default 0.70).
+    """
+    from projeto_final import roteador_tfidf
+
+    pred = roteador_tfidf.classificar_limiar(pergunta, config.AGENTE_CASCADE_LIMIAR)
+    if pred == "INDETERMINADO":
+        return classificar_rota(pergunta, roteador="slm"), True
+    return pred, False
 
 
 # --------------------------------------------------------------- geradores
@@ -338,7 +363,7 @@ def avaliar_golden(
 # --------------------------------------------------------------- CLI
 
 def _add_model_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--roteador", choices=["slm", "flash"], default=None)
+    parser.add_argument("--roteador", choices=["slm", "flash", "tfidf", "cascade"], default=None)
     parser.add_argument("--simples", choices=["slm", "flash", "pro"], default=None)
     parser.add_argument("--complexa", choices=["slm", "flash", "pro"], default=None)
 

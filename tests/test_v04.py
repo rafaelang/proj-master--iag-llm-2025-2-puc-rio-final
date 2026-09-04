@@ -158,3 +158,79 @@ def test_slm_chat_quando_gguf_presente():
     assert texto.strip()
 
 
+# ---------------------------------------------------------------- R2 roteador classico (tfidf)
+
+def test_tfidf_rotulos_13_7():
+    """Ground-truth do estudo do roteador: 13 SIMPLES / 7 COMPLEXAS."""
+    from projeto_final import roteador_tfidf
+
+    vals = list(roteador_tfidf.ROTULOS.values())
+    assert vals.count("SIMPLES") == 13
+    assert vals.count("COMPLEXA") == 7
+
+
+def test_tfidf_classifica_canonicas():
+    """R2 classifica exemplos canonicos (sem API, sem GGUF)."""
+    from projeto_final import roteador_tfidf
+
+    assert roteador_tfidf.classificar("O que é RAG?") == "SIMPLES"
+    assert roteador_tfidf.classificar(
+        "Qual a diferença entre prompt engineering e fine-tuning?") == "COMPLEXA"
+    assert roteador_tfidf.classificar(
+        "O que é atenção em modelos de linguagem e onde ela é usada?") == "COMPLEXA"
+
+
+def test_tfidf_insensivel_acento_typo():
+    """char_wb + normalizacao tornam o R2 imune a acentos/typos simples."""
+    from projeto_final import roteador_tfidf
+
+    assert roteador_tfidf.classificar("o que e rag?") == "SIMPLES"
+    assert roteador_tfidf.classificar(
+        "qual a diferenca entre prompt engineering e fine-tuning?") == "COMPLEXA"
+
+
+def test_tfidf_fallback_vazio():
+    from projeto_final import roteador_tfidf
+
+    assert roteador_tfidf.classificar("") == "SIMPLES"
+    assert roteador_tfidf.classificar("   ") == "SIMPLES"
+
+
+def test_classificar_rota_tfidf_via_agentes():
+    """O orquestrador aceita roteador='tfidf' (R2)."""
+    assert agentes.classificar_rota("O que é DDL e para que serve?", roteador="tfidf") == "SIMPLES"
+    assert agentes.classificar_rota(
+        "Qual a diferença entre prompt engineering e fine-tuning?", roteador="tfidf") == "COMPLEXA"
+
+
+# ---------------------------------------------------------------- R3 cascata (R2 -> R1)
+
+def test_classificar_limiar_extremos():
+    """Margem 0 decide sempre; margem 1 deixa tudo INDETERMINADO."""
+    from projeto_final import roteador_tfidf
+
+    assert roteador_tfidf.classificar_limiar("O que é RAG?", 0.0) in ("SIMPLES", "COMPLEXA")
+    assert roteador_tfidf.classificar_limiar("O que é RAG?", 1.0) == "INDETERMINADO"
+
+
+def test_classificar_cascade_confiante_nao_escala():
+    """R2 com confianca decide sozinho (nao chama o R1/slm)."""
+    with patch("projeto_final.roteador_tfidf.classificar_limiar", return_value="SIMPLES") as lim, \
+         patch("projeto_final.agentes.classificar_rota") as slm:
+        rotulo, escalou = agentes.classificar_cascade("O que é RAG?")
+    assert rotulo == "SIMPLES"
+    assert escalou is False
+    lim.assert_called_once()
+    slm.assert_not_called()
+
+
+def test_classificar_cascade_indeterminado_escala_r1():
+    """INDETERMINADO (baixa margem) escala para o R1 decidir."""
+    with patch("projeto_final.roteador_tfidf.classificar_limiar", return_value="INDETERMINADO"), \
+         patch("projeto_final.agentes.classificar_rota", return_value="COMPLEXA") as slm:
+        rotulo, escalou = agentes.classificar_cascade("pergunta fronteira")
+    assert rotulo == "COMPLEXA"
+    assert escalou is True
+    slm.assert_called_once()
+
+

@@ -107,7 +107,15 @@ SLM_TEMPERATURE = float(os.getenv("SLM_TEMPERATURE", "0.2"))
 # pro = deepseek-v4-pro (API). Modelos escolhiveis por env/CLI.
 AGENTE_MODELO_FLASH = os.getenv("AGENTE_MODELO_FLASH", "deepseek-v4-flash")
 AGENTE_MODELO_PRO = os.getenv("AGENTE_MODELO_PRO", "deepseek-v4-pro")
-AGENTE_ROTEADOR = os.getenv("AGENTE_ROTEADOR", "slm")
+# Roteador: slm (Qwen local, few-shot) | flash (deepseek-v4-flash API) |
+# tfidf (classico local: TF-IDF char_wb + XGBoost — estudo v0.4) |
+# cascade (R3: tfidf decide; INDETERMINADO -> R1 slm decide).
+# DEFAULT = cascade@0.60 (decisao do estudo v0.4 por custo/latencia: ~85% das
+# perguntas a 2 ms; fronteiras sobem ao SLM). Evidencia/doc: docs/v04.md §Estudo.
+AGENTE_ROTEADOR = os.getenv("AGENTE_ROTEADOR", "cascade")
+# Margem minima de confianca do R2 para decidir sozinho na cascata (R3).
+# Abaixo dela o item e "INDETERMINADO" e escala para o R1 (SLM few-shot).
+AGENTE_CASCADE_LIMIAR = float(os.getenv("AGENTE_CASCADE_LIMIAR", "0.60"))
 AGENTE_SIMPLES = os.getenv("AGENTE_SIMPLES", "slm")
 AGENTE_COMPLEXA = os.getenv("AGENTE_COMPLEXA", "pro")
 # deepseek-v4-pro e "reasoning": o max_tokens limita raciocinio + resposta juntos.

@@ -33,13 +33,14 @@ ONNX/CPU + LLM remoto DeepSeek + SLM local):
   corrigiu o texto (o RAG só-texto abstinha-se com `NAO_SEI`).
 - **v0.4 · Agentes** — decisões: **SLM local de verdade** (Qwen2.5-1.5B-Instruct
   GGUF Q4_K_M via llama-cpp-python, 100% CPU, US$ 0.00) na rota simples, LLM
-  remoto (`deepseek-v4-pro`) na rota complexa, e **roteador SIMPLES/COMPLEXA**
-  (SLM local com few-shot pt-BR; `flash`/`pro`/`slm` parametrizáveis por
-  env/CLI) com **fallback cruzado sob falha** (falha/rota → outra rota; ambas
-  falham → abstenção com motivo). Resultado: **abstenção correta 0.950** (19/20),
-  rotas **13/7**, **0 fallbacks**, latência média **64,96 s** (SLM ~40–140 s ×
-  pro ~9–28 s) e rota simples a custo zero. API: `/chat` e `/chat/imagem` usam o
-  fluxo multiagente por padrão (`AGENTES_HABILITADO=true`).
+  remoto (`deepseek-v4-pro`) na rota complexa, **roteador SIMPLES/COMPLEXA** com
+  **fallback cruzado sob falha** (falha/rota → outra rota; ambas falham →
+  abstenção com motivo) e **estudo de roteadores**: default passou a
+  **`cascade`** (R2 TF-IDF+XGB decide ~85% a <2 ms/US$ 0; `INDETERMINADO` → R1
+  SLM few-shot; θ=0.60). Medição R1 (SLM): abstenção correta **0.950** (19/20);
+  com o default `cascade` o golden set mede **0.850** (decisão por custo,
+  detalhes em `docs/v04.md` §11). API: `/chat` e `/chat/imagem` usam o fluxo
+  multiagente por padrão (`AGENTES_HABILITADO=true`).
 
 Cada release fecha com **evidência medida** em `docs/` (`v0X.md` +
 `v0X_evidencia.md`), testes `pytest` e tag no Git. Próxima: **v0.5 · Adaptação**.
@@ -339,16 +340,18 @@ Componentes:
 - **SLM local de verdade:** `src/projeto_final/slm.py` carrega
   **Qwen2.5-1.5B-Instruct** (GGUF Q4_K_M, ~1,1 GB) via `llama-cpp-python`
   (compilado do sdist, Python 3.14), **100% CPU, US$ 0.00**, com carga *lazy*.
-- **Roteador SIMPLES/COMPLEXA:** `agentes.classificar_rota` — SLM local (padrão)
-  com **few-shot pt-BR** (`prompts/v0.4/roteador_sistema.txt`); em falha assume
-  SIMPLES. O Qwen 1.5B sem few-shot tendia a 19/20 COMPLEXA; com o prompt
-  versionado a distribuição ficou **13 simples / 7 complexas**.
+- **Roteador SIMPLES/COMPLEXA:** `agentes.classificar_rota` com **default
+  `cascade`** (R2 TF-IDF+XGB decide pela confiança; `INDETERMINADO` → R1 SLM
+  few-shot — estudo medido em `docs/v04.md` §11). O R1 (SLM local few-shot,
+  `AGENTE_ROTEADOR=slm`) classifica com `prompts/v0.4/roteador_sistema.txt`;
+  em falha assume SIMPLES. O Qwen 1.5B sem few-shot tendia a 19/20 COMPLEXA;
+  com o prompt versionado a distribuição ficou **13 simples / 7 complexas**.
 - **Geradores e mapeamento:** rota simples → SLM local · rota complexa →
   `deepseek-v4-pro` · opção `flash` → `deepseek-v4-flash`
   (`AGENTE_MODELO_FLASH`/`AGENTE_MODELO_PRO` com defaults próprios, independentes
   de `DEEPSEEK_MODEL`/`JUIZ_MODEL`).
   Escolha **parametrizável por env/CLI** (`AGENTE_ROTEADOR/SIMPLES/COMPLEXA` e
-  `--roteador {slm,flash}`, `--simples/--complexa {slm,flash,pro}`); função nova
+  `--roteador {slm,flash,tfidf,cascade}`, `--simples/--complexa {slm,flash,pro}`); função nova
   que usa `flash` chama o modelo mapeado explicitamente.
 - **Fallback cruzado:** exceção ou resposta vazia no gerador da rota escolhida →
   tenta a outra rota; ambas falham → **abstenção (`NAO_SEI`) com
@@ -398,7 +401,7 @@ Mais detalhes em `docs/v04.md` e `docs/v04_evidencia.md`.
 | v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
 | v0.2 · RAG | ✅ **CONCLUÍDA** — retrieval Recall@5=1.000/MRR=0.969 (272 chunks limpos/anti-garbage); e2e recall@5=1.000/acurácia=0.700 (juiz deepseek-v4-pro); BM25 próprio + RRF ponderado; dataset único do projeto2; rerank testado/desativado. |
 | v0.3 · Imagem | ✅ **CONCLUÍDA** — OCR local (RapidOCR/ONNX) de figuras extraídas dos PDFs (PyMuPDF; 275 únicas, 22 úteis indexadas); corpus texto+imagem 294 chunks; conteúdo da figura no top-5: 0.000 (texto) → 1.000 (texto+imagem); 3/3 casos em que a visão corrigiu o texto; chat por imagem (`/chat/imagem` + deepseek-vision). *(Na v0.4, os endpoints JSON `/rag/perguntar` e `/rag/imagem/analisar` foram removidos.)* |
-| v0.4 · Agentes | ✅ **CONCLUÍDA** — fluxo heterogêneo (roteador SIMPLES/COMPLEXA + SLM local Qwen2.5-1.5B na rota simples + deepseek-v4-pro na complexa; fallback cruzado); abstenção correta 0.950, rotas 13/7, 0 fallbacks, latência média 64,96 s; Python 3.14 + llama-cpp-python; `/chat` e `/chat/imagem` usam os agentes por padrão (`AGENTES_HABILITADO`); endpoints `/rag/perguntar` e `/rag/imagem/analisar` removidos. |
+| v0.4 · Agentes | ✅ **CONCLUÍDA** — fluxo heterogêneo (roteador SIMPLES/COMPLEXA + SLM local Qwen2.5-1.5B na rota simples + deepseek-v4-pro na complexa; fallback cruzado); estudo de roteadores com default `cascade` (R2 TF-IDF+XGB→R1, θ=0.60); R1 slm mede abstenção correta 0.950 e o default `cascade` mede 0.850 (decisão por custo, docs/v04.md §11); Python 3.14 + llama-cpp-python + scikit-learn/xgboost; `/chat` e `/chat/imagem` usam os agentes por padrão (`AGENTES_HABILITADO`); endpoints `/rag/perguntar` e `/rag/imagem/analisar` removidos. |
 | v0.5 · Adaptação | ⏳ |
 | v0.6 · Avaliação | ⏳ |
 | v1.0 · Produção | ⏳ |

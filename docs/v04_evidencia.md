@@ -180,6 +180,30 @@ pytest                                                    # suíte completa (45 
 - Python **3.14** (uv) + `llama-cpp-python` 0.3.35 compilado do sdist (CPU);
   GGUF em `data/processed/slm_models/` (fora do Git).
 
+### Estudo do roteador (R1 × R2 × R3) — seção manual
+
+> O bloco automático acima registra a evidência **R1 (roteador SLM)** — config
+> usada na medição original. Após o estudo, o **default passou a ser `cascade`
+> (R2 TF-IDF+XGB decide; `INDETERMINADO` → R1 slm, θ=0.60)** por decisão de
+> custo/latência. Roteador isolado: `python scripts/avaliadores/avaliar_roteador.py`.
+
+**Roteador isolado (20 canônicas + 14 typos):**
+
+| Backend | Acc canônicas | Acc typos | Acc total | Falso-S | Lat mediana | Memória |
+|---|---|---|---|---|---|---|
+| slm (R1) | 0.900 | 0.929 | 0.912 | 1 | 5.72 s | 1.12 GB |
+| tfidf (R2) | 1.000 (in-sample) | 0.857 | 0.941 | 2 | 0.0015 s | ~124 KB |
+| flash (API) | 0.700 | 0.714 | 0.706 | 10 | 1.28 s | 0 |
+| **cascade (R3)** θ=0.60 | 1.000 | 0.929 | **0.971** | **1** | **0.84 s (mix)** | ~15% escala |
+
+CV estratificada R2 (5 folds): **0.600** — generalização limitada com n=20.
+
+**End-to-end (golden set 20):** R1 slm **0.950** · R2 tfidf **0.850** ·
+**R3 cascade (default) 0.850** (erros #12/#13/#15; #13/#15 são itens confiantes
+da cascata cujos rótulos de complexidade divergem da rota que os geradores
+respondem melhor). Decisão por custo: ~85% das perguntas roteadas a <2 ms/US$0.
+Para reverter: `AGENTE_ROTEADOR=slm`. Detalhes em `docs/v04.md` §11.
+
 
 
 

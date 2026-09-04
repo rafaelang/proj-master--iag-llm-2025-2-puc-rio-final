@@ -83,7 +83,7 @@ def _gerar_evidencia(out: dict) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Avaliador v0.4 (multiagentes)")
-    ap.add_argument("--roteador", choices=["slm", "flash"], default=None)
+    ap.add_argument("--roteador", choices=["slm", "flash", "tfidf", "cascade"], default=None)
     ap.add_argument("--simples", choices=["slm", "flash", "pro"], default=None)
     ap.add_argument("--complexa", choices=["slm", "flash", "pro"], default=None)
     ap.add_argument("--top-k", type=int, default=5)

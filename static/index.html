@@ -229,16 +229,18 @@
       <h2>Sobre a v0.4 - Agentes (SLM local + LLM remoto)</h2>
       <p>
         A v0.4 implementa um <strong>fluxo heterogeneo de agentes</strong>: um <strong>roteador</strong>
-        (SLM local Qwen2.5-1.5B) classifica a pergunta como SIMPLES ou COMPLEXA; a rota simples e
-        respondida por um <strong>SLM local de verdade</strong> (Qwen2.5-1.5B-Instruct, GGUF Q4_K_M,
-        100% CPU, custo zero) via RAG v0.3, e a rota complexa pelo LLM remoto
+        (padrao <strong>cascade</strong>: o clasificador local TF-IDF+XGBoost decide a rota SIMPLES/COMPLEXA
+        pela confianca; perguntas <strong>INDETERMINADAS</strong> sobem ao SLM Qwen2.5-1.5B few-shot) e
+        geradores: a rota simples e respondida por um <strong>SLM local de verdade</strong> (Qwen2.5-1.5B-Instruct,
+        GGUF Q4_K_M, 100% CPU, custo zero) via RAG v0.3, e a rota complexa pelo LLM remoto
         <code>deepseek-v4-pro</code> — com <strong>fallback cruzado</strong> sob falha e abstencao
         com motivo. O fluxo roda na API nos endpoints <code>/chat</code> (voz) e <code>/chat/imagem</code>,
         ativo por padrao (<code>AGENTES_HABILITADO=true</code>).
       </p>
       <ul class="highlights">
-        <li>Roteador SLM com <strong>few-shot pt-BR</strong>: 13 simples / 7 complexas no golden set (sem few-shot, o Qwen 1.5B tendia a 19/20 COMPLEXA).</li>
-        <li>Modelos parametrizaveis (CLI/env): roteador <code>{slm,flash}</code> e geradores <code>{slm,flash,pro}</code> (flash=deepseek-v4-flash, pro=deepseek-v4-pro).</li>
+        <li>Roteador SLM (R1) com <strong>few-shot pt-BR</strong>: 13 simples / 7 complexas no golden set (sem few-shot, o Qwen 1.5B tendia a 19/20 COMPLEXA).</li>
+        <li><strong>Estudo do roteador</strong> (docs/v04.md §11): default <code>cascade</code> (R2 TF-IDF char_wb+XGBoost decide ~85% a &lt;2 ms/US$ 0; INDETERMINADO -&gt; SLM; θ=0.60). R1 slm media 0.950 de abstencao correta; cascade mede 0.850 (decisao por custo/latencia).</li>
+        <li>Modelos parametrizaveis (CLI/env): roteador <code>{slm,flash,tfidf,cascade}</code> e geradores <code>{slm,flash,pro}</code> (flash=deepseek-v4-flash, pro=deepseek-v4-pro).</li>
         <li>Comportamento sob falha testado sem API (6 cenarios com mock): falha no gerador cai para a outra rota; ambas falham -&gt; abstencao.</li>
       </ul>
       <table class="result-table">
