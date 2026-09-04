@@ -37,7 +37,6 @@ pathvalidate==3.3.1
 pillow==12.3.0
 piper-tts==1.7.0
 pluggy==1.6.0
--e file:///home/rafael/projetos/hermes_study/POS_GenAI/projeto_final
 protobuf==7.36.0
 py-rust-stemmers==0.1.8
 pyclipper==1.4.0

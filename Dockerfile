@@ -22,7 +22,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY deploy/requirements.txt deploy/requirements.txt
-RUN pip install --upgrade pip && pip install -r deploy/requirements.txt
+# --ignore-requires-python: rapidocr-onnxruntime==1.4.4 declara <3.13 no metadata,
+# mas roda em 3.14 (validado pela suite pytest); os demais pins aceitam 3.14.
+RUN pip install --upgrade pip && pip install --ignore-requires-python -r deploy/requirements.txt
 
 # codigo + entrypoint (o corpus vem do dataset privado no boot — nao esta no repo)
 COPY . .
