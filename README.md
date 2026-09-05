@@ -286,9 +286,10 @@ Componentes:
   **ASSUNTO/TERMOS/SÍNTESE**; o RAG recebe o prompt *"fale sobre: {conteúdo}"* e
   a **resposta com citação vai ao usuário** (texto + áudio); a mensagem do
   usuário é a própria imagem.
-- **Endpoints:** `/chat` (voz) e `/chat/imagem` usam o corpus texto+imagem
-  automaticamente (na v0.4, os endpoints JSON `/rag/perguntar` e
-  `/rag/imagem/analisar` foram removidos — não eram usados pelo front-end).
+- **Endpoints:** `/chat` (voz), `/chat/imagem` e `/chat/texto` (pergunta digitada
+  → JSON, sem TTS) usam o corpus texto+imagem automaticamente (na v0.4, os
+  endpoints JSON `/rag/perguntar` e `/rag/imagem/analisar` foram removidos — não
+  eram usados pelo front-end).
 
 ### Resultado da v0.3 (concluída)
 
@@ -360,10 +361,11 @@ Componentes:
 - **Prompts:** `prompts/v0.4/roteador_sistema.txt` (few-shot) e
   `prompts/v0.4/rag_sistema_slm.txt` (regras curtas p/ o 1.5B: só o contexto,
   `NAO_SEI` isolado, citação `[N]`).
-- **API/CLI:** `/chat` (voz) e `/chat/imagem` passam pelo fluxo multiagente por
-  padrão (`AGENTES_HABILITADO=true`, desligável por env) e o `index.html` usa
-  esses endpoints (os JSON `/rag/perguntar`/`/rag/imagem/analisar` foram
-  removidos); CLI: `python -m projeto_final.agentes perguntar|avaliar`.
+- **API/CLI:** `/chat` (voz), `/chat/imagem` e `/chat/texto` (JSON, sem TTS)
+  passam pelo fluxo multiagente por padrão (`AGENTES_HABILITADO=true`,
+  desligável por env) e o `index.html` usa esses endpoints (os JSON
+  `/rag/perguntar`/`/rag/imagem/analisar` foram removidos); CLI:
+  `python -m projeto_final.agentes perguntar|avaliar`.
 
 ### Resultado da v0.4 (concluída)
 

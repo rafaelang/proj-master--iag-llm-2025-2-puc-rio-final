@@ -9,8 +9,10 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
+from fastapi.testclient import TestClient
 
 from projeto_final import agentes, config
+from projeto_final.main import app
 
 CHUNK_FAKE = [{"id": 1, "doc_id": "nlp_aula06_rag_avancado_ocr.pdf", "pagina": 1,
                "tipo": "texto", "texto": "RAG recupera trechos e o modelo responde."}]
@@ -232,5 +234,37 @@ def test_classificar_cascade_indeterminado_escala_r1():
     assert rotulo == "COMPLEXA"
     assert escalou is True
     slm.assert_called_once()
+
+
+# ---------------------------------------------------------------- API chat por texto
+
+def test_chat_texto_endpoint():
+    """POST /chat/texto responde em JSON (sem TTS) com o fluxo agentes/RAG."""
+    fake = {
+        "transcricao": "O que é RAG?", "resposta": "RAG responde recuperando trechos. [1]",
+        "audio": None, "abstencao": False,
+        "referencias": [{"n": 1, "doc_id": "nlp_aula06_rag_avancado_ocr.pdf", "pagina": 1}],
+        "latencia_s": {"asr": 0.0, "llm": 1.2, "tts": None},
+    }
+    with patch("projeto_final.main._pipeline_resposta", return_value=fake) as pl:
+        client = TestClient(app)
+        res = client.post("/chat/texto", data={"texto": "O que é RAG?"})
+    assert res.status_code == 200
+    corpo = res.json()
+    assert corpo["resposta"].startswith("RAG")
+    assert corpo["audio"] is None
+    assert corpo["referencias"]
+    assert corpo["abstencao"] is False
+    pl.assert_called_once()
+    assert pl.call_args.args[0] == "O que é RAG?"
+
+
+def test_chat_texto_vazio():
+    """Texto vazio -> 400 (sem chamar o pipeline)."""
+    with patch("projeto_final.main._pipeline_resposta") as pl:
+        client = TestClient(app)
+        res = client.post("/chat/texto", data={"texto": "   "})
+    assert res.status_code == 400
+    pl.assert_not_called()
 
 

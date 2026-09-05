@@ -9,7 +9,7 @@ import time
 from collections import deque
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from loguru import logger
 from starlette.concurrency import run_in_threadpool
@@ -247,6 +247,25 @@ def create_app() -> FastAPI:
             },
         )
 
+    @app.post("/chat/texto")
+    async def chat_texto(texto: str = Form(...)) -> dict:
+        """Chat por TEXTO: pergunta digitada -> fluxo (RAG/multiagente) -> JSON.
+
+        Sem TTS (com_audio=False): retorna {transcricao, resposta, abstencao,
+        referencias, latencia_s}. Rate limit: grupo "rag" (prefixo /chat).
+        """
+        logger.info("Chat /chat/texto: {}", (texto or "")[:120])
+        msg = (texto or "").strip()
+        if not msg:
+            raise HTTPException(status_code=400, detail="texto vazio")
+        try:
+            return await run_in_threadpool(_pipeline_resposta, msg, com_audio=False)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Erro no chat por texto: {}", e)
+            raise HTTPException(status_code=502, detail=f"Falha ao responder: {e}")
+
     return app
 
 
@@ -301,13 +320,16 @@ def _pipeline_imagem(dados: bytes, ext: str) -> dict:
 
 
 def _pipeline_resposta(texto: str, lat_asr: float | None = None,
-                       usar_agentes: bool | None = None) -> dict:
-    """Texto -> (RAG/agentes) -> TTS. Compartilhado pelos fluxos de voz e imagem.
+                       usar_agentes: bool | None = None,
+                       com_audio: bool = True) -> dict:
+    """Texto -> (RAG/agentes) -> TTS (opcional). Compartilhado por voz/imagem/texto.
 
     v0.4: com AGENTES_HABILITADO (default true), a resposta passa pelo
     orquestrador multiagente (roteador SIMPLES/COMPLEXA + geradores com fallback)
     sempre no corpus texto+imagem (v0.3). Desligue com AGENTES_HABILITADO=false
     ou passar usar_agentes=False (volta ao RAG v0.3 de modelo unico).
+    com_audio=False (endpoint /chat/texto) pula o TTS e devolve audio=None
+    (mais referencias/abstencao no dict).
     """
     if usar_agentes is None:
         usar_agentes = config.AGENTES_HABILITADO
@@ -344,20 +366,32 @@ def _pipeline_resposta(texto: str, lat_asr: float | None = None,
         resposta = "Desculpe, nao consegui consultar o modelo agora. Tente novamente."
         meta_llm = {"modelo": config.DEEPSEEK_MODEL, "uso": None, "latencia_s": 0.0}
 
-    # TTS le apenas o conteudo (sem rodape de referencias nem marcadores [N]).
-    tts_texto = resposta
+    # v0.4 - enriquece a resposta com abstenção e referências quando vierem do RAG
+    abstencao = None
+    referencias = []
     if isinstance(resultado_rag, dict):
-        tts_texto = resultado_rag.get("resposta_tts") or resposta
-    audio, lat_tts = tts.sintetizar(tts_texto)
+        abstencao = resultado_rag.get("abstencao")
+        referencias = resultado_rag.get("referencias") or []
+
+    audio = None
+    lat_tts = None
+    if com_audio:
+        # TTS le apenas o conteudo (sem rodape de referencias nem marcadores [N]).
+        tts_texto = resposta
+        if isinstance(resultado_rag, dict):
+            tts_texto = resultado_rag.get("resposta_tts") or resposta
+        audio, lat_tts = tts.sintetizar(tts_texto)
 
     return {
         "transcricao": texto,
         "resposta": resposta,
         "audio": audio,
+        "abstencao": abstencao,
+        "referencias": referencias,
         "latencia_s": {
             "asr": round(lat_asr or 0.0, 2),
             "llm": meta_llm["latencia_s"],
-            "tts": round(lat_tts, 2),
+            "tts": round(lat_tts, 2) if lat_tts is not None else None,
         },
     }
 

@@ -12,7 +12,7 @@ def test_grupo_e_limite():
     """Pagina tem limite alto; endpoints de RAG/chat (LLM) tem 4/min."""
     assert _grupo_e_limite("/") == ("geral", config.RATELIMIT_GERAL_QTD)
     assert _grupo_e_limite("/saude") == ("geral", config.RATELIMIT_GERAL_QTD)
-    for path in ("/rag/saude", "/chat", "/chat/imagem"):
+    for path in ("/rag/saude", "/chat", "/chat/imagem", "/chat/texto"):
         assert _grupo_e_limite(path) == ("rag", config.RATELIMIT_RAG_QTD)
     assert config.RATELIMIT_RAG_QTD == 4  # decisao: 4 por minuto
 

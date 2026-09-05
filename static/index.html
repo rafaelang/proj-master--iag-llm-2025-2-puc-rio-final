@@ -42,6 +42,12 @@
     }
     button:disabled { opacity: 0.4; cursor: not-allowed; }
     button.record-on { background: var(--error); color: #fff; }
+    input[type="text"] {
+      min-width: 180px; padding: 10px 14px; font-size: 1rem; color: var(--text);
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    }
+    input[type="text"]:focus { outline: none; border-color: var(--accent); }
+    input[type="text"]:disabled { opacity: 0.4; }
     #status { min-height: 1.2em; text-align: center; color: var(--muted); font-size: 0.95rem; }
     #status.error { color: var(--error); }
     #player { width: 100%; display: none; margin: 0 auto; }
@@ -103,15 +109,18 @@
       <button id="stop" type="button" disabled>Enviar</button>
       <button id="image" type="button">Enviar imagem</button>
       <input id="imageInput" type="file" accept="image/*" hidden>
+      <input id="textInput" type="text" placeholder="Digite sua pergunta..." maxlength="500"
+             autocomplete="off">
+      <button id="sendText" type="button">Enviar texto</button>
     </div>
 
-    <div id="status">Clique em "Gravar" e fale, ou envie uma imagem. Depois clique em "Enviar".</div>
+    <div id="status">Fale (Gravar), envie uma imagem ou digite sua pergunta. Depois clique em "Enviar".</div>
 
     <audio id="player" controls></audio>
 
     <ul id="chat" aria-label="Historico da conversa"></ul>
 
-    <div class="hint">A transcricao da sua fala (ou a descricao da imagem) e a resposta do assistente aparecem aqui.</div>
+    <div class="hint">A transcricao da sua fala, a descricao da imagem ou a sua pergunta digitada e a resposta do assistente aparecem aqui.</div>
 
     <section class="about">
       <h2>Sobre o projeto e a avaliacao (v0.1)</h2>
@@ -270,6 +279,8 @@
       const stopBtn = document.getElementById("stop");
       const imageBtn = document.getElementById("image");
       const imageInput = document.getElementById("imageInput");
+      const textInput = document.getElementById("textInput");
+      const sendTextBtn = document.getElementById("sendText");
       const statusEl = document.getElementById("status");
       const player = document.getElementById("player");
       const chatEl = document.getElementById("chat");
@@ -319,6 +330,8 @@
         recordBtn.disabled = recordingState;
         stopBtn.disabled = !recordingState;
         imageBtn.disabled = recordingState;
+        sendTextBtn.disabled = recordingState;
+        textInput.disabled = recordingState;
         recordBtn.classList.toggle("record-on", recordingState);
       }
 
@@ -486,9 +499,77 @@
         }
       }
 
+      async function sendText() {
+        const texto = (textInput.value || "").trim();
+        if (!texto) {
+          setStatus("Digite uma pergunta antes de enviar.", true);
+          return;
+        }
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          setStatus("Finalize a gravacao de audio antes de enviar texto.", true);
+          return;
+        }
+
+        recordBtn.disabled = true;
+        stopBtn.disabled = true;
+        imageBtn.disabled = true;
+        sendTextBtn.disabled = true;
+        textInput.disabled = true;
+
+        const startTime = Date.now();
+        let timerId = setInterval(() => {
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          setStatus("Enviando texto para o assistente... " + elapsed + "s");
+        }, 100);
+
+        function cleanup(ok, msg) {
+          clearInterval(timerId);
+          setStatus(msg, !ok);
+          recordBtn.disabled = false;
+          imageBtn.disabled = false;
+          sendTextBtn.disabled = false;
+          textInput.disabled = false;
+          if (ok) {
+            textInput.value = "";
+            textInput.focus();
+          }
+        }
+
+        const formData = new FormData();
+        formData.append("texto", texto);
+
+        try {
+          const res = await fetch("/chat/texto", { method: "POST", body: formData });
+
+          if (!res.ok) {
+            let detail = "Erro " + res.status;
+            try {
+              const data = await res.json();
+              if (data && data.detail) detail = data.detail;
+            } catch (_) {}
+            addMessage("system", detail);
+            cleanup(false, detail);
+            return;
+          }
+
+          const data = await res.json();
+          const resposta = (data && data.resposta) || "";
+          addMessage("user", texto);
+          addMessage("assistant", resposta);
+
+          cleanup(true, "Resposta recebida.");
+        } catch (err) {
+          cleanup(false, "Falha ao enviar o texto: " + err.message);
+        }
+      }
+
       recordBtn.addEventListener("click", startRecording);
       stopBtn.addEventListener("click", stopRecording);
       imageBtn.addEventListener("click", () => imageInput.click());
+      sendTextBtn.addEventListener("click", sendText);
+      textInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendText();
+      });
       imageInput.addEventListener("change", () => {
         const file = imageInput.files && imageInput.files[0];
         if (file) sendImage(file);
