@@ -93,6 +93,10 @@
     .result-table tbody tr:last-child td {
       font-weight: 700; color: var(--accent); border-bottom: 0;
     }
+    /* tabelas largas (ex.: resultados da v0.4) podem quebrar linha p/ nao estourar o card */
+    .result-table.wrap th, .result-table.wrap td {
+      white-space: normal; word-break: break-word;
+    }
     .highlights {
       list-style: none; margin: 12px 0 0; padding: 0; display: flex;
       flex-direction: column; gap: 6px; color: var(--muted);
@@ -106,12 +110,12 @@
 
     <div class="controls">
       <button id="record" type="button">Gravar</button>
-      <button id="stop" type="button" disabled>Enviar</button>
+      <button id="stop" type="button" disabled>Enviar audio</button>
       <button id="image" type="button">Enviar imagem</button>
       <input id="imageInput" type="file" accept="image/*" hidden>
       <input id="textInput" type="text" placeholder="Digite sua pergunta..." maxlength="500"
              autocomplete="off">
-      <button id="sendText" type="button">Enviar texto</button>
+      <button id="sendText" type="button" disabled>Enviar texto</button>
     </div>
 
     <div id="status">Fale (Gravar), envie uma imagem ou digite sua pergunta. Depois clique em "Enviar".</div>
@@ -252,7 +256,7 @@
         <li>Modelos parametrizaveis (CLI/env): roteador <code>{slm,flash,tfidf,cascade}</code> e geradores <code>{slm,flash,pro}</code> (flash=deepseek-v4-flash, pro=deepseek-v4-pro).</li>
         <li>Comportamento sob falha testado sem API (6 cenarios com mock): falha no gerador cai para a outra rota; ambas falham -&gt; abstencao.</li>
       </ul>
-      <table class="result-table">
+      <table class="result-table wrap">
         <thead>
           <tr><th>Metrica</th><th>Valor</th></tr>
         </thead>
@@ -326,12 +330,21 @@
         return EXT_BY_MIME[base] || "webm";
       }
 
+      function atualizarEnvioTexto() {
+        const temTexto = Boolean((textInput.value || "").trim());
+        sendTextBtn.disabled = !temTexto;
+      }
+
       function resetButtons(recordingState) {
         recordBtn.disabled = recordingState;
         stopBtn.disabled = !recordingState;
         imageBtn.disabled = recordingState;
-        sendTextBtn.disabled = recordingState;
         textInput.disabled = recordingState;
+        if (recordingState) {
+          sendTextBtn.disabled = true;
+        } else {
+          atualizarEnvioTexto();
+        }
         recordBtn.classList.toggle("record-on", recordingState);
       }
 
@@ -527,12 +540,12 @@
           setStatus(msg, !ok);
           recordBtn.disabled = false;
           imageBtn.disabled = false;
-          sendTextBtn.disabled = false;
           textInput.disabled = false;
           if (ok) {
             textInput.value = "";
             textInput.focus();
           }
+          atualizarEnvioTexto();
         }
 
         const formData = new FormData();
@@ -570,6 +583,7 @@
       textInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") sendText();
       });
+      textInput.addEventListener("input", atualizarEnvioTexto);
       imageInput.addEventListener("change", () => {
         const file = imageInput.files && imageInput.files[0];
         if (file) sendImage(file);
