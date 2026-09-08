@@ -50,8 +50,9 @@ No boot, `deploy/entrypoint.sh` baixa o dataset para `/app/data` e então sobe
 
 Secrets adicionais de configuração da v0.4: `AGENTE_ROTEADOR=flash`,
 `AGENTE_SIMPLES=flash`, `AGENTE_COMPLEXA=pro` — na API pública o fluxo
-`/chat` (voz) e `/chat/imagem` (agentes habilitados por padrão) usa modelos
-remotos (latência compatível com o gateway); o **SLM local** (Qwen 2.5-1.5B)
+`/chat` unificado (v0.4: áudio/imagem/texto; agentes habilitados por padrão)
+usa modelos remotos (latência compatível com o gateway); o **SLM local**
+(Qwen 2.5-1.5B)
 roda em ambiente local/CLI (padrão do código) e é compilado portável
 (`GGML_NATIVE=OFF`) para o Space. Os endpoints `/rag/perguntar` e
 `/rag/imagem/analisar` foram removidos (não usados pelo front-end).
@@ -62,7 +63,7 @@ roda em ambiente local/CLI (padrão do código) e é compilado portável
 - Modelos locais (whisper/fastembed/piper/OCR) são baixados em runtime; o GGUF
   do SLM (v0.4, `processed/slm_models/*`) vem do **dataset privado** no boot
   junto com o corpus;
-- ⚠️ A API pública expõe `/chat` e `/chat/imagem` a qualquer pessoa (consome o
+- ⚠️ A API pública expõe o único `/chat` (áudio/imagem/texto) a qualquer pessoa (consome o
   `DEEPSEEK_API_KEY`). Recomenda-se criar um token **read-only** para o
   `HF_TOKEN_READ` e revisar uso/custo. Para restringir acesso no futuro, adicione
   uma chave de aplicação (ex.: header `X-API-Key`).

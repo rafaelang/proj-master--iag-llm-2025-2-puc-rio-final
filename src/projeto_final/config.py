@@ -121,7 +121,7 @@ AGENTE_COMPLEXA = os.getenv("AGENTE_COMPLEXA", "pro")
 # deepseek-v4-pro e "reasoning": o max_tokens limita raciocinio + resposta juntos.
 # Orcamento generoso evita resposta vazia (finish_reason='length') no gerador pro.
 AGENTE_PRO_MAX_TOKENS = int(os.getenv("AGENTE_PRO_MAX_TOKENS", "1500"))
-# v0.4: /chat (voz) e /chat/imagem usam o fluxo multiagente por padrao.
+# v0.4: o /chat unico (audio/imagem/texto) usa o fluxo multiagente por padrao.
 # Desligue com AGENTES_HABILITADO=false para voltar ao RAG v0.3 de modelo unico.
 AGENTES_HABILITADO = os.getenv("AGENTES_HABILITADO", "true").lower() == "true"
 

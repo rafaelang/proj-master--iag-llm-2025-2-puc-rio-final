@@ -1,7 +1,14 @@
-"""FastAPI — v0.3 (RAG texto+imagem + voz + visao multimodal)."""
+"""FastAPI — API unificada de Voz, Imagem e Texto (v0.4).
+
+Endpoint unico POST /chat: recebe audio, imagem OU texto; normaliza a entrada
+para texto e roda o MESMO processo de RAG/resposta para todos os fluxos.
+Saida: JSON {texto, resposta, audio_base64, ...}; audio somente quando a
+entrada nao e texto puro.
+"""
 
 from __future__ import annotations
 
+import base64
 import os
 import tempfile
 import threading
@@ -10,18 +17,18 @@ from collections import deque
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse
 from loguru import logger
 from starlette.concurrency import run_in_threadpool
-from urllib.parse import quote
 
 from projeto_final import config, llm, tts, voz
 from projeto_final.rag import pipeline as rag_pipeline
 
 RAIZ = config.RAIZ
 STATIC_INDEX = RAIZ / "static" / "index.html"
+# v0.4 - o endpoint unico /chat aceita arquivo de audio OU de imagem
+# (o tipo e detectado pela extensao) ou texto digitado no campo "texto".
 CHAT_EXTS = (*voz.AUDIO_EXTS,)
-# v0.3 - imagens no chat (visao multimodal -> descricao -> RAG -> TTS)
 IMAGEM_EXTS = {"jpg", "jpeg", "png", "gif", "webp", "bmp", "tif", "tiff"}
 
 MIME_POR_EXT = {
@@ -76,14 +83,14 @@ def _ip_cliente(request: Request) -> str:
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Assistente Master IAG & LLM - API de Voz, Imagem, RAG e Agentes",
-        description="Recebe audio ou imagem, transcreve/descreve, responde via RAG/multiagentes e devolve audio sintetizado.",
+        title="Assistente Master IAG & LLM - API unificada de Voz, Imagem e Texto",
+        description="POST /chat: recebe audio, imagem ou texto; todas as entradas passam pelo mesmo RAG/multiagentes e a resposta e JSON {texto, resposta, audio_base64}. WAV em base64 apenas para audio/imagem (texto puro retorna audio_base64=null).",
         version="0.4.0",
     )
 
     @app.on_event("startup")
     def startup():
-        logger.info("Iniciando API v0.3 em {}", RAIZ)
+        logger.info("Iniciando API v0.4 (unificada) em {}", RAIZ)
         if not config.DEEPSEEK_API_KEY:
             logger.warning("DEEPSEEK_API_KEY nao configurada — endpoint /chat usara TTS echo se LLM falhar")
         try:
@@ -172,163 +179,189 @@ def create_app() -> FastAPI:
     def saude_rag() -> dict:
         return saude()["rag"]
 
-    # v0.4: os endpoints JSON /rag/perguntar e /rag/imagem/analisar foram
-    # REMOVIDOS (nao usados pelo index.html) — o fluxo RAG/multiagente roda nos
-    # endpoints /chat (voz) e /chat/imagem abaixo.
+    # v0.4 - API unificada: POST /chat recebe audio, imagem OU texto. A entrada
+    # e normalizada para texto (_normalizar_entrada) e TODOS os fluxos passam
+    # pelo mesmo processo de RAG/multiagentes + resposta (_pipeline_resposta).
+    # WAV sintetizado (audio_base64) somente quando a entrada NAO e texto puro.
 
     @app.post("/chat")
-    async def chat(file: UploadFile = File(...)) -> Response:
-        logger.info("Recebendo audio: {}", file.filename)
-        ext = (file.filename or "").rsplit(".", 1)[-1].lower()
-        if ext not in CHAT_EXTS:
-            logger.warning("Extensao nao suportada: {}", ext)
-            raise HTTPException(
-                status_code=415,
-                detail=f"Extensao nao suportada: .{ext} (aceitas: {', '.join(CHAT_EXTS)})",
-            )
-
-        dados = await file.read()
-        if not dados:
-            raise HTTPException(status_code=400, detail="audio vazio")
-
-        t_total = time.time()
-        p = await run_in_threadpool(_pipeline_voz, dados, ext)
-        logger.info("Pipeline finalizado em {} s", round(time.time() - t_total, 2))
-
-        return Response(
-            content=p["audio"],
-            media_type="audio/wav",
-            headers={
-                "X-Transcription": quote(p["transcricao"]),
-                "X-Answer": quote(p["resposta"]),
-            },
-        )
-
-    @app.post("/chat/imagem")
-    async def chat_imagem(file: UploadFile = File(...)) -> Response:
-        """Chat por imagem: visao multimodal -> descricao -> RAG -> TTS.
-
-        Mesmo contrato do /chat (audio/wav + X-Transcription/X-Answer):
-        X-Transcription carrega a descricao gerada pelo modelo de visao, que e
-        a pergunta enviada ao RAG.
-        """
-        logger.info("Recebendo imagem: {}", file.filename)
-        ext = (file.filename or "").rsplit(".", 1)[-1].lower()
-        if ext not in IMAGEM_EXTS:
-            logger.warning("Extensao de imagem nao suportada: {}", ext)
-            raise HTTPException(
-                status_code=415,
-                detail=f"Extensao nao suportada: .{ext} (aceitas: {', '.join(sorted(IMAGEM_EXTS))})",
-            )
-
-        dados = await file.read()
-        if not dados:
-            raise HTTPException(status_code=400, detail="imagem vazia")
-
+    async def chat(file: UploadFile | None = File(None),
+                   texto: str | None = Form(None)) -> JSONResponse:
+        req = await _preparar_entrada(file, texto)
         t_total = time.time()
         try:
-            p = await run_in_threadpool(_pipeline_imagem, dados, ext)
+            entrada = await run_in_threadpool(_normalizar_entrada, req)
+            resposta = await run_in_threadpool(
+                _pipeline_resposta, entrada["pergunta_rag"],
+                com_audio=(req["tipo"] != "texto"),
+            )
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Erro no pipeline de imagem: {}", e)
-            raise HTTPException(status_code=502, detail=f"Falha ao processar a imagem: {e}")
+            logger.error("Erro no pipeline de {}: {}", req["tipo"], e)
+            raise HTTPException(
+                status_code=502,
+                detail=f"Falha ao processar a entrada ({req['tipo']}): {e}",
+            )
         logger.info(
-            "Pipeline de imagem finalizado em {} s (visao={})",
-            round(time.time() - t_total, 2), p.get("modelo_visao"),
+            "Chat {} finalizado em {} s (modelo_entrada={}, com_audio={})",
+            req["tipo"], round(time.time() - t_total, 2),
+            entrada.get("modelo_entrada"), resposta.get("audio") is not None,
         )
-
-        return Response(
-            content=p["audio"],
-            media_type="audio/wav",
-            headers={
-                "X-Transcription": quote(p["transcricao"]),
-                "X-Answer": quote(p["resposta"]),
-            },
-        )
-
-    @app.post("/chat/texto")
-    async def chat_texto(texto: str = Form(...)) -> dict:
-        """Chat por TEXTO: pergunta digitada -> fluxo (RAG/multiagente) -> JSON.
-
-        Sem TTS (com_audio=False): retorna {transcricao, resposta, abstencao,
-        referencias, latencia_s}. Rate limit: grupo "rag" (prefixo /chat).
-        """
-        logger.info("Chat /chat/texto: {}", (texto or "")[:120])
-        msg = (texto or "").strip()
-        if not msg:
-            raise HTTPException(status_code=400, detail="texto vazio")
-        try:
-            return await run_in_threadpool(_pipeline_resposta, msg, com_audio=False)
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error("Erro no chat por texto: {}", e)
-            raise HTTPException(status_code=502, detail=f"Falha ao responder: {e}")
+        return JSONResponse(_montar_payload(req["tipo"], entrada, resposta))
 
     return app
 
 
-def _pipeline_voz(dados: bytes, ext: str) -> dict:
-    """ASR -> texto -> (RAG -> TTS). Em thread separada."""
-    prompt = config.ler_prompt_vocabulario()
+async def _preparar_entrada(file: UploadFile | None,
+                            texto: str | None) -> dict:
+    """Valida a requisicao do /chat e devolve a entrada bruta.
 
-    with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False) as tmp:
-        tmp.write(dados)
-        path = tmp.name
-    try:
-        texto, lat_asr = voz.transcrever(path, prompt=prompt, modelo=config.ASR_MODELO)
-    finally:
-        os.unlink(path)
-
-    if not texto:
-        logger.warning("Transcricao vazia")
-        raise HTTPException(status_code=422, detail="Nao foi possivel transcrever o audio")
-
-    return _pipeline_resposta(texto, lat_asr=lat_asr)
-
-
-def _pipeline_imagem(dados: bytes, ext: str) -> dict:
-    """Visao multimodal (deepseek-vision) -> prompt RAG -> TTS.
-
-    A visao retorna ASSUNTO/TERMOS/SINTESE da imagem; o RAG recebe um PROMPT
-    ("fale sobre o assunto retratado") — nao a descricao crua como pergunta.
-    A resposta final enviada ao usuario e a do RAG (texto + audio).
+    Regras: exatamente UMA das entradas — arquivo de audio/imagem (UploadFile)
+    OU texto digitado. Arquivo -> tipo detectado pela extensao. Retorna dict:
+    {"tipo": "audio"|"imagem"|"texto", "conteudo": bytes|str,
+    "ext": str|None}.
     """
-    t_visao = time.time()
-    mime = MIME_POR_EXT.get(ext, "image/png")
-    conteudo, meta_visao = llm.descrever_imagem(dados, mime)
-    if not conteudo:
-        logger.warning("Modelo de visao nao retornou conteudo")
-        raise HTTPException(status_code=502, detail="O modelo de visao nao retornou conteudo")
+    tem_arquivo = file is not None
+    tem_texto = bool((texto or "").strip())
+    if tem_arquivo and tem_texto:
+        raise HTTPException(
+            status_code=400,
+            detail="informe apenas UMA entrada: file (audio/imagem) ou texto",
+        )
+    if not tem_arquivo and not tem_texto:
+        raise HTTPException(
+            status_code=400,
+            detail="informe file (audio/imagem) ou texto",
+        )
+    if tem_texto:
+        return {"tipo": "texto", "conteudo": (texto or "").strip(), "ext": None}
 
-    pergunta_rag = (
-        "O usuário enviou uma imagem. O modelo de visão analisou a imagem e "
-        "identificou o seguinte:\n"
-        f"{conteudo}\n"
-        "Fale sobre o assunto retratado na imagem: explique os conceitos envolvidos "
-        "com base SOMENTE nos trechos do corpus fornecidos (contexto) e cite as "
-        "fontes. Se o contexto não cobrir o assunto, responda exatamente NAO_SEI."
-    )
+    ext = (file.filename or "").rsplit(".", 1)[-1].lower()
+    if ext in CHAT_EXTS:
+        tipo = "audio"
+    elif ext in IMAGEM_EXTS:
+        tipo = "imagem"
+    else:
+        raise HTTPException(
+            status_code=415,
+            detail=(
+                f"Extensao nao suportada: .{ext} "
+                f"(audio: {', '.join(CHAT_EXTS)}; "
+                f"imagem: {', '.join(sorted(IMAGEM_EXTS))})"
+            ),
+        )
+    dados = await file.read()
+    if not dados:
+        raise HTTPException(status_code=400, detail=f"{tipo} vazio")
+    return {"tipo": tipo, "conteudo": dados, "ext": ext}
 
-    resultado = _pipeline_resposta(pergunta_rag)
-    resultado["pergunta_rag"] = pergunta_rag
-    resultado["transcricao"] = conteudo  # visao (nao exibida ao usuario; resposta e a do RAG)
-    resultado["latencia_s"]["visao"] = round(time.time() - t_visao, 2)
-    resultado["modelo_visao"] = meta_visao.get("modelo")
-    return resultado
+
+def _normalizar_entrada(req: dict) -> dict:
+    """Converte a entrada bruta (audio/imagem/texto) em texto para o RAG.
+
+    Etapa UNICA de normalizacao de entrada: audio -> transcricao ASR (local);
+    imagem -> descricao do modelo de visao + prompt RAG ("fale sobre o assunto
+    retratado"); texto -> as-is. Retorna dict com "texto" (exibido ao
+    usuario), "pergunta_rag" (enviada ao RAG) e metadados de entrada
+    (modelo_entrada, latencia_entrada_s).
+    """
+    tipo = req["tipo"]
+    if tipo == "audio":
+        prompt = config.ler_prompt_vocabulario()
+        dados, ext = req["conteudo"], req["ext"]
+        with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False) as tmp:
+            tmp.write(dados)
+            path = tmp.name
+        try:
+            texto, lat_asr = voz.transcrever(
+                path, prompt=prompt, modelo=config.ASR_MODELO
+            )
+        finally:
+            os.unlink(path)
+        if not texto:
+            logger.warning("Transcricao vazia")
+            raise HTTPException(
+                status_code=422, detail="Nao foi possivel transcrever o audio"
+            )
+        return {
+            "texto": texto,
+            "pergunta_rag": texto,
+            "modelo_entrada": config.ASR_MODELO,
+            "latencia_entrada_s": lat_asr,
+        }
+
+    if tipo == "imagem":
+        mime = MIME_POR_EXT.get(req["ext"], "image/png")
+        conteudo, meta_visao = llm.descrever_imagem(req["conteudo"], mime)
+        if not conteudo:
+            logger.warning("Modelo de visao nao retornou conteudo")
+            raise HTTPException(
+                status_code=502, detail="O modelo de visao nao retornou conteudo"
+            )
+        pergunta_rag = (
+            "O usuário enviou uma imagem. O modelo de visão analisou a imagem e "
+            "identificou o seguinte:\n"
+            f"{conteudo}\n"
+            "Fale sobre o assunto retratado na imagem: explique os conceitos envolvidos "
+            "com base SOMENTE nos trechos do corpus fornecidos (contexto) e cite as "
+            "fontes. Se o contexto não cobrir o assunto, responda exatamente NAO_SEI."
+        )
+        return {
+            "texto": conteudo,
+            "pergunta_rag": pergunta_rag,
+            "modelo_entrada": meta_visao.get("modelo"),
+            "latencia_entrada_s": meta_visao.get("latencia_s"),
+        }
+
+    # texto puro: ja e a pergunta final
+    return {
+        "texto": req["conteudo"],
+        "pergunta_rag": req["conteudo"],
+        "modelo_entrada": None,
+        "latencia_entrada_s": None,
+    }
 
 
-def _pipeline_resposta(texto: str, lat_asr: float | None = None,
-                       usar_agentes: bool | None = None,
+def _montar_payload(tipo: str, entrada: dict, resposta: dict) -> dict:
+    """Monta o JSON unificado da API a partir da entrada normalizada + resposta.
+
+    Contrato v0.4: texto + audio (WAV em base64) sempre, EXCETO quando a entrada
+    e apenas texto (audio_base64=null, latencia.tts=null).
+    """
+    lat = resposta.get("latencia_s") or {}
+    audio = resposta.get("audio")
+    return {
+        "tipo_entrada": tipo,
+        "texto": entrada["texto"],
+        "resposta": resposta.get("resposta", ""),
+        "audio_base64": (
+            base64.b64encode(audio).decode("ascii") if audio else None
+        ),
+        "abstencao": resposta.get("abstencao"),
+        "referencias": resposta.get("referencias") or [],
+        "modelo_entrada": entrada.get("modelo_entrada"),
+        "latencia": {
+            "entrada": (
+                round(entrada["latencia_entrada_s"], 2)
+                if entrada.get("latencia_entrada_s") is not None else None
+            ),
+            "llm": lat.get("llm"),
+            "tts": lat.get("tts"),
+        },
+    }
+
+
+def _pipeline_resposta(texto: str, usar_agentes: bool | None = None,
                        com_audio: bool = True) -> dict:
-    """Texto -> (RAG/agentes) -> TTS (opcional). Compartilhado por voz/imagem/texto.
+    """(RAG/agentes) -> TTS (opcional). Etapa de RESPOSTA unica e compartilhada
+    por audio/imagem/texto (a entrada ja foi normalizada para texto).
 
     v0.4: com AGENTES_HABILITADO (default true), a resposta passa pelo
     orquestrador multiagente (roteador SIMPLES/COMPLEXA + geradores com fallback)
     sempre no corpus texto+imagem (v0.3). Desligue com AGENTES_HABILITADO=false
     ou passar usar_agentes=False (volta ao RAG v0.3 de modelo unico).
-    com_audio=False (endpoint /chat/texto) pula o TTS e devolve audio=None
+    com_audio=False (entrada = texto puro) pula o TTS e devolve audio=None
     (mais referencias/abstencao no dict).
     """
     if usar_agentes is None:
@@ -383,13 +416,11 @@ def _pipeline_resposta(texto: str, lat_asr: float | None = None,
         audio, lat_tts = tts.sintetizar(tts_texto)
 
     return {
-        "transcricao": texto,
         "resposta": resposta,
-        "audio": audio,
+        "audio": audio,          # bytes WAV ou None (com_audio=False)
         "abstencao": abstencao,
         "referencias": referencias,
         "latencia_s": {
-            "asr": round(lat_asr or 0.0, 2),
             "llm": meta_llm["latencia_s"],
             "tts": round(lat_tts, 2) if lat_tts is not None else None,
         },

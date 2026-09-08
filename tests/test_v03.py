@@ -73,16 +73,50 @@ def test_config_modelo_visao_definido():
     assert cfg.DEEPSEEK_VISION_MAX_TOKENS >= 100
 
 
-def test_chat_imagem_extensao_invalida():
+def test_chat_extensao_invalida():
+    """POST /chat com arquivo de extensao desconhecida -> 415."""
     client = TestClient(app)
-    res = client.post("/chat/imagem", files={"file": ("nota.txt", b"texto", "text/plain")})
+    res = client.post("/chat", files={"file": ("nota.txt", b"texto", "text/plain")})
     assert res.status_code == 415
 
 
-def test_chat_imagem_vazia_erro():
+def test_chat_arquivo_vazio():
+    """POST /chat com arquivo vazio (PNG 0 bytes) -> 400."""
     client = TestClient(app)
-    res = client.post("/chat/imagem", files={"file": ("vazia.png", b"", "image/png")})
+    res = client.post("/chat", files={"file": ("vazia.png", b"", "image/png")})
     assert res.status_code == 400
+
+
+def test_chat_imagem_fluxo_json():
+    """Imagem no /chat unificado: visao -> prompt RAG -> mesmo fluxo de resposta
+    -> JSON unificado com texto + audio_base64 (contrato v0.4)."""
+    from unittest.mock import patch
+
+    fake = {
+        "resposta": "A imagem mostra um diagrama. [1]",
+        "audio": b"RIFFwav", "abstencao": False,
+        "referencias": [{"n": 1, "doc_id": "nlp_aula06_rag_avancado_ocr.pdf", "pagina": 5}],
+        "latencia_s": {"llm": 0.4, "tts": 0.3},
+    }
+    with patch(
+        "projeto_final.main.llm.descrever_imagem",
+        return_value=("grafico de barras", {"modelo": "fake-vision", "latencia_s": 0.2}),
+    ) as vis, patch("projeto_final.main._pipeline_resposta", return_value=fake) as pl:
+        client = TestClient(app)
+        res = client.post("/chat", files={"file": ("fig.png", _test_img_bytes(), "image/png")})
+    assert res.status_code == 200
+    corpo = res.json()
+    assert corpo["tipo_entrada"] == "imagem"
+    assert corpo["texto"] == "grafico de barras"
+    assert corpo["resposta"].startswith("A imagem mostra")
+    assert corpo["audio_base64"]             # texto + audio na saida
+    assert corpo["modelo_entrada"] == "fake-vision"
+    assert corpo["latencia"]["entrada"] == 0.2
+    vis.assert_called_once()
+    pl.assert_called_once()
+    pergunta = pl.call_args.args[0]
+    assert "grafico de barras" in pergunta and "Fale sobre o assunto" in pergunta
+    assert pl.call_args.kwargs["com_audio"] is True
 
 
 @pytest.mark.skipif(

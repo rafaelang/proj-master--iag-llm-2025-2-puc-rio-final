@@ -125,10 +125,11 @@ def test_gerador_desconhecido_erro():
 # ---------------------------------------------------------------- API
 
 def test_pipeline_resposta_usa_agentes():
-    """v0.4: /chat (voz) e /chat/imagem usam o orquestrador multiagente.
+    """v0.4: o /chat unico (audio/imagem/texto) usa o orquestrador multiagente.
 
-    `_pipeline_resposta` (compartilhado por voz e imagem) chama
-    agentes.responder_agentes quando AGENTES_HABILITADO (default true).
+    `_pipeline_resposta` (compartilhado por todas as entradas, apos a
+    normalizacao para texto) chama agentes.responder_agentes quando
+    AGENTES_HABILITADO (default true).
     """
     from projeto_final.main import _pipeline_resposta
 
@@ -236,35 +237,89 @@ def test_classificar_cascade_indeterminado_escala_r1():
     slm.assert_called_once()
 
 
-# ---------------------------------------------------------------- API chat por texto
+# ---------------------------------------------------------------- API /chat unificada (v0.4)
 
 def test_chat_texto_endpoint():
-    """POST /chat/texto responde em JSON (sem TTS) com o fluxo agentes/RAG."""
+    """POST /chat com campo texto -> JSON unificado (sem TTS: audio_base64=null)
+    com o mesmo fluxo RAG/agentes das demais entradas."""
     fake = {
-        "transcricao": "O que é RAG?", "resposta": "RAG responde recuperando trechos. [1]",
+        "resposta": "RAG responde recuperando trechos. [1]",
         "audio": None, "abstencao": False,
         "referencias": [{"n": 1, "doc_id": "nlp_aula06_rag_avancado_ocr.pdf", "pagina": 1}],
-        "latencia_s": {"asr": 0.0, "llm": 1.2, "tts": None},
+        "latencia_s": {"llm": 1.2, "tts": None},
     }
     with patch("projeto_final.main._pipeline_resposta", return_value=fake) as pl:
         client = TestClient(app)
-        res = client.post("/chat/texto", data={"texto": "O que é RAG?"})
+        res = client.post("/chat", data={"texto": "O que é RAG?"})
     assert res.status_code == 200
     corpo = res.json()
+    assert corpo["tipo_entrada"] == "texto"
+    assert corpo["texto"] == "O que é RAG?"
     assert corpo["resposta"].startswith("RAG")
-    assert corpo["audio"] is None
+    assert corpo["audio_base64"] is None       # texto puro -> so texto
+    assert corpo["modelo_entrada"] is None
+    assert corpo["latencia"]["llm"] == 1.2
+    assert corpo["latencia"]["tts"] is None
     assert corpo["referencias"]
     assert corpo["abstencao"] is False
     pl.assert_called_once()
     assert pl.call_args.args[0] == "O que é RAG?"
+    assert pl.call_args.kwargs["com_audio"] is False
 
 
 def test_chat_texto_vazio():
-    """Texto vazio -> 400 (sem chamar o pipeline)."""
+    """Texto vazio/branco -> 400 (sem chamar o pipeline)."""
     with patch("projeto_final.main._pipeline_resposta") as pl:
         client = TestClient(app)
-        res = client.post("/chat/texto", data={"texto": "   "})
+        res = client.post("/chat", data={"texto": "   "})
     assert res.status_code == 400
     pl.assert_not_called()
+
+
+def test_chat_sem_entrada_400():
+    """Nenhuma entrada (sem file e sem texto) -> 400."""
+    with patch("projeto_final.main._pipeline_resposta") as pl:
+        client = TestClient(app)
+        res = client.post("/chat", data={})
+    assert res.status_code == 400
+    pl.assert_not_called()
+
+
+def test_chat_entrada_dupla_400():
+    """file E texto juntos -> 400 (ambigua, evita custo de LLM)."""
+    with patch("projeto_final.main._pipeline_resposta") as pl:
+        client = TestClient(app)
+        res = client.post(
+            "/chat",
+            data={"texto": "pergunta"},
+            files={"file": ("a.wav", b"x", "audio/wav")},
+        )
+    assert res.status_code == 400
+    pl.assert_not_called()
+
+
+def test_chat_audio_retorna_audio_base64():
+    """Audio -> mesmo RAG/resposta que o texto -> JSON com texto + audio_base64."""
+    fake = {
+        "resposta": "Resposta sobre RAG. [1]",
+        "audio": b"RIFFfakewav", "abstencao": False,
+        "referencias": [], "latencia_s": {"llm": 0.5, "tts": 0.2},
+    }
+    with patch("projeto_final.main.voz.transcrever",
+               return_value=("O que é RAG?", 1.0)) as tr, \
+         patch("projeto_final.main._pipeline_resposta", return_value=fake) as pl:
+        client = TestClient(app)
+        res = client.post("/chat", files={"file": ("pergunta.wav", b"RIFF....", "audio/wav")})
+    assert res.status_code == 200
+    corpo = res.json()
+    assert corpo["tipo_entrada"] == "audio"
+    assert corpo["texto"] == "O que é RAG?"
+    assert corpo["audio_base64"]            # texto + audio na saida
+    assert corpo["modelo_entrada"] == config.ASR_MODELO
+    assert corpo["latencia"]["entrada"] == 1.0
+    tr.assert_called_once()
+    pl.assert_called_once()
+    assert pl.call_args.args[0] == "O que é RAG?"
+    assert pl.call_args.kwargs["com_audio"] is True
 
 

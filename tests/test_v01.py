@@ -82,7 +82,8 @@ def test_saude():
 
 
 def test_chat_com_audio_silencioso():
-    """Envia um WAV mudo para /chat e verifica resposta com headers."""
+    """WAV mudo para /chat -> 422 (transcricao vazia) ou 200 com JSON
+    {texto, resposta, audio_base64} (saida texto + audio)."""
     from projeto_final.tts import _wav_mudo
 
     wav = _wav_mudo(duracao_s=1.0)
@@ -93,6 +94,7 @@ def test_chat_com_audio_silencioso():
     )
     assert res.status_code in (200, 422)
     if res.status_code == 200:
-        assert "X-Transcription" in res.headers
-        assert "X-Answer" in res.headers
-        assert res.headers["content-type"] == "audio/wav"
+        corpo = res.json()
+        assert corpo["tipo_entrada"] == "audio"
+        assert corpo["resposta"]
+        assert corpo["audio_base64"]

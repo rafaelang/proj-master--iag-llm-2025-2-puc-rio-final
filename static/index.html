@@ -220,7 +220,7 @@
       <ul class="highlights">
         <li>Conteudo da figura no top-5: <strong>0.000</strong> (texto-only) -&gt; <strong>1.000</strong> (texto+imagem).</li>
         <li><strong>3/3</strong> casos do golden set em que a visao corrigiu o texto (o texto abstinha-se com NAO_SEI).</li>
-        <li>OCR/figuras 100% locais (CPU/ONNX) — custo zero; o <code>/chat/imagem</code> (e o <code>/chat</code> de voz) usam o corpus texto+imagem.</li>
+        <li>OCR/figuras 100% locais (CPU/ONNX) — custo zero; audio, imagem e texto usam o mesmo <code>/chat</code> (API unificada v0.4) sobre o corpus texto+imagem.</li>
         <li>As respostas terminam com o <strong>rodape de referencias</strong> (<code>[1] doc.pdf</code> ...) e a voz TTS padrao e <code>pt_BR-cadu-medium</code>.</li>
       </ul>
       <table class="result-table">
@@ -247,7 +247,7 @@
         geradores: a rota simples e respondida por um <strong>SLM local de verdade</strong> (Qwen2.5-1.5B-Instruct,
         GGUF Q4_K_M, 100% CPU, custo zero) via RAG v0.3, e a rota complexa pelo LLM remoto
         <code>deepseek-v4-pro</code> — com <strong>fallback cruzado</strong> sob falha e abstencao
-        com motivo. O fluxo roda na API nos endpoints <code>/chat</code> (voz) e <code>/chat/imagem</code>,
+        com motivo. O fluxo roda na API no endpoint unico <code>/chat</code> (audio, imagem ou texto),
         ativo por padrao (<code>AGENTES_HABILITADO=true</code>).
       </p>
       <ul class="highlights">
@@ -378,6 +378,17 @@
         }
       }
 
+      function tocarAudioBase64(b64) {
+        // v0.4: a resposta vem em JSON e o audio (WAV) chega em base64.
+        if (!b64) return Promise.resolve(false);
+        const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: "audio/wav" });
+        const url = URL.createObjectURL(blob);
+        player.src = url;
+        player.classList.add("visible");
+        return player.play().then(() => true).catch(() => false);
+      }
+
       async function sendAudio() {
         resetButtons(false);
         recordBtn.disabled = true;
@@ -421,21 +432,10 @@
             return;
           }
 
-          const decode = (v) => {
-            if (!v) return "";
-            try { return decodeURIComponent(v); } catch (_) { return v; }
-          };
-          const transcription = decode(res.headers.get("X-Transcription"));
-          const answer = decode(res.headers.get("X-Answer"));
-
-          addMessage("user", transcription);
-          addMessage("assistant", answer);
-
-          const audioBlob = await res.blob();
-          const url = URL.createObjectURL(audioBlob);
-          player.src = url;
-          player.classList.add("visible");
-          await player.play();
+          const data = await res.json();
+          addMessage("user", data.texto || "");
+          addMessage("assistant", data.resposta || "");
+          await tocarAudioBase64(data.audio_base64);
 
           cleanup(true, "Resposta recebida e reproduzida.");
         } catch (err) {
@@ -477,7 +477,7 @@
         formData.append("file", file, file.name || "imagem.png");
 
         try {
-          const res = await fetch("/chat/imagem", { method: "POST", body: formData });
+          const res = await fetch("/chat", { method: "POST", body: formData });
 
           if (!res.ok) {
             let detail = "Erro " + res.status;
@@ -490,21 +490,12 @@
             return;
           }
 
-          const decode = (v) => {
-            if (!v) return "";
-            try { return decodeURIComponent(v); } catch (_) { return v; }
-          };
-          const answer = decode(res.headers.get("X-Answer"));
-
-          // A mensagem do usuario e a propria imagem; a resposta exibida e a do RAG.
-          addMessage("user", "", previewUrl);
-          addMessage("assistant", answer);
-
-          const audioBlob = await res.blob();
-          const url = URL.createObjectURL(audioBlob);
-          player.src = url;
-          player.classList.add("visible");
-          await player.play();
+          const data = await res.json();
+          // A mensagem do usuario e a propria imagem (legenda = descricao da
+          // visao); a resposta exibida e a do RAG — mesmo fluxo de audio/texto.
+          addMessage("user", data.texto || "", previewUrl);
+          addMessage("assistant", data.resposta || "");
+          await tocarAudioBase64(data.audio_base64);
 
           cleanup(true, "Imagem analisada; resposta recebida e reproduzida.");
         } catch (err) {
@@ -552,7 +543,9 @@
         formData.append("texto", texto);
 
         try {
-          const res = await fetch("/chat/texto", { method: "POST", body: formData });
+          // v0.4: texto puro -> mesmo fluxo RAG/resposta, saida SO texto
+          // (audio_base64=null no JSON; nada a reproduzir).
+          const res = await fetch("/chat", { method: "POST", body: formData });
 
           if (!res.ok) {
             let detail = "Erro " + res.status;

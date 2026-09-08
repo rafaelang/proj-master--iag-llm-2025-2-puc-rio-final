@@ -39,8 +39,10 @@ ONNX/CPU + LLM remoto DeepSeek + SLM local):
   **`cascade`** (R2 TF-IDF+XGB decide ~85% a <2 ms/US$ 0; `INDETERMINADO` → R1
   SLM few-shot; θ=0.60). Medição R1 (SLM): abstenção correta **0.950** (19/20);
   com o default `cascade` o golden set mede **0.850** (decisão por custo,
-  detalhes em `docs/v04.md` §11). API: `/chat` e `/chat/imagem` usam o fluxo
-  multiagente por padrão (`AGENTES_HABILITADO=true`).
+  detalhes em `docs/v04.md` §11). API: **um único `/chat`** (áudio, imagem ou
+  texto) roda o fluxo multiagente por padrão (`AGENTES_HABILITADO=true`);
+  todas as entradas passam pelo mesmo RAG/resposta e a saída é JSON
+  `{texto, resposta, audio_base64}` — WAV só para entradas de áudio/imagem.
 
 Cada release fecha com **evidência medida** em `docs/` (`v0X.md` +
 `v0X_evidencia.md`), testes `pytest` e tag no Git. Próxima: **v0.5 · Adaptação**.
@@ -259,12 +261,12 @@ flowchart TB
         E --> F["índice v0.3 separado<br/>272 texto + 22 imagem = 294 chunks"]
     end
     subgraph ONLINE["Chat por imagem (online)"]
-        P["Navegador — botão Enviar imagem"] --> Q["POST /chat/imagem"]
+        P["Navegador — botão Enviar imagem"] --> Q["POST /chat (file=imagem)"]
         Q --> R["deepseek-v4-flash-vision-exp<br/>ASSUNTO + TERMOS + SÍNTESE"]
         R --> S["prompt RAG: fale sobre o assunto da imagem"]
         S --> T["busca híbrida + RRF<br/>peso 1.15 para chunks de imagem"]
         T --> U["top-5 → DeepSeek deepseek-chat<br/>resposta com citação [N]"]
-        U --> V["piper-tts → audio/wav + X-Answer"]
+        U --> V["piper-tts → JSON {resposta, audio_base64}"]
         V --> W["Navegador — resposta do RAG (texto + áudio)"]
     end
     F --> T
@@ -281,15 +283,20 @@ Componentes:
 - **Índice v0.3 separado:** `data/processed/rag_v3/` (294 chunks) não toca o
   índice texto-only da v0.2 (`data/processed/rag/`); o RRF dá **peso 1.15** a
   chunks de imagem para a figura disputar o top-5 com a prosa.
-- **Chat por imagem:** `POST /chat/imagem` — o modelo de visão
+- **Chat por imagem:** no `/chat` unificado o modelo de visão
   (`DEEPSEEK_VISION_MODEL`, `deepseek-v4-flash-vision-exp`) extrai
   **ASSUNTO/TERMOS/SÍNTESE**; o RAG recebe o prompt *"fale sobre: {conteúdo}"* e
   a **resposta com citação vai ao usuário** (texto + áudio); a mensagem do
   usuário é a própria imagem.
-- **Endpoints:** `/chat` (voz), `/chat/imagem` e `/chat/texto` (pergunta digitada
-  → JSON, sem TTS) usam o corpus texto+imagem automaticamente (na v0.4, os
-  endpoints JSON `/rag/perguntar` e `/rag/imagem/analisar` foram removidos — não
-  eram usados pelo front-end).
+- **Endpoints (v0.4 — API unificada):** um único `POST /chat` recebe **áudio
+  (`file`)**, **imagem (`file`)** ou **texto (`texto`)**; independente da entrada,
+  todos passam pelo mesmo processo de RAG/resposta (corpus texto+imagem v0.3 /
+  multiagentes v0.4). A saída é sempre JSON com **texto + áudio**
+  (`{tipo_entrada, texto, resposta, audio_base64, abstencao, referencias,
+  latencia}`), exceto quando a entrada é apenas texto (`audio_base64: null`,
+  sem TTS). Os endpoints `/chat/imagem` e `/chat/texto` foram unificados em
+  `/chat` (e, na v0.4, os JSON `/rag/perguntar` e `/rag/imagem/analisar` já
+  haviam sido removidos).
 
 ### Resultado da v0.3 (concluída)
 
@@ -361,9 +368,10 @@ Componentes:
 - **Prompts:** `prompts/v0.4/roteador_sistema.txt` (few-shot) e
   `prompts/v0.4/rag_sistema_slm.txt` (regras curtas p/ o 1.5B: só o contexto,
   `NAO_SEI` isolado, citação `[N]`).
-- **API/CLI:** `/chat` (voz), `/chat/imagem` e `/chat/texto` (JSON, sem TTS)
-  passam pelo fluxo multiagente por padrão (`AGENTES_HABILITADO=true`,
-  desligável por env) e o `index.html` usa esses endpoints (os JSON
+- **API/CLI:** o **único `POST /chat`** (áudio/imagem/texto — v0.4) passa pelo
+  fluxo multiagente por padrão (`AGENTES_HABILITADO=true`, desligável por env),
+  responde JSON `{texto, resposta, audio_base64, ...}` e o `index.html` usa esse
+  endpoint (os endpoints `/chat/imagem`, `/chat/texto` e os JSON
   `/rag/perguntar`/`/rag/imagem/analisar` foram removidos); CLI:
   `python -m projeto_final.agentes perguntar|avaliar`.
 
