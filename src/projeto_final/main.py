@@ -379,9 +379,17 @@ def _pipeline_resposta(texto: str, usar_agentes: bool | None = None,
                     from projeto_final import agentes as agentes_mod
 
                     resultado_rag = agentes_mod.responder_agentes(texto)
-                    logger.info("Multiagente (chat): rota={} agente={} fallback={}",
-                                resultado_rag.get("rota"), resultado_rag.get("agente"),
-                                resultado_rag.get("fallback"))
+                    fallback = bool(resultado_rag.get("fallback"))
+                    msg = "Multiagente (chat): rota={} agente={} fallback={}"
+                    args = [resultado_rag.get("rota"), resultado_rag.get("agente"), fallback]
+                    if fallback:
+                        erros = resultado_rag.get("erros") or []
+                        motivo = resultado_rag.get("motivo") or (
+                            "; ".join(erros) if erros else "desconhecido"
+                        )
+                        msg += " motivo={}"
+                        args.append(motivo)
+                    logger.info(msg, *args)
                 else:
                     resultado_rag = rag_pipeline.responder_v3(texto)
             else:
