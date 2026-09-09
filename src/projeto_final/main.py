@@ -15,10 +15,12 @@ import threading
 import time
 from collections import deque
 from pathlib import Path
+from typing import Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from loguru import logger
+from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
 from projeto_final import config, llm, tts, voz
@@ -36,6 +38,103 @@ MIME_POR_EXT = {
     "gif": "image/gif", "webp": "image/webp", "bmp": "image/bmp",
     "tif": "image/tiff", "tiff": "image/tiff",
 }
+
+
+# ------------------------------------------------- schemas (documentacao no Swagger)
+
+class Referencia(BaseModel):
+    """Fonte citada na resposta do RAG."""
+
+    n: int = Field(..., description="Numero da citacao (ordem de primeira aparicao na resposta).")
+    doc_id: str = Field(..., description="Nome do documento do corpus citado (ex.: nlp_aula06_rag_avancado_ocr.pdf).")
+    pagina: int | None = Field(None, description="Pagina do trecho citado; null quando indisponivel.")
+
+
+class Latencia(BaseModel):
+    """Latencia (em segundos) das etapas do pipeline."""
+
+    entrada: float | None = Field(
+        None, description="Etapa de entrada: ASR no audio, visao na imagem; null para texto puro."
+    )
+    llm: float | None = Field(None, description="Etapa de RAG/geracao (LLM).")
+    tts: float | None = Field(None, description="Sintese de voz (TTS); null quando nao ha audio na saida.")
+
+
+class ChatResponse(BaseModel):
+    """Payload de retorno do endpoint POST /chat (audio, imagem ou texto)."""
+
+    tipo_entrada: Literal["audio", "imagem", "texto"] = Field(
+        ..., description="Tipo de entrada recebida (audio, imagem ou texto)."
+    )
+    texto: str = Field(
+        ..., description="Conteudo normalizado da entrada: transcricao do audio, descricao da imagem ou texto digitado."
+    )
+    resposta: str = Field(
+        ..., description="Resposta gerada pelo RAG/multiagentes, com citacoes [N] e rodape de referencias."
+    )
+    audio_base64: str | None = Field(
+        None,
+        description="Audio (WAV) da resposta em base64. Presente para audio/imagem; null quando a entrada "
+        "e apenas texto (sem TTS).",
+    )
+    abstencao: bool | None = Field(
+        None, description="Indica abstencao do assistente (NAO_SEI); null quando o fluxo nao produziu essa marca."
+    )
+    referencias: list[Referencia] = Field(
+        default_factory=list, description="Fontes citadas na resposta (n, doc_id, pagina), na ordem de aparicao."
+    )
+    modelo_entrada: str | None = Field(
+        None, description="Modelo da etapa de entrada (faster-whisper no audio; visao na imagem); null para texto."
+    )
+    latencia: Latencia = Field(..., description="Latencia (s) por etapa: entrada, llm e tts.")
+
+
+class SaudeASR(BaseModel):
+    """Estado do modulo de transcricao (ASR)."""
+
+    backend: str = Field(..., description="Backend do ASR (faster-whisper, CPU).")
+    modelo: str = Field(..., description="Tamanho/modelo do faster-whisper em uso.")
+    vocabulario_dominio: bool = Field(..., description="True quando o prompt de vocabulario do dominio esta disponivel.")
+
+
+class SaudeLLM(BaseModel):
+    """Estado do provedor de LLM."""
+
+    provedor: str = Field(..., description="Provedor do LLM (deepseek).")
+    configurado: bool = Field(..., description="True quando a chave da API do LLM esta configurada.")
+
+
+class SaudeTTS(BaseModel):
+    """Estado do modulo de sintese de voz (TTS)."""
+
+    backend: str = Field(..., description="Backend do TTS (piper ou echo).")
+    voz: str = Field(..., description="Voz usada no Piper (ex.: pt_BR-cadu-medium).")
+
+
+class SaudeCorpusV3(BaseModel):
+    """Estado do corpus combinado texto+imagem (v0.3)."""
+
+    ativo: bool = Field(..., description="True quando o corpus v0.3 (texto+imagem) foi carregado.")
+    chunks_total: int = Field(..., description="Total de chunks do corpus v0.3 (texto + imagem).")
+    chunks_imagem: int = Field(..., description="Chunks de imagem (OCR) presentes no corpus v0.3.")
+
+
+class SaudeRAG(BaseModel):
+    """Estado do RAG (corpus e indices)."""
+
+    chunks_indexados: int = Field(..., description="Chunks de texto (v0.2) carregados/indexados.")
+    corpus_v3: SaudeCorpusV3 = Field(..., description="Estado do corpus combinado texto+imagem (v0.3).")
+    corpus_raw: list[str] = Field(..., description="Nomes dos arquivos brutos disponiveis em data/raw.")
+
+
+class SaudeResponse(BaseModel):
+    """Payload de retorno do endpoint GET /saude."""
+
+    asr: SaudeASR = Field(..., description="Estado do modulo de transcricao (ASR).")
+    llm: SaudeLLM = Field(..., description="Estado do provedor de LLM.")
+    tts: SaudeTTS = Field(..., description="Estado do modulo de sintese de voz (TTS).")
+    rag: SaudeRAG = Field(..., description="Estado do RAG (corpus/indices).")
+
 
 # ------------------------------------------------------- rate limiting (in-memory)
 _janelas: dict[tuple[str, str], deque] = {}
@@ -66,9 +165,9 @@ def _rate_limpar() -> None:
 
 
 def _grupo_e_limite(path: str) -> tuple[str, int]:
-    """Endpoint generativo (LLM/custo): /rag/* e /chat* -> 4/min. Pagina e
+    """Endpoint generativo (LLM/custo): apenas /chat -> 4/min. Pagina, /saude e
     demais rotas -> limite alto (padrao 300/min)."""
-    if path.startswith("/rag/") or path.startswith("/chat"):
+    if path.startswith("/chat"):
         return "rag", config.RATELIMIT_RAG_QTD
     return "geral", config.RATELIMIT_GERAL_QTD
 
@@ -131,8 +230,8 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail="index.html nao encontrado")
         return HTMLResponse(STATIC_INDEX.read_text(encoding="utf-8"))
 
-    @app.get("/saude")
-    def saude() -> dict:
+    @app.get("/saude", response_model=SaudeResponse)
+    def saude() -> SaudeResponse:
         chunks = []
         try:
             chunks = rag_pipeline.carregar_chunks()
@@ -167,26 +266,26 @@ def create_app() -> FastAPI:
                     "chunks_total": len(corpus_v3) if corpus_v3 else 0,
                     "chunks_imagem": n_img if n_img is not None else 0,
                 },
-                "corpus_raw": list(config.RAW_DIR.glob("*.*")),
+                "corpus_raw": sorted(p.name for p in config.RAW_DIR.glob("*.*")),
             },
         }
-
-    @app.get("/voz/saude")
-    def saude_voz() -> dict:
-        return saude()
-
-    @app.get("/rag/saude")
-    def saude_rag() -> dict:
-        return saude()["rag"]
 
     # v0.4 - API unificada: POST /chat recebe audio, imagem OU texto. A entrada
     # e normalizada para texto (_normalizar_entrada) e TODOS os fluxos passam
     # pelo mesmo processo de RAG/multiagentes + resposta (_pipeline_resposta).
     # WAV sintetizado (audio_base64) somente quando a entrada NAO e texto puro.
 
-    @app.post("/chat")
-    async def chat(file: UploadFile | None = File(None),
-                   texto: str | None = Form(None)) -> JSONResponse:
+    @app.post("/chat", response_model=ChatResponse)
+    async def chat(
+        file: UploadFile | None = File(
+            None,
+            description="Arquivo de audio (wav/mp3/m4a/ogg/flac/webm) ou de imagem "
+                        "(jpg/jpeg/png/gif/webp/bmp/tif/tiff); o tipo e detectado pela extensao.",
+        ),
+        texto: str | None = Form(
+            None, description="Pergunta digitada (entrada do tipo texto; saida sem audio)."
+        ),
+    ) -> ChatResponse:
         req = await _preparar_entrada(file, texto)
         t_total = time.time()
         try:
@@ -208,7 +307,7 @@ def create_app() -> FastAPI:
             req["tipo"], round(time.time() - t_total, 2),
             entrada.get("modelo_entrada"), resposta.get("audio") is not None,
         )
-        return JSONResponse(_montar_payload(req["tipo"], entrada, resposta))
+        return _montar_payload(req["tipo"], entrada, resposta)
 
     return app
 

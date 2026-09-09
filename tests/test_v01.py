@@ -74,11 +74,20 @@ def test_root_serve_index():
 
 
 def test_saude():
+    """GET /saude (unico endpoint de saude) expoe asr/llm/tts/rag."""
     client = TestClient(app)
-    res = client.get("/voz/saude")
+    res = client.get("/saude")
     assert res.status_code == 200
     data = res.json()
     assert data["asr"]["backend"] == "faster-whisper (CPU)"
+    assert {"asr", "llm", "tts", "rag"} <= set(data)
+
+
+def test_saude_subrotas_removidas():
+    """Apenas /saude existe — /voz/saude e /rag/saude retornam 404."""
+    client = TestClient(app)
+    for path in ("/voz/saude", "/rag/saude"):
+        assert client.get(path).status_code == 404
 
 
 def test_chat_com_audio_silencioso():

@@ -90,12 +90,13 @@ def test_recupera_chunks():
     assert all("doc_id" in c for c in top)
 
 
-def test_rag_saude():
+def test_saude_rag():
+    """GET /saude expoe o estado do RAG (chunks_indexados) dentro de rag."""
     client = TestClient(app)
-    res = client.get("/rag/saude")
+    res = client.get("/saude")
     assert res.status_code == 200
     data = res.json()
-    assert "chunks_indexados" in data
+    assert "chunks_indexados" in data["rag"]
 
 
 def test_rag_responder_pipeline():
