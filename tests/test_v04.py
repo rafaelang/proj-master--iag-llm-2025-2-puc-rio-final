@@ -149,6 +149,32 @@ def test_pipeline_resposta_usa_agentes():
     assert ra.call_args.args[0] == "O que e RAG?"
     assert out["resposta"] == fake["resposta"]
     assert out["audio"] == b"RIFF...."
+    # payload interno expoe os dados do multiagente (rota/agente/fallback/motivo)
+    assert out["multiagente"] == {
+        "rota": "simples", "agente": "gerador-slm",
+        "fallback": False, "motivo": None,
+    }
+
+
+def test_pipeline_resposta_multiagente_motivo_fallback():
+    """Em fallback, o payload interno carrega o motivo (erros da rota primaria)."""
+    from projeto_final.main import _pipeline_resposta
+
+    fake = {
+        "pergunta": "O que e RAG?", "resposta": "Resposta via fallback [1]",
+        "resposta_tts": "Resposta via fallback", "referencias": [],
+        "abstencao": False, "chunks": [], "contexto": "", "latencia_s": 1.0,
+        "modelo_llm": "deepseek-v4-pro", "uso": None, "usar_imagens": True,
+        "rota": "simples", "agente": "gerador-pro", "roteador": "cascade",
+        "config": {"simples": "slm", "complexa": "pro"},
+        "fallback": True, "erros": ["gerador-slm: resposta vazia"], "motivo": None,
+    }
+    with patch("projeto_final.agentes.responder_agentes", return_value=fake),          patch("projeto_final.main.tts.sintetizar", return_value=(b"RIFF....", 0.1)):
+        out = _pipeline_resposta("O que e RAG?", usar_agentes=True)
+    assert out["multiagente"] == {
+        "rota": "simples", "agente": "gerador-pro",
+        "fallback": True, "motivo": "gerador-slm: resposta vazia",
+    }
 
 
 # ---------------------------------------------------------------- SLM (local)
@@ -247,6 +273,8 @@ def test_chat_texto_endpoint():
         "audio": None, "abstencao": False,
         "referencias": [{"n": 1, "doc_id": "nlp_aula06_rag_avancado_ocr.pdf", "pagina": 1}],
         "latencia_s": {"llm": 1.2, "tts": None},
+        "multiagente": {"rota": "simples", "agente": "gerador-flash",
+                        "fallback": False, "motivo": None},
     }
     with patch("projeto_final.main._pipeline_resposta", return_value=fake) as pl:
         client = TestClient(app)
@@ -260,6 +288,10 @@ def test_chat_texto_endpoint():
     assert corpo["modelo_entrada"] is None
     assert corpo["latencia"]["llm"] == 1.2
     assert corpo["latencia"]["tts"] is None
+    assert corpo["multiagente"]["rota"] == "simples"
+    assert corpo["multiagente"]["agente"] == "gerador-flash"
+    assert corpo["multiagente"]["fallback"] is False
+    assert corpo["multiagente"]["motivo"] is None
     assert corpo["referencias"]
     assert corpo["abstencao"] is False
     pl.assert_called_once()

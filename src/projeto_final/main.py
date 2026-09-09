@@ -60,6 +60,28 @@ class Latencia(BaseModel):
     tts: float | None = Field(None, description="Sintese de voz (TTS); null quando nao ha audio na saida.")
 
 
+class MultiagenteInfo(BaseModel):
+    """Dados do fluxo multiagente que produziu a resposta (quando habilitado)."""
+
+    rota: Literal["simples", "complexa"] | None = Field(
+        None,
+        description="Rota classificada pelo roteador (simples ou complexa); null fora do fluxo multiagente.",
+    )
+    agente: str | None = Field(
+        None,
+        description="Gerador que produziu a resposta (ex.: gerador-slm, gerador-flash, gerador-pro). "
+        "Null quando ambas as rotas falharam (abstencao).",
+    )
+    fallback: bool | None = Field(
+        None,
+        description="True quando a rota primaria falhou e a resposta veio da rota alternativa (fallback cruzado).",
+    )
+    motivo: str | None = Field(
+        None,
+        description="Motivo do fallback (erro/resposta vazia da rota primaria); null quando nao houve fallback.",
+    )
+
+
 class ChatResponse(BaseModel):
     """Payload de retorno do endpoint POST /chat (audio, imagem ou texto)."""
 
@@ -87,6 +109,11 @@ class ChatResponse(BaseModel):
         None, description="Modelo da etapa de entrada (faster-whisper no audio; visao na imagem); null para texto."
     )
     latencia: Latencia = Field(..., description="Latencia (s) por etapa: entrada, llm e tts.")
+    multiagente: MultiagenteInfo | None = Field(
+        None,
+        description="Dados do fluxo multiagente (rota, agente, fallback e motivo). Null quando o fluxo "
+        "multiagente esta desligado (AGENTES_HABILITADO=false) ou o RAG simples foi usado.",
+    )
 
 
 class SaudeASR(BaseModel):
@@ -440,6 +467,7 @@ def _montar_payload(tipo: str, entrada: dict, resposta: dict) -> dict:
         "abstencao": resposta.get("abstencao"),
         "referencias": resposta.get("referencias") or [],
         "modelo_entrada": entrada.get("modelo_entrada"),
+        "multiagente": resposta.get("multiagente"),
         "latencia": {
             "entrada": (
                 round(entrada["latencia_entrada_s"], 2)
@@ -448,6 +476,27 @@ def _montar_payload(tipo: str, entrada: dict, resposta: dict) -> dict:
             "llm": lat.get("llm"),
             "tts": lat.get("tts"),
         },
+    }
+
+
+def _extrair_info_multiagente(resultado_rag: dict) -> dict:
+    """Extrai os dados do fluxo multiagente para o log e o payload do /chat.
+
+    Quando houve fallback, deriva o motivo (erros da rota primaria ou o motivo
+    de abstencao quando ambas falharam) — mesma logica usada no log.
+    """
+    fallback = bool(resultado_rag.get("fallback"))
+    motivo = None
+    if fallback:
+        erros = resultado_rag.get("erros") or []
+        motivo = resultado_rag.get("motivo") or (
+            "; ".join(erros) if erros else "desconhecido"
+        )
+    return {
+        "rota": resultado_rag.get("rota"),
+        "agente": resultado_rag.get("agente"),
+        "fallback": fallback,
+        "motivo": motivo,
     }
 
 
@@ -467,6 +516,7 @@ def _pipeline_resposta(texto: str, usar_agentes: bool | None = None,
         usar_agentes = config.AGENTES_HABILITADO
     resposta = ""
     resultado_rag = None
+    multiagente = None
     try:
         if os.getenv("USE_RAG", "true").lower() == "true":
             logger.debug("Gerando resposta (agentes={}, corpus v0.3={})",
@@ -478,16 +528,15 @@ def _pipeline_resposta(texto: str, usar_agentes: bool | None = None,
                     from projeto_final import agentes as agentes_mod
 
                     resultado_rag = agentes_mod.responder_agentes(texto)
-                    fallback = bool(resultado_rag.get("fallback"))
+                    multiagente = _extrair_info_multiagente(resultado_rag)
                     msg = "Multiagente (chat): rota={} agente={} fallback={}"
-                    args = [resultado_rag.get("rota"), resultado_rag.get("agente"), fallback]
-                    if fallback:
-                        erros = resultado_rag.get("erros") or []
-                        motivo = resultado_rag.get("motivo") or (
-                            "; ".join(erros) if erros else "desconhecido"
-                        )
+                    args = [
+                        multiagente["rota"], multiagente["agente"],
+                        multiagente["fallback"],
+                    ]
+                    if multiagente["fallback"]:
                         msg += " motivo={}"
-                        args.append(motivo)
+                        args.append(multiagente["motivo"])
                     logger.info(msg, *args)
                 else:
                     resultado_rag = rag_pipeline.responder_v3(texto)
@@ -527,6 +576,7 @@ def _pipeline_resposta(texto: str, usar_agentes: bool | None = None,
         "audio": audio,          # bytes WAV ou None (com_audio=False)
         "abstencao": abstencao,
         "referencias": referencias,
+        "multiagente": multiagente,
         "latencia_s": {
             "llm": meta_llm["latencia_s"],
             "tts": round(lat_tts, 2) if lat_tts is not None else None,
