@@ -59,6 +59,10 @@ roda em ambiente local/CLI (padrão do código) e é compilado portável
 
 ## Notas
 
+- `deploy/mcp_colab/` contém um **servidor MCP** (FastMCP/stdio) para o
+  `google-colab-cli` — ferramenta de dev local com `.venv` próprio; o
+  `deploy.sh` a exclui do bundle do Space (`--exclude deploy/mcp_colab`).
+  Ver `deploy/mcp_colab/README.md`.
 - O corpus **não fica** no repositório público nem no histórico do Space;
 - Modelos locais (whisper/fastembed/piper/OCR) são baixados em runtime; o GGUF
   do SLM (v0.4, `processed/slm_models/*`) vem do **dataset privado** no boot

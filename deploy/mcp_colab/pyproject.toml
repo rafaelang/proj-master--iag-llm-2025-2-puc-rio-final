@@ -1,0 +1,25 @@
+[project]
+name = "colab-mcp"
+version = "0.1.0"
+description = "Servidor MCP (FastMCP/stdio) que expoe o google-colab-cli como tools"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=2.0.0",
+    "google-colab-cli>=0.1.0",
+]
+
+[project.scripts]
+colab-mcp = "server:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["server"]
