@@ -1,4 +1,4 @@
-"""v0.5 · Lab — gerar dataset sintético (Q&A) com curadoria (R5).
+"""v0.5b · Lab — gerar dataset sintético (Q&A) com curadoria (R5).
 
 Spec: "o modelo grande gera o dataset da tarefa específica; treina-se um SLM".
 
@@ -17,7 +17,6 @@ Roda no Colab (T4 opcional; a geração usa API DeepSeek).
 
 from __future__ import annotations
 
-import glob
 import json
 import os
 import random
@@ -27,7 +26,6 @@ import time
 
 from dotenv import load_dotenv
 from openai import OpenAI
-from pypdf import PdfReader
 
 load_dotenv("/content/.env")
 API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
@@ -38,21 +36,28 @@ client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
 GEN_MODELO = os.environ.get("GEN_MODELO", "deepseek-v4-pro")
 JUIZ_MODELO = os.environ.get("JUIZ_MODELO", "deepseek-v4-pro")
-N_TRECHOS = int(os.environ.get("N_TRECHOS", "14"))       # trechos sorteados do corpus
+N_TRECHOS = int(os.environ.get("N_TRECHOS", "30"))       # trechos sorteados do corpus
 Q_PER_TRECHO = int(os.environ.get("Q_PER_TRECHO", "5"))  # Q&A por trecho
 N_ABSTENCAO = int(os.environ.get("N_ABSTENCAO", "8"))    # casos de abstenção injetados
 SEED = int(os.environ.get("SEED", "42"))
 
-RAW = "/content/data/raw"
-SAIDA = "/content/data/golden_set/adaptacao/dataset_sintetico.json"
+CHUNKS = os.environ.get("CHUNKS_PATH", "/content/data/processed/rag/chunks.json")
+SAIDA = os.environ.get("GEN_SAIDA", "/content/data/golden_set/adaptacao/dataset_sintetico.json")
 
 
-def extrair(pdf: str) -> str:
-    try:
-        reader = PdfReader(pdf)
-    except Exception:
-        return ""
-    return " ".join((p.extract_text() or "") for p in reader.pages)
+def extrair_chunks() -> dict[str, str]:
+    """Carrega os chunks do corpus expandido (PDF/MD/IPYNB/PPTX) por documento.
+
+    A Fase 0.5 serializa tudo em chunks.json; o amostrador de trechos passa a
+    sortear a partir dos chunks (que ja cobrem os quatro formatos), em vez de
+    re-extrair PDFs crus.
+    """
+    with open(CHUNKS, encoding="utf-8") as f:
+        chunks = json.load(f)
+    docs: dict[str, list[str]] = {}
+    for c in chunks:
+        docs.setdefault(c["doc_id"], []).append(c["texto"])
+    return {doc: "\n".join(textos) for doc, textos in docs.items()}
 
 
 def _chat(modelo: str, system: str, user: str, max_tokens: int = 1500,
@@ -165,19 +170,17 @@ ABSTENCAO_PERGUNTAS = [
 
 def main() -> None:
     random.seed(SEED)
-    docs = {}
-    for p in sorted(glob.glob(os.path.join(RAW, "*.pdf"))):
-        docs[os.path.basename(p)] = extrair(p)
+    docs = extrair_chunks()
 
     trechos = []
     for doc, txt in docs.items():
-        for start in range(0, min(len(txt), 6000), 800):
-            trechos.append((doc, txt[start:start + 800]))
+        for start in range(0, min(len(txt), 8000), 1000):
+            trechos.append((doc, txt[start:start + 1000]))
 
     if not trechos:
-        raise SystemExit("sem PDFs em /content/data/raw")
+        raise SystemExit(f"sem chunks em {CHUNKS}")
     amostra = random.sample(trechos, min(N_TRECHOS, len(trechos)))
-    print(f"[gen] {len(trechos)} trechos no total; sorteando {len(amostra)}")
+    print(f"[gen] {len(docs)} docs / {len(trechos)} trechos; sorteando {len(amostra)}")
 
     gerados: list[dict] = []
     for doc, trecho in amostra:

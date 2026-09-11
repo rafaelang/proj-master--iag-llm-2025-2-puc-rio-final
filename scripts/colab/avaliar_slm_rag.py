@@ -1,4 +1,4 @@
-"""v0.5 · A/B — RAG com SLM base x SLM destilado (LoRA) no golden set (projeto_final).
+"""v0.5b · A/B — RAG com SLM base x SLM destilado (LoRA) no golden set (projeto_final).
 
 Roda no Colab (T4). Reimplementado sobre os módulos do projeto_final (bm25 e
 detecção de abstenção portados de forma self-contained — sem deps pesadas).
@@ -9,6 +9,10 @@ Uso (no Colab):
   python avaliar_slm_rag.py /content/data/processed/slm_adapter          # destilado + RAG
   python avaliar_slm_rag.py /content/data/processed/slm_adapter --no-rag # destilado, sem RAG
 
+Variáveis de ambiente (v0.5b):
+  PERGUNTAS_PATH=/content/data/golden_set/rag/perguntas_v05b.json  # golden expandido
+  NOMEROLE=base|destilado_no_rag         # sufixo do arquivo de saída (default derivado)
+
 Arquivos esperados (upload): /content/data/golden_set/rag/perguntas.json,
 /content/data/processed/rag/chunks.json, /content/prompts/rag_sistema.txt.
 Saída: /content/resultado_{base|destilado}[_no_rag].json
@@ -18,6 +22,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 import sys
 import unicodedata
@@ -36,7 +41,9 @@ for arg in sys.argv[1:]:
 
 BASE = "Qwen/Qwen2.5-1.5B-Instruct"
 CHUNKS_PATH = "/content/data/processed/rag/chunks.json"
-PERGUNTAS_PATH = "/content/data/golden_set/rag/perguntas.json"
+PERGUNTAS_PATH = os.environ.get(
+    "PERGUNTAS_PATH", "/content/data/golden_set/rag/perguntas.json")
+NOMEROLE = os.environ.get("NOMEROLE", "")
 RAG_SYS = "/content/prompts/v0.2/rag_sistema.txt"
 PROMPT_ONLY_SYS = "Você é um assistente. Responda à pergunta. Se não souber a resposta, responda apenas: Não sei."
 
@@ -173,7 +180,7 @@ def main():
         flag = "OK " if r["ok"] else "FALHA"
         print(f"  [{flag}] #{r['id']:02d} absteve={r['absteve']} deve={r['deve']} | {r['pergunta'][:45]}")
 
-    nome_arq = ("destilado" if ADAPTER else "base") + ("_no_rag" if NO_RAG else "")
+    nome_arq = NOMEROLE or (("destilado" if ADAPTER else "base") + ("_no_rag" if NO_RAG else ""))
     json.dump(resultados, open(f"/content/resultado_{nome_arq}.json", "w"), ensure_ascii=False, indent=2)
     print(f"salvo: resultado_{nome_arq}.json")
 

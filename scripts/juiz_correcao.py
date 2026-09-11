@@ -15,6 +15,7 @@ Saída: data/processed/v05_ab/correcao_judge.json + auditoria.json
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 import time
@@ -149,8 +150,7 @@ def main() -> None:
     respostas = json.loads(fonte.read_text(encoding="utf-8"))
     respostas = {r["id"]: r for r in respostas} if isinstance(respostas, list) else respostas
 
-    perguntas = json.loads((config.GOLDEN_SET_DIR / "rag" / "perguntas.json")
-                           .read_text(encoding="utf-8"))["perguntas"]
+    perguntas = json.loads(config.RAG_GOLDEN_SET.read_text(encoding="utf-8"))["perguntas"]
     cliente = _cliente()
 
     linhas = []
@@ -197,7 +197,7 @@ def main() -> None:
     print(f"--- {fonte.stem}: acerto {resumo['acerto_rate']} · nota {resumo['nota_media']} "
           f"· aluc. {resumo['alucinacoes']} · abstenção ok {resumo['abstencao_correta']}")
 
-    dest = config.PROCESSED_DIR / "v05_ab"
+    dest = config.PROCESSED_DIR / os.getenv("JUIZ_PROC_DIR", "v05_ab")
     dest.mkdir(parents=True, exist_ok=True)
     saída = dest / f"correcao_judge_{fonte.stem.replace('resultado_', '')}.json"
     saída.write_text(json.dumps({

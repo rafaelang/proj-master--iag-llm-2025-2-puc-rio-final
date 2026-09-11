@@ -12,6 +12,7 @@ Saída: /content/data/processed/slm_adapter/ (adapter + tokenizer)
 from __future__ import annotations
 
 import json
+import os
 
 import torch
 import transformers
@@ -26,8 +27,9 @@ from transformers import (
 )
 
 MODELO = "Qwen/Qwen2.5-1.5B-Instruct"
-DATASET = "/content/data/golden_set/adaptacao/dataset_sintetico.json"
-SAIDA = "/content/data/processed/slm_adapter"
+DATASET = os.environ.get("TRAIN_DATASET",
+                         "/content/data/golden_set/adaptacao/dataset_sintetico.json")
+SAIDA = os.environ.get("TRAIN_SAIDA", "/content/data/processed/slm_adapter")
 
 
 def main() -> None:

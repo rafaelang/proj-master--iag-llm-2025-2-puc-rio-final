@@ -50,7 +50,7 @@ RAG_CHUNK_PATH = RAG_DIR / "chunks.json"
 RAG_BM25_PATH = RAG_DIR / "bm25.pkl"
 RAG_EMBEDDINGS_PATH = RAG_DIR / "embeddings.npy"
 RAG_CHUNK_IDS_PATH = RAG_DIR / "chunk_ids.json"
-RAG_GOLDEN_SET = GOLDEN_SET_DIR / "rag" / "perguntas.json"
+RAG_GOLDEN_SET = GOLDEN_SET_DIR / "rag" / os.getenv("RAG_GOLDEN_SET_FILE", "perguntas.json")
 # v0.3 - Imagem/OCR: indice combinado (texto + imagem) em pasta propria (nao toca a v0.2)
 RAG_V3_DIR = PROCESSED_DIR / "rag_v3"
 RAG_V3_CHUNK_PATH = RAG_V3_DIR / "chunks.json"

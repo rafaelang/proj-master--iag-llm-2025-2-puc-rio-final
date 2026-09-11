@@ -1,0 +1,254 @@
+[
+  {
+    "pergunta": "O que a biblioteca statistics retorna quando utilizada para calcular a moda?",
+    "resposta": "Ela fornece diretamente a moda do conjunto de dados.",
+    "fonte": "dpia_aula05_funcoes_e_bibliotecas_feito_em_aula2.ipynb",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Como o trecho denomina o processo de treinar um programa para sugerir um y dado um novo x?",
+    "resposta": "Esse processo é denominado Aprendizado de Máquina.",
+    "fonte": "nlp_aula03_llm_aprendizado_de_maquina.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "No código apresentado, o que a função plt.savefig('histograma.png', dpi=600, transparent=True) faz?",
+    "resposta": "Ela salva o histograma gerado em um arquivo chamado 'histograma.png', com resolução de 600 dpi e fundo transparente.",
+    "fonte": "dpia_aula05_funcoes_e_bibliotecas_feito_em_aula2.ipynb",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Em quais tipos de benchmarks a abordagem foi avaliada?",
+    "resposta": "Em benchmarks de raciocínio aritmético, senso comum e simbólico.",
+    "fonte": "nlp_aula05_introducao_a_prompt_engineering_artigo2.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual o preço atual da ação da Petrobras?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Quais modelos são citados como possíveis VLM no pipeline?",
+    "resposta": "GPT-4o, LLaVA e Gemini Vision.",
+    "fonte": "proj_aula03_slides_aula03.md",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Quem é o presidente da França?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "O que o trecho afirma que os autores exploram?",
+    "resposta": "Exploram a capacidade de modelos de linguagem realizarem few-shot prompting para tarefas de raciocínio.",
+    "fonte": "nlp_aula05_introducao_a_prompt_engineering_artigo2.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "O que acontece quando os bilhetes premiados estão acima do tamanho de 10-20%?",
+    "resposta": "Acima desse tamanho, os bilhetes premiados aprendem mais rápido que a rede original e alcançam maior acurácia de teste.",
+    "fonte": "pai_aula06_transfer_learning_thelotterytickethypothesis.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Na tarefa de classificação, qual prompt de exemplo é sugerido e qual dica é indicada para a saída?",
+    "resposta": "O prompt de exemplo é: 'Classifique o texto como {urgente, normal, baixo}. Retorne só a classe: ...'. A dica é: 'Force saída mínima (apenas um rótulo).'",
+    "fonte": "nlp_aula11_text_to_text_openai_aula_vf.ipynb",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Quais são as etapas do experimento central descrito no trecho?",
+    "resposta": "1) Inicializar aleatoriamente a rede f(x;θ0); 2) Treinar a rede por j iterações, chegando aos parâmetros θj; 3) Podar p% dos parâmetros em θj, criando uma máscara m; 4) Redefinir os parâmetros restantes aos valores em θ0, criando o winning ticket f(x; m⊙θ0).",
+    "fonte": "pai_aula06_transfer_learning_thelotterytickethypothesis.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual comando é usado para importar a biblioteca matplotlib no trecho?",
+    "resposta": "import matplotlib.pyplot as plt",
+    "fonte": "dpia_aula05_funcoes_e_bibliotecas_feito_em_aula2.ipynb",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual é o sintoma típico da limitação 'tabelas densas' e qual alternativa recomendada?",
+    "resposta": "O sintoma típico é mesclar linhas, inverter colunas e perder células. A alternativa recomendada é OCR + parser estruturado (Camel).",
+    "fonte": "proj_aula03_slides_ia_multimodal.pptx",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "O que o sistema proposto no case prático 'Netflix' pretende fazer?",
+    "resposta": "Simular um sistema que permita a descoberta de indicações de filmes a partir dos filmes assistidos por um usuário de um streaming, utilizando bancos de dados relacionais.",
+    "fonte": "oficina_tdp_aula01_tdp_00.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "O que a função help fornece?",
+    "resposta": "A função help fornece informações sobre funções.",
+    "fonte": "dpia_aula05_funcoes_e_bibliotecas_feito_em_aula.ipynb",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Na poda iterativa, qual porcentagem de pesos é podada a cada rodada?",
+    "resposta": "Cada rodada poda p/n% dos pesos que sobreviveram à rodada anterior.",
+    "fonte": "pai_aula06_transfer_learning_thelotterytickethypothesis.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual a previsão do tempo para amanhã no Rio de Janeiro?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Explique a teoria da relatividade geral de Einstein.",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Quais metadados estão associados a cada trecho recuperado?",
+    "resposta": "Cada trecho recuperado tem metadados de 'source' (arquivo de origem) e 'page'.",
+    "fonte": "nlp_aula05_introducao_a_prompt_engineering_2_aula_rag_multiplos_pdfs.ipynb",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "O que uma stoplist bem elaborada permite fazer, de acordo com o material?",
+    "resposta": "Uma stoplist bem elaborada permite a eliminação de muitos termos irrelevantes.",
+    "fonte": "tdp_aula08_dados_nao_estruturados_2_processamento_de_linguagem_natural.pptx",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "O que significa redefinir os parâmetros restantes para seus valores de inicialização?",
+    "resposta": "Significa que cada conexão não podada tem seu valor restaurado ao valor que tinha na rede original antes do treinamento, ou seja, aos valores em θ0.",
+    "fonte": "pai_aula06_transfer_learning_thelotterytickethypothesis.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual é a função da SQL em relação aos dados usados em IA?",
+    "resposta": "SQL é a chave para preparar e acessar dados usados em IA; além disso, organiza e estrutura os dados.",
+    "fonte": "oficina_tdp_aula01_tdp_00.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Na limitação de leitura de números pequenos, qual é o sintoma típico e qual alternativa é recomendada?",
+    "resposta": "O sintoma típico é a leitura errada de decimais e valores em tabelas densas. A alternativa recomendada é o OCR clássico (Tesseract · PaddleOCR).",
+    "fonte": "proj_aula03_slides_ia_multimodal.pptx",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Como fazer um bolo de chocolate?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Qual é a primeira etapa do laboratório e qual conceito ela aborda?",
+    "resposta": "A primeira etapa é 'Fala → texto com vocabulário de domínio', ou seja, transforma a fala em texto considerando o vocabulário específico do domínio.",
+    "fonte": "proj_aula01_multimodal_project_lab02_voz_para_ordem_de_servico.ipynb",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "O que a validação Pydantic verifica segundo o trecho?",
+    "resposta": "Tipos, campos obrigatórios e null explícito.",
+    "fonte": "proj_aula03_slides_aula03.md",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "O que o documento 'Estruturas de Dados em Python' menciona sobre Python?",
+    "resposta": "Ele menciona que Python possui várias estruturas de dados built-in, citando listas.",
+    "fonte": "nlp_aula09_revisao_pratica_openai.ipynb",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual a fórmula da velocidade da luz?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Quem ganhou a Copa do Mundo de 2022?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Na seção de recuperação, o que significa buscar os 'k trechos mais relevantes'?",
+    "resposta": "Significa recuperar um número k de trechos mais relevantes para a pergunta. No código, o k padrão é 4, mas pode ser trocado pelo usuário.",
+    "fonte": "nlp_aula05_introducao_a_prompt_engineering_2_aula_rag_multiplos_pdfs.ipynb",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "No conjunto de pares para treinamento, o que representam xi e yi?",
+    "resposta": "xi é chamado de atributo (feature) e yi é chamado de resultado (label).",
+    "fonte": "nlp_aula03_llm_aprendizado_de_maquina.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Qual é a diferença entre regressão e regressão logística segundo o trecho?",
+    "resposta": "Quando y é um conjunto contínuo de valores, o método de treinamento é chamado de regressão; quando y é discreto, tem-se uma regressão logística.",
+    "fonte": "nlp_aula03_llm_aprendizado_de_maquina.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Qual é a analogia apresentada para o processo de segmentação de páginas complexas?",
+    "resposta": "A segmentação é comparada ao princípio do chunking textual: a qualidade da entrada determina a qualidade da saída, ou seja, 'lixo entra, lixo sai'.",
+    "fonte": "proj_aula03_slides_ia_multimodal.pptx",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual comando é utilizado para vetorizar as imagens antes de treinar o modelo de rede neural?",
+    "resposta": "O comando utilizado é x_train.reshape(x_train.shape[0], -1) para o conjunto de treinamento e x_test.reshape(x_test.shape[0], -1) para o conjunto de teste, transformando cada imagem em um vetor unidimensional de pixels.",
+    "fonte": "pai_aula03_introducao_ao_processamento_de_imagens_mnist.ipynb",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual é a finalidade do trecho de código que inclui sns.barplot, plt.figure e plt.show()?",
+    "resposta": "A finalidade desse código é visualizar a distribuição de classes no conjunto de treinamento e teste, usando um gráfico de barras do seaborn, com o objetivo de verificar o balanceamento das classes.",
+    "fonte": "pai_aula03_introducao_ao_processamento_de_imagens_mnist.ipynb",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Segundo o slide 'Importante' mencionado no trecho, como o Hugging Face é organizado?",
+    "resposta": "O Hugging Face é organizado por tarefas.",
+    "fonte": "nlp_aula01_introducao_a_nlp_e_tarefas_notebook_exemplos_tarefas_nlp_2.ipynb",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Na etapa de limpeza de dados, quais elementos devem ser removidos segundo o trecho?",
+    "resposta": "Devem ser removidos letras maiúsculas, pontuação, números e palavras de parada.",
+    "fonte": "tdp_aula08_dados_nao_estruturados_2_processamento_de_linguagem_natural.pptx",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "No exemplo de Chain-of-Thought Prompting, quais passos o prompt instrui o modelo a seguir?",
+    "resposta": "O prompt instrui a: 1) primeiro, calcular o preço de uma maçã; 2) depois, dividir o dinheiro total pelo preço de uma maçã; 3) finalmente, dar a resposta final e provar.",
+    "fonte": "nlp_aula09_revisao_pratica_openai.ipynb",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "No pipeline imagem → JSON → banco, o que ocorre quando a imagem falha na validação Pydantic?",
+    "resposta": "A imagem que falhar a validação vai para log e revisão humana.",
+    "fonte": "proj_aula03_slides_aula03.md",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "No treinamento simples apresentado, qual é a forma da função h e quais parâmetros precisam ser determinados?",
+    "resposta": "A função h é definida por h(x) = mx + b, e o problema central é a determinação dos parâmetros m e b a partir da amostra de pares (x, y).",
+    "fonte": "nlp_aula03_llm_aprendizado_de_maquina.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Qual é a principal vantagem de uma visão materializada em relação a uma visão regular?",
+    "resposta": "Ela pode melhorar significativamente o desempenho de consultas complexas, especialmente em sistemas com grandes volumes de dados, pois armazena fisicamente os dados em vez de executar a consulta a cada acesso.",
+    "fonte": "oficina_tdp_aula03_tdp_07.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual a capital do Japão?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  }
+]
