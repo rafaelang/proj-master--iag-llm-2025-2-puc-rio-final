@@ -99,6 +99,11 @@ Aponte o cliente para o comando abaixo (substitua o caminho absoluto). Usar
 
 ## Limitações
 
+- **Compat `jupyter-kernel-client`:** o `google-colab-cli 0.6.0` espera a API
+  antiga (`jupyter_kernel_client.KernelClient`). O `pyproject.toml` fixa
+  `jupyter-kernel-client==1.0.2` e um `sitecustomize.py` no venv cria o alias
+  `KernelClient = JupyterKernelClient` — sem isso, `colab exec` falha com
+  `AttributeError: module 'jupyter_kernel_client' has no attribute 'KernelClient'`.
 - Comandos interativos/TTY não são tools: `repl`, `console`, `ssh` e `edit`
   (abrem terminal/editor local) e o login interativo `colab auth`.
 - `colab exec`/`colab run` têm timeout remoto padrão de 30 s do próprio CLI;

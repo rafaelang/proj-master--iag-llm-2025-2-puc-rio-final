@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fastmcp>=2.0.0",
     "google-colab-cli>=0.1.0",
+    "jupyter-kernel-client==1.0.2",
 ]
 
 [project.scripts]

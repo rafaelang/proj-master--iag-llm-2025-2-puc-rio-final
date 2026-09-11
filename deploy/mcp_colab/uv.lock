@@ -360,6 +360,7 @@ source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
     { name = "google-colab-cli" },
+    { name = "jupyter-kernel-client" },
 ]
 
 [package.dev-dependencies]
@@ -371,6 +372,7 @@ dev = [
 requires-dist = [
     { name = "fastmcp", specifier = ">=2.0.0" },
     { name = "google-colab-cli", specifier = ">=0.1.0" },
+    { name = "jupyter-kernel-client", specifier = "==1.0.2" },
 ]
 
 [package.metadata.requires-dev]

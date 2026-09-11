@@ -1,0 +1,176 @@
+[
+  {
+    "pergunta": "O que significa dizer que o modelo não precisa de labels ou anotações?",
+    "resposta": "Significa que ninguém diz \"isso é um rosto\"; o modelo aprende apenas com exemplos reais, sem rótulos ou anotações.",
+    "fonte": "dgl_aula01_gan_vae.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "O que é conhecimento conforme o trecho?",
+    "resposta": "Conhecimento é a interpretação formal das relações entre dados e informação, sendo informação organizada, também chamada de expertise.",
+    "fonte": "tdp_aula01_modelagem_relacional.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Quais são os quatro tipos de tarefas em que o trabalho é decomposto, conforme o trecho?",
+    "resposta": "Classificar intenção, prioridade, risco; extrair campos, fatos e estruturas; rotear o próximo passo do fluxo; e validar formato, regras e evidência.",
+    "fonte": "proj_aula04_multiagentes_slm.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual a previsão do tempo para amanhã no Rio de Janeiro?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Quem ganhou a Copa do Mundo de 2022?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Qual a diferença entre a camada de saída e as camadas intermediárias na retropropagação quanto ao sinal de erro?",
+    "resposta": "Na camada de saída, o erro é propagado a partir dela em direção à camada de entrada; nas camadas intermediárias, onde não existem saídas desejadas, o sinal do erro é determinado recursivamente em termos dos sinais dos erros dos neurônios diretamente conectados a elas e dos pesos dessas conexões.",
+    "fonte": "pai_aula07_deploy_fastapi.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Como o sinal de erro é determinado para os neurônios das camadas intermediárias?",
+    "resposta": "Para os neurônios das camadas intermediárias, onde não existem saídas desejadas, o sinal do erro é determinado recursivamente em termos dos sinais dos erros dos neurônios diretamente conectados a eles e dos pesos destas conexões.",
+    "fonte": "pai_aula07_deploy_fastapi.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Como funciona a entrega do projeto a cada aula?",
+    "resposta": "Nenhuma aula gera um projeto novo: todas incrementam o mesmo repositório. A cada release o aluno versiona código, um README atualizado e a evidência pedida, que pode ser métrica, comparação ou diagrama.",
+    "fonte": "proj_spec_tcc.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Quais exemplos de atuação de um SLM especializado são citados no material?",
+    "resposta": "Triagem, extração, verificação e resumo.",
+    "fonte": "proj_aula04_multiagentes_slm.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "O que representa a expressão u_k = Σ w_kj x_j?",
+    "resposta": "Representa a soma ponderada das entradas x_j pelos respectivos pesos w_kj, antes de adicionar o bias e aplicar a função de ativação.",
+    "fonte": "pai_aula07_deploy_fastapi.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual foi o desempenho do GPT-4 com prompting em cadeia de pensamento (chain-of-thought) no Game of 24, segundo o trecho?",
+    "resposta": "O GPT-4 com chain-of-thought resolveu apenas 4% das tarefas.",
+    "fonte": "nlp_aula05_prompt_engineering.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Qual o preço atual da ação da Petrobras?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Qual é a diferença entre aprender regras e aprender padrões no aprendizado implícito?",
+    "resposta": "Aprender regras seria memorizar afirmações explícitas como \"rosto tem dois olhos simétricos, nariz centralizado...\", enquanto aprender padrões é capturar estruturas estatísticas profundas que definem o que é \"real\".",
+    "fonte": "dgl_aula01_gan_vae.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Qual a fórmula da velocidade da luz?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Como funciona o passo Feed Forward no algoritmo Backpropagation?",
+    "resposta": "Um padrão é apresentado à camada de entrada da rede e propagado em direção à camada de saída; a saída obtida é comparada com a saída desejada para esse padrão particular e, então, o erro é calculado.",
+    "fonte": "pai_aula07_deploy_fastapi.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Quem é o presidente da França?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Comparando a fase de diminuição de interesse em IA com a fase de Aprendizado de Máquina Clássico, qual diferença o trecho destaca quanto aos resultados práticos da IA?",
+    "resposta": "Na fase de diminuição de interesse, as redes neurais não escalaram a problemas maiores e o interesse nos negócios diminuiu; já no Aprendizado de Máquina Clássico, soluções de IA tiveram sucesso em reconhecimento de voz, diagnóstico médico e robótica, e algoritmos de IA foram integrados em sistemas maiores, tornando-se úteis em toda a indústria.",
+    "fonte": "dpia_aula01_intro_ia.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Qual a diferença entre avaliar por commit e avaliar apenas o estado final do repositório?",
+    "resposta": "Avaliar por commit considera o histórico de commits e o progresso contínuo ao longo do curso, enquanto avaliar apenas o estado final olharia somente o resultado entregue no fim. O curso adota a avaliação por commit, e não por promessa na última semana.",
+    "fonte": "proj_spec_tcc.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Quem é Ian Goodfellow e qual é sua relação com Yoshua Bengio e o 'Deep Learning Book'?",
+    "resposta": "Ian Goodfellow fez doutorado na Université de Montréal, foi orientado por Yoshua Bengio, um dos 'três mosqueteiros' do Deep Learning, e é autor do famoso 'Deep Learning Book', referência da área.",
+    "fonte": "dgl_aula01_gan_vae.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Na fórmula y_k = φ(u_k + b_k) = φ(net), qual é a relação entre u_k, b_k, net e y_k?",
+    "resposta": "u_k é a soma ponderada das entradas; b_k é o bias; net é a entrada líquida u_k + b_k; y_k é o resultado da função de ativação φ aplicada a net.",
+    "fonte": "pai_aula07_deploy_fastapi.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Qual a capital do Japão?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "O que é a retropropagação (backward)?",
+    "resposta": "É o processo em que o erro é propagado a partir da camada de saída até a camada de entrada, e os pesos das conexões dos neurônios das camadas internas vão sendo atualizados conforme o erro é retropropagado.",
+    "fonte": "pai_aula07_deploy_fastapi.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Como fazer um bolo de chocolate?",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Na simulação de processamento, o que significa a similaridade 0,21 entre 'Os felinos gostam de lugares macios.' e 'A taxa de juros do mercado subiu hoje.'?",
+    "resposta": "Significa que a similaridade ficou abaixo do limiar, então o algoritmo fez um split, criando um novo chunk nesse ponto.",
+    "fonte": "nlp_aula06_rag_avancado_ocr.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "O que é a abordagem ToT mencionada no trecho?",
+    "resposta": "É uma abordagem de prompting que permite explorar unidades coerentes de texto, chamadas de “thoughts”, que servem como passos intermediários para a resolução de problemas.",
+    "fonte": "nlp_aula05_prompt_engineering.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "Explique a teoria da relatividade geral de Einstein.",
+    "resposta": "Não sei.",
+    "fonte": "abstencao",
+    "tipo": "abstencao"
+  },
+  {
+    "pergunta": "Segundo o trecho, quais fatores contribuíram para a diminuição do interesse em IA nos negócios?",
+    "resposta": "As redes neurais não escalaram a problemas maiores e mais complexos; além disso, softwares de negócios gerais (por exemplo, SAP, Oracle) poderiam funcionar em PCs em vez de mainframes.",
+    "fonte": "dpia_aula01_intro_ia.pdf",
+    "tipo": "ancorado"
+  },
+  {
+    "pergunta": "O que Yann LeCun afirmou sobre as GANs e qual é a sua posição profissional mencionada no trecho?",
+    "resposta": "Yann LeCun, diretor de IA no Meta (até pouco tempo), fundador da AMI Labs e Prêmio Turing, afirmou que as GANs são 'uma das ideias mais importantes dos últimos 10 anos em Machine Learning'.",
+    "fonte": "dgl_aula01_gan_vae.pdf",
+    "tipo": "composta"
+  },
+  {
+    "pergunta": "Qual é a principal diferença entre as arquiteturas VGG e ResNet apresentadas no trecho?",
+    "resposta": "As VGG são descritas como arquiteturas simples e profundas, muito utilizadas para extração de características visuais básicas e intermediárias; já as ResNet são redes residuais com conexões de atalho que facilitam o treinamento de redes extremamente profundas.",
+    "fonte": "pai_aula07_deploy_fastapi.pdf",
+    "tipo": "composta"
+  }
+]

@@ -1,7 +1,7 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v0.4 · Agentes ✅ **CONCLUÍDA** (fluxo heterogêneo: roteador **`cascade`** — R2 TF-IDF+XGB decide ~85%; `INDETERMINADO` → SLM few-shot, θ=0.60 — + SLM local na rota simples + `deepseek-v4-pro` na complexa; E2E do default **0.850** por decisão de custo; R1/SLM media **0.950** — docs/v04.md §11; v0.1–v0.3 intactas)
+> **Status:** v0.5 · Adaptação ✅ **CONCLUÍDA** (comparativo das 4 abordagens + decisão **"não treinar"** justificada; mini-experimento prompt×RAG com **juiz de correção**; destilação LoRA **curada** no Colab T4 — adapter 8,7 MB; matriz 2×2 base×destilado medida com acurácia: destilado reduz alucinações mas piora acurácia por super-cautela; auditoria do juiz aprovada; DPO não executado por falta de preferência real — docs/v05.md; v0.1–v0.4 intactas)
 > **Repositório base de consulta:** `projeto2/` (protótipo de experimentação)
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens, roteamento simples/complexo entre SLM local e LLM remoto, e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
@@ -403,6 +403,39 @@ Mais detalhes em `docs/v04.md` e `docs/v04_evidencia.md`.
 
 ---
 
+## Arquitetura da v0.5 (Adaptação)
+
+A v0.5 **não altera a arquitetura de produção** — ela *mede e decide*: comparou
+as 4 abordagens (prompt/RAG/fine-tuning/pré-treino) e decidiu **não treinar**.
+O experimento reimplantou a PoC com as correções da aula07:
+
+```mermaid
+flowchart LR
+    subgraph LOCAL["Local (API)"]
+        A[golden set 20] --> B["prompt-only (frontier)"]
+        A --> C["RAG (frontier, citação)"]
+        B --> J["juiz de correção<br/>deepseek-v4-pro"]
+        C --> J
+    end
+    subgraph COLAB["Colab T4 (google-colab-cli)"]
+        D["dataset sintético 60 brutos"] --> E["curadoria (juiz de ancoragem)<br/>29 curados: 21 anc + 10 comp + 8 abst"]
+        E --> F["LoRA Qwen2.5-1.5B 4-bit<br/>22–32 s · loss 2.447"]
+        F --> G["matriz 2×2: base × destilado<br/>× sem/com RAG"]
+    end
+    J --> R["docs/v05_evidencia.md"]
+    G --> R
+    R --> D2["decisão: não treinar"]
+```
+
+**Resultado-chave:** o destilado (curado) reduziu alucinações (5→4) mas **piorou
+a acurácia** (0.40→0.30) por **super-cautela** (abstém mesmo com evidência) —
+confirma o "não treinar" com métrica de acurácia (R3), diferente da PoC que
+media só abstenção. Auditoria do juiz aprovada nas 3 sondas (R3).
+
+Mais detalhes em `docs/v05.md` e `docs/v05_evidencia.md`.
+
+---
+
 ## 6. Status
 
 | Release | Status |
@@ -412,7 +445,7 @@ Mais detalhes em `docs/v04.md` e `docs/v04_evidencia.md`.
 | v0.2 · RAG | ✅ **CONCLUÍDA** — retrieval Recall@5=1.000/MRR=0.969 (272 chunks limpos/anti-garbage); e2e recall@5=1.000/acurácia=0.700 (juiz deepseek-v4-pro); BM25 próprio + RRF ponderado; dataset único do projeto2; rerank testado/desativado. |
 | v0.3 · Imagem | ✅ **CONCLUÍDA** — OCR local (RapidOCR/ONNX) de figuras extraídas dos PDFs (PyMuPDF; 275 únicas, 22 úteis indexadas); corpus texto+imagem 294 chunks; conteúdo da figura no top-5: 0.000 (texto) → 1.000 (texto+imagem); 3/3 casos em que a visão corrigiu o texto; chat por imagem (`/chat/imagem` + deepseek-vision). *(Na v0.4, os endpoints JSON `/rag/perguntar` e `/rag/imagem/analisar` foram removidos.)* |
 | v0.4 · Agentes | ✅ **CONCLUÍDA** — fluxo heterogêneo (roteador SIMPLES/COMPLEXA + SLM local Qwen2.5-1.5B na rota simples + deepseek-v4-pro na complexa; fallback cruzado); estudo de roteadores com default `cascade` (R2 TF-IDF+XGB→R1, θ=0.60); R1 slm mede abstenção correta 0.950 e o default `cascade` mede 0.850 (decisão por custo, docs/v04.md §11); Python 3.14 + llama-cpp-python + scikit-learn/xgboost; `/chat` e `/chat/imagem` usam os agentes por padrão (`AGENTES_HABILITADO`); endpoints `/rag/perguntar` e `/rag/imagem/analisar` removidos. |
-| v0.5 · Adaptação | ⏳ |
+| v0.5 · Adaptação | ✅ **CONCLUÍDA** — comparativo (prompt/RAG/fine-tuning/pré-treino) com **decisão: não treinar**; mini-experimento prompt-only × RAG com **juiz de correção** (R3: prompt-only alucina 2× fora do corpus e nunca cita; RAG 0 alucinações + 100% citação); **destilação LoRA com curadoria** (R5) no Colab T4 — dataset curado 29 Q&A (21 ancorados + 10 compostos + 8 abstenção), adapter 8,7 MB, 22–32 s de GPU, **train_loss 2.447**; matriz 2×2 (base × destilado × sem/com RAG) medida com juiz: destilado reduz alucinações (5→4) mas **piora acurácia** (0.40→0.30) por super-cautela; **auditoria do juiz aprovada** (consistência, viés de comprimento, rubrica — R3); **DPO não executado** (R6: sem preferência real); TCO 3 cenários (R7). |
 | v0.6 · Avaliação | ⏳ |
 | v1.0 · Produção | ⏳ |
 
