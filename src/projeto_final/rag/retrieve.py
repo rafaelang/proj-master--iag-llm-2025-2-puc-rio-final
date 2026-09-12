@@ -17,8 +17,12 @@ PESO_DENSO = 1.5
 # v0.3: peso extra para chunks de IMAGEM no RRF. Sem ele, listas de rotulos OCR
 # (figuras) quase nunca superam a prosa do mesmo slide na disputa pelo top-5.
 PESO_IMAGEM_RRF = 1.15
-# Candidatos (por lado) buscados antes da fusao + rerank quando o rerank esta ativo.
-POOL_RERANK = 30
+# Over-fetch de candidatos (por lado) antes da fusao RRF (com ou sem rerank).
+# P1 (melhoria_v0.5.md, Fase 3): pool 60 medido em 0.737 recall@5 no golden v0.5b
+# corrigido + indice pos-OCR (rotineira 0.880, composta 0.556, negativa 0.250);
+# pool 10 (producao antiga) = 0.632. Pool > 60 afoga no ruido (0.711). Evidencia
+# em data/processed/rag/recall_pool_*_norerank.json e docs/v05b_retrieval.md.
+POOL_RERANK = 60
 # Dedup: Jaccard minimo entre dois chunks da MESMA pagina/doc para tratar como
 # duplicata (overlay de chunking e prefixos de imagem duplicam conteudo).
 DEDUP_JACCARD = 0.85
@@ -104,8 +108,9 @@ def recuperar(
     """Recupera top-k chunks: busca hibrida BM25 + denso, fusao RRF ponderada e RERANK opcional.
 
     Fluxo:
-      1) BM25 e denso buscam candidatos (over-fetch: POOL_RERANK=30 com rerank,
-         top_k*2 sem rerank) -> RRF ponderado (k=60, BM25 1.0 x denso 1.5);
+      1) BM25 e denso buscam candidatos (over-fetch: POOL_RERANK=60; com rerank o
+         pool alimenta o cross-encoder, sem rerank vai direto ao RRF) -> RRF
+         ponderado (k=60, BM25 1.0 x denso 1.5);
       2) RERANK opcional dos candidatos com cross-encoder (rag/rerank.py);
       3) retorna estritamente top_k (o pipeline usa top_k=5 -> Top-5 definitivo).
 
@@ -114,7 +119,7 @@ def recuperar(
     0.865 no golden set; custo ~40 s/query em CPU). Use rerank=True para ativa-lo.
     """
     bm25, embeddings, chunk_ids = construir_indices(chunks, base=base)
-    candidatos_n = POOL_RERANK if rerank else top_k * 2
+    candidatos_n = POOL_RERANK
     r_bm25 = _ranking_bm25(pergunta, bm25, chunks, top_k=candidatos_n)
     r_emb = _ranking_embeddings(pergunta, embeddings, chunk_ids, chunks, top_k=candidatos_n)
 

@@ -8,8 +8,11 @@ import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import pymupdf
 from loguru import logger
 from pypdf import PdfReader
+
+from projeto_final import config
 
 
 # ------------------------------------------------------- limpeza de "mobilia" de slides
@@ -97,20 +100,117 @@ def _limpar_pagina(texto: str) -> str:
             continue
         linhas_limpas.append(l)
     return "\n".join(linhas_limpas)
+# ------------------------------------------------------------ OCR de pagina (P1)
+
+_ocr_cache = None
+_ocr_paginas_cache: dict | None = None
+_OCR_PAGINAS_CACHE_PATH = config.RAG_DIR / "ocr_paginas_cache.json"
+
+
+def _get_ocr():
+    """Singleton do RapidOCR (ONNX, CPU) — carrega o modelo uma unica vez."""
+    global _ocr_cache
+    if _ocr_cache is None:
+        from rapidocr_onnxruntime import RapidOCR
+
+        _ocr_cache = RapidOCR()
+    return _ocr_cache
+
+
+def _carregar_ocr_paginas_cache() -> dict:
+    """Cache em disco do OCR por pagina (evita re-OCR em cada ingest()/teste)."""
+    global _ocr_paginas_cache
+    if _ocr_paginas_cache is None:
+        if _OCR_PAGINAS_CACHE_PATH.exists():
+            try:
+                _ocr_paginas_cache = json.loads(_OCR_PAGINAS_CACHE_PATH.read_text(encoding="utf-8"))
+            except Exception:
+                _ocr_paginas_cache = {}
+        else:
+            _ocr_paginas_cache = {}
+    return _ocr_paginas_cache
+
+
+def _salvar_ocr_paginas_cache() -> None:
+    if _ocr_paginas_cache is None:
+        return
+    _OCR_PAGINAS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _OCR_PAGINAS_CACHE_PATH.write_text(
+        json.dumps(_ocr_paginas_cache, ensure_ascii=False), encoding="utf-8")
+
+
+def _e_letra_a_letra(texto: str) -> bool:
+    """True quando a extracao parece 'letra a letra' (espacada por caractere).
+
+    PDFs com fonte/posicionamento por caractere extraem 'T e x t o' (palavras de
+    1 char). Esse texto dilui BM25/embedding e nao responde a queries reais.
+    """
+    palavras = texto.split()
+    if not palavras:
+        return False
+    return sum(1 for p in palavras if len(p) <= 1) / len(palavras) > 0.25
+
+
+def _ocr_linhas(png: bytes) -> list[str]:
+    """Roda RapidOCR e devolve linhas ordenadas de cima p/ baixo, esq p/ dir."""
+    res, _el = _get_ocr()(png)
+    if not res:
+        return []
+    linhas = []
+    for box, txt, _conf in res:
+        ys = [p[1] for p in box]
+        xs = [p[0] for p in box]
+        linhas.append((min(ys) // 8, min(xs), str(txt)))
+    linhas.sort()
+    return [t for _, _, t in linhas]
+
+
+def _ocr_pagina_pdf(pagina: pymupdf.Page, escala: float = 2.0) -> str:
+    """Rasteriza a pagina e extrai o texto via OCR (paginas escaneadas/PDF-foto).
+
+    Resultado cacheado em disco por pagina (doc_id + numero) — re-OCR em ingest()
+    repetida (ex.: testes) custa uma unica vez.
+    """
+    chave = f"{pagina.parent.name}::p{pagina.number + 1}"
+    cache = _carregar_ocr_paginas_cache()
+    if chave in cache:
+        return cache[chave]
+    pix = pagina.get_pixmap(matrix=pymupdf.Matrix(escala, escala))
+    png = pix.tobytes("png")
+    texto = "\n".join(_ocr_linhas(png))
+    cache[chave] = texto
+    _salvar_ocr_paginas_cache()
+    return texto
+
+
 def extrair_texto_pdf(caminho: Path) -> list[dict]:
-    """Extrai texto pagina a pagina de um PDF."""
+    """Extrai texto pagina a pagina de um PDF.
+
+    Fallback de OCR (P1): quando a extracao textual vem VAZIA ou 'letra a letra'
+    (PDF escaneado ou com fontes ruins), a pagina e rasterizada (pymupdf) e
+    processada com RapidOCR — o texto resultante entra no mesmo fluxo de chunking.
+    """
     doc_id = caminho.name  # nome do arquivo COM extensao (ex.: nlp_aula06_rag_avancado_ocr.pdf)
     paginas = []
     try:
         reader = PdfReader(str(caminho))
+        pdf = pymupdf.open(str(caminho))
         for i, page in enumerate(reader.pages, start=1):
             texto = _limpar_pagina(page.extract_text() or "")
+            if not texto.strip() or _e_letra_a_letra(texto):
+                try:
+                    texto_ocr = _ocr_pagina_pdf(pdf[i - 1])
+                except Exception as e:
+                    logger.warning("OCR falhou em {} p{}: {}", caminho.name, i, e)
+                    texto_ocr = ""
+                texto = _limpar_pagina(texto_ocr) if texto_ocr.strip() else texto
             paginas.append({
                 "doc_id": doc_id,
                 "arquivo": caminho.name,
                 "pagina": i,
                 "texto": texto.strip(),
             })
+        pdf.close()
         logger.debug("PDF {}: {} paginas extraidas", caminho.name, len(paginas))
     except Exception as e:
         logger.error("Erro ao extrair {}: {}", caminho, e)
