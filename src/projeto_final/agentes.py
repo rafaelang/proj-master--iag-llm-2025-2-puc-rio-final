@@ -32,11 +32,7 @@ from pathlib import Path
 from loguru import logger
 
 from projeto_final import config, llm as llm_mod, slm
-from projeto_final.rag.pipeline import (
-    _formatar_contexto,
-    _formatar_referencias,
-    carregar_corpus_v3,
-)
+from projeto_final.rag.pipeline import _formatar_contexto, _formatar_referencias, carregar_chunks
 from projeto_final.rag.retrieve import recuperar
 
 NOME_SLM = "Qwen2.5-1.5B-Instruct (GGUF Q4_K_M, local)"
@@ -132,9 +128,12 @@ def _abstido(motivo: str) -> dict:
 
 
 def _gerar_slm(pergunta: str, chunks: list[dict], top_k: int = 5) -> dict:
-    """Gerador local (rota simples): recupera no corpus v0.3 e responde com o SLM."""
+    """Gerador local (rota simples): recupera no corpus e responde com o SLM."""
     t0 = time.time()
-    recuperados = recuperar(pergunta, chunks, top_k=top_k, base=config.RAG_V3_DIR)
+    # P2 (melhoria_v0.5.md): usa o indice de texto corrigido do P1 (RAG_DIR, pool 60,
+    # OCR). O RAG_V3_DIR (texto+imagem) ficou defasado (corpus antigo) e NAO recebeu
+    # as correcoes de P1 — voltar a usá-lo exige re-rodar o pipeline de imagem.
+    recuperados = recuperar(pergunta, chunks, top_k=top_k, base=None)
     if not recuperados:
         return _abstido("sem evidencia recuperada")
     contexto = _formatar_contexto(recuperados)
@@ -154,9 +153,9 @@ def _gerar_slm(pergunta: str, chunks: list[dict], top_k: int = 5) -> dict:
 
 
 def _gerar_api(pergunta: str, chunks: list[dict], modelo: str, top_k: int = 5) -> dict:
-    """Gerador remoto (flash/pro): recupera no corpus v0.3 e responde com a API."""
+    """Gerador remoto (flash/pro): recupera no corpus e responde com a API."""
     t0 = time.time()
-    recuperados = recuperar(pergunta, chunks, top_k=top_k, base=config.RAG_V3_DIR)
+    recuperados = recuperar(pergunta, chunks, top_k=top_k, base=None)
     if not recuperados:
         return _abstido("sem evidencia recuperada")
     contexto = _formatar_contexto(recuperados)
@@ -205,7 +204,9 @@ def resposta_multiagente(
     complexa = complexa or config.AGENTE_COMPLEXA
     rota = classificar_rota(pergunta, roteador=roteador).lower()
     if chunks is None:
-        chunks = carregar_corpus_v3()
+        # P2: corpus de texto corrigido do P1 (RAG_DIR). O RAG_V3_DIR (texto+imagem)
+        # esta defasado (nao recebeu as correcoes de P1 / expansao do corpus).
+        chunks = carregar_chunks()
 
     # Ordem de tentativa: rota escolhida primeiro; fallback para a outra.
     ordem = (
