@@ -56,6 +56,7 @@ def _get_llm():
             model_path=str(caminho),
             n_ctx=config.SLM_N_CTX,
             n_threads=config.SLM_N_THREADS,
+            n_gpu_layers=config.SLM_N_GPU_LAYERS,
             verbose=False,
         )
         logger.info("SLM carregado em {:.1f}s", time.time() - t0)

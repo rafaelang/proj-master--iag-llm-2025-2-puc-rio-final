@@ -101,6 +101,9 @@ SLM_N_THREADS = int(os.getenv("SLM_N_THREADS", "8"))
 SLM_N_CTX = int(os.getenv("SLM_N_CTX", "4096"))
 SLM_MAX_TOKENS = int(os.getenv("SLM_MAX_TOKENS", "400"))
 SLM_TEMPERATURE = float(os.getenv("SLM_TEMPERATURE", "0.2"))
+# Camadas do GGUF offload'adas para GPU (0 = CPU puro, uso local/producao).
+# P3: ambientes GPU (Colab) aceleram o SLM via llama-cpp CUDA com n_gpu_layers=-1.
+SLM_N_GPU_LAYERS = int(os.getenv("SLM_N_GPU_LAYERS", "0"))
 
 # v0.4 - Agentes (roteador SIMPLES/COMPLEXA + geradores com fallback).
 # Mapeamento: slm = local · flash = deepseek-v4-flash (API, texto) ·

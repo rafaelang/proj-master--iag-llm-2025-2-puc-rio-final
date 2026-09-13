@@ -127,8 +127,13 @@ def _abstido(motivo: str) -> dict:
     }
 
 
-def _gerar_slm(pergunta: str, chunks: list[dict], top_k: int = 5) -> dict:
-    """Gerador local (rota simples): recupera no corpus e responde com o SLM."""
+def _gerar_slm(pergunta: str, chunks: list[dict], top_k: int = 5,
+               sistema: str | None = None) -> dict:
+    """Gerador local (rota simples): recupera no corpus e responde com o SLM.
+
+    sistema: override do prompt de sistema (P3 — avaliacao de variantes de
+    prompt sem tocar no arquivo de producao). Default: prompts/v0.4/rag_sistema_slm.txt.
+    """
     t0 = time.time()
     # P2 (melhoria_v0.5.md): usa o indice de texto corrigido do P1 (RAG_DIR, pool 60,
     # OCR). O RAG_V3_DIR (texto+imagem) ficou defasado (corpus antigo) e NAO recebeu
@@ -137,7 +142,7 @@ def _gerar_slm(pergunta: str, chunks: list[dict], top_k: int = 5) -> dict:
     if not recuperados:
         return _abstido("sem evidencia recuperada")
     contexto = _formatar_contexto(recuperados)
-    sistema = _sistema_slm()
+    sistema = sistema or _sistema_slm()
     texto = slm.chat(
         [
             {"role": "system", "content": sistema},
