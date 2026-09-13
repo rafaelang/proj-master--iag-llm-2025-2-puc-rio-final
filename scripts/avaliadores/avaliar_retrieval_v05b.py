@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 from loguru import logger
@@ -25,8 +26,12 @@ from projeto_final.rag.pipeline import carregar_chunks
 from projeto_final.rag.retrieve import recuperar
 
 GOLDEN = config.RAG_GOLDEN_SET
-RESULTADOS_JSON = config.RAG_DIR / "retrieval_v05b.json"
-EVIDENCIA_MD = config.DOCS_DIR / "v05b_retrieval.md"
+# Emprestimos de nome derivam da versão do golden (v05b → v05b_retrieval.md;
+# v06 → v06_retrieval.md) para não sobrescrever evidências de releases fechadas.
+_VERSAO = re.search(r"v\d[\w]*", GOLDEN.name)
+_VERSAO = _VERSAO.group() if _VERSAO else "v05b"
+RESULTADOS_JSON = config.RAG_DIR / f"retrieval_{_VERSAO}.json"
+EVIDENCIA_MD = config.DOCS_DIR / f"{_VERSAO}_retrieval.md"
 
 TOP_K = 5
 

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from collections import Counter
@@ -30,7 +31,11 @@ from projeto_final import agentes, config
 from projeto_final.rag.pipeline import carregar_chunks
 
 GOLDEN = config.RAG_GOLDEN_SET
-SAIDA_JSONL = config.PROCESSED_DIR / "v05b_ab" / "cascade_v05b_p2.jsonl"
+# Nome de saída derivado da versão do golden (cascade_v05b_p2.jsonl vs
+# cascade_v06_p2.jsonl) — preserva as medições de releases fechadas.
+_VERSAO = re.search(r"v\d[\w]*", GOLDEN.name)
+_VERSAO = _VERSAO.group() if _VERSAO else "v05b"
+SAIDA_JSONL = config.PROCESSED_DIR / "v05b_ab" / f"cascade_{_VERSAO}_p2.jsonl"
 
 # Preco por milhao de tokens (USD, DeepSeek) para estimativa de custo.
 PRECO_IN = 0.27      # $/M token de entrada (deepseek-v4-pro)
@@ -168,7 +173,7 @@ def main() -> None:
     resumo = resumir(linhas)
     print("\n=== P2 RESUMO ===")
     print(json.dumps(resumo, ensure_ascii=False, indent=2))
-    (config.PROCESSED_DIR / "v05b_ab" / "cascade_v05b_p2_resumo.json").write_text(
+    (config.PROCESSED_DIR / "v05b_ab" / f"cascade_{_VERSAO}_p2_resumo.json").write_text(
         json.dumps(resumo, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
