@@ -94,14 +94,19 @@ def auditar_juiz(cliente: OpenAI) -> dict:
     print("== auditoria do juiz ==")
 
     # 1) consistência: mesma resposta julgada 2x -> veredito igual?
+    # O veredito que move a METRICA e `correta` (binario); a `nota` 1-5 tem
+    # granularidade ruidosa (P4: flutua 4<->5 com conteudo identico). Criterio
+    # de aprovacao: `correta` identico; `nota` divergente vira ALERTA, nao falha.
     perg = "O que é RAG?"
     resp = "RAG é uma técnica que combina recuperação de informações com geração de texto [1]. É apresentado no curso como um mecanismo de busca associado a modelos de linguagem [1]."
     j1 = avaliar(perg, ["nlp_aula06_rag_avancado_ocr.pdf"], resp, cliente)
     time.sleep(1)
     j2 = avaliar(perg, ["nlp_aula06_rag_avancado_ocr.pdf"], resp, cliente)
-    consistente = bool(j1 and j2 and j1["correta"] == j2["correta"] and j1["nota"] == j2["nota"])
-    print(f"  consistência (mesma resposta 2x): {j1['correta'] if j1 else '?'} vs "
-          f"{j2['correta'] if j2 else '?'} -> {'OK' if consistente else 'FALHOU'}")
+    consistente = bool(j1 and j2 and j1["correta"] == j2["correta"])
+    nota_estavel = bool(j1 and j2 and j1["nota"] == j2["nota"])
+    print(f"  consistência (mesma resposta 2x): correta {j1['correta'] if j1 else '?'} vs "
+          f"{j2['correta'] if j2 else '?'} -> {'OK' if consistente else 'FALHOU'}"
+          f"{'' if nota_estavel else '  [alerta: nota flutuou %s<>%s]' % (j1 and j1['nota'], j2 and j2['nota'])}")
 
     # 2) viés de comprimento: mesmo conteúdo, curto x longo (com fonte esperada)
     resp_curta = "RAG combina recuperação de informação com geração, com citação [1]."
@@ -132,7 +137,7 @@ def auditar_juiz(cliente: OpenAI) -> dict:
           f"-> {'OK' if rubrica_ok else 'FALHOU'}")
 
     return {
-        "consistencia": {"ok": consistente, "j1": j1, "j2": j2},
+        "consistencia": {"ok": consistente, "nota_estavel": nota_estavel, "j1": j1, "j2": j2},
         "vies_comprimento": {"alerta": tendencia, "curta": jc, "longa": jl},
         "rubrica": {"ok": rubrica_ok, "abstencao": jab, "resposta": jre},
         "aprovado": consistente and not tendencia and rubrica_ok,

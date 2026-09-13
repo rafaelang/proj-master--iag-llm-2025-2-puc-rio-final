@@ -143,6 +143,11 @@ def resumir(linhas: list[dict]) -> dict:
     resumo["total"] = _met(linhas)
     resumo["rotas"] = dict(sorted(Counter(l["rota"] or "?" for l in linhas).items()))
     resumo["agentes"] = dict(sorted(Counter(l["agente"] or "?" for l in linhas).items()))
+    # P4: corte por estrato em toda medição (relatório por estrato)
+    por_estrato: dict[str, list[dict]] = {}
+    for l in linhas:
+        por_estrato.setdefault(l.get("estrato") or "?", []).append(l)
+    resumo["por_estrato"] = {e: _met(rs) for e, rs in sorted(por_estrato.items())}
     return resumo
 
 

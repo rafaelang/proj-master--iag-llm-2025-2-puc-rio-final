@@ -121,6 +121,19 @@ def resumir(linhas: list[dict]) -> dict:
     aluc = sum(1 for r in julg if r["juiz"]["alucinou"])
     abs_ok = sum(1 for r in linhas if r["absteve"] == r["deve_abster"])
     cit = sum(1 for r in linhas if not r["absteve"] and r["resposta"])
+    # P4: relatório por estrato em toda medição (esconde rotineira=elo fraco)
+    por_estrato = {}
+    for est in ("rotineira", "composta", "negativa", "adversarial"):
+        le = [r for r in linhas if r.get("estrato") == est]
+        jle = [r for r in le if r.get("juiz")]
+        if le:
+            por_estrato[est] = {
+                "n": len(le), "acerto_rate": round(
+                    sum(1 for r in jle if r["juiz"]["correta"]) / max(1, len(jle)), 3),
+                "alucinacoes": sum(1 for r in jle if r["juiz"]["alucinou"]),
+                "abstencao_correta": round(
+                    sum(1 for r in le if r["absteve"] == r["deve_abster"]) / len(le), 3),
+            }
     return {
         "n": n, "acuracia": round(acerto / max(1, len(julg)), 3),
         "acertos": acerto, "julgadas": len(julg),
@@ -129,6 +142,7 @@ def resumir(linhas: list[dict]) -> dict:
         "nota_media": round(sum(r["juiz"]["nota"] for r in julg) / max(1, len(julg)), 2),
         "citacao": round(cit / max(1, sum(1 for r in linhas if not r["absteve"])), 3),
         "respostas_abstidas": sum(1 for r in linhas if r["absteve"]),
+        "por_estrato": por_estrato,
     }
 
 
