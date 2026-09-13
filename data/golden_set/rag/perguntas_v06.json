@@ -1,0 +1,1608 @@
+{
+  "meta": {
+    "dominio": "materiais do Master IAG & LLM (PUC-Rio)",
+    "estratos": [
+      "rotineira",
+      "composta",
+      "negativa",
+      "adversarial"
+    ],
+    "metricas": "recall@k (docs_esperados recuperados) + taxa de abstenção correta (absteve == deve_abster) + juiz de correção",
+    "origem": "v0.6 - P5: golden expandido (44 congeladas v0.5b + novos ancorados no corpus)",
+    "nota": "IDs 1-44 congeladas da v0.5b (textualmente preservadas). IDs 45+ gerados no P5 com curadoria de ancoragem (resposta_esperada em _auditoria, fora do schema avaliado). Estratos: {'rotineira': 69, 'composta': 29, 'negativa': 16, 'adversarial': 18}. Critério de rótulo: data/golden_set/adaptacao/criterio_rotulo.md (congelado)."
+  },
+  "perguntas": [
+    {
+      "id": 1,
+      "pergunta": "O que é RAG?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula06_rag_avancado_ocr.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 2,
+      "pergunta": "O que significa DDL e para que serve?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula03_sql_ddl.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 3,
+      "pergunta": "O que é DQL?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula03_sql_ddl.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 4,
+      "pergunta": "Como o FastAPI é usado para servir um modelo?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula07_deploy_fastapi.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 5,
+      "pergunta": "O que são GAN e VAE?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "dgl_aula01_gan_vae.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 6,
+      "pergunta": "O que é OCR e como ele ajuda na recuperação de documentos?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula06_rag_avancado_ocr.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 7,
+      "pergunta": "O que é fine-tuning de um modelo de linguagem?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula05_prompt_engineering.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 8,
+      "pergunta": "O que é transfer learning?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula07_deploy_fastapi.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 9,
+      "pergunta": "O que é WER e como ele é usado na avaliação de voz?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_spec_tcc.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 10,
+      "pergunta": "O que são sistemas multiagentes com small language models?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula04_multiagentes_slm.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 11,
+      "pergunta": "O que são embeddings e como são usados no RAG?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "nlp_aula06_rag_avancado_ocr.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 12,
+      "pergunta": "Qual a diferença entre prompt engineering e fine-tuning?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "nlp_aula05_prompt_engineering.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 13,
+      "pergunta": "O que é atenção em modelos de linguagem e onde ela é usada?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "pai_aula08_visiontransformers_attention_is_all_you_need.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 14,
+      "pergunta": "Como Whisper e WER se relacionam com o protótipo de voz do projeto?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "proj_spec_tcc.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 15,
+      "pergunta": "Qual destes termos NÃO está relacionado a bancos de dados: DDL, DQL ou GAN?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "tdp_aula03_sql_ddl.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 16,
+      "pergunta": "O WER é uma métrica de qual modalidade: voz, imagem ou banco de dados?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "proj_spec_tcc.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 17,
+      "pergunta": "Qual a previsão do tempo para amanhã no Rio de Janeiro?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true
+    },
+    {
+      "id": 18,
+      "pergunta": "Quem ganhou a Copa do Mundo de 2022?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true
+    },
+    {
+      "id": 19,
+      "pergunta": "Explique a teoria da relatividade geral de Einstein.",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true
+    },
+    {
+      "id": 20,
+      "pergunta": "Qual o preço atual da ação da Petrobras?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true
+    },
+    {
+      "id": 21,
+      "pergunta": "O que é DQL (Data Query Language) e qual comando o representa?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula04_sql_para_consulta_de_dados_dql_05.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 22,
+      "pergunta": "O que são joins em SQL e por que são usados?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula05_joins_e_combinacoes_complexas_06.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 23,
+      "pergunta": "O que são subqueries em SQL?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "oficina_tdp_aula03_tdp_07.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 24,
+      "pergunta": "O que é modelagem lógica e física em bancos relacionais?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula02_modelagem_logica_e_fisica_de_bancos_relacionais_02.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 25,
+      "pergunta": "O que são dados não estruturados e como são processados?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula07_dados_nao_estruturados.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 26,
+      "pergunta": "O que é o Numpy e para que ele é usado em Python?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "dpia_aula06_numpy_na_pratica.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 27,
+      "pergunta": "Como LLMs são usados para programação?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "dpia_aula10_llm_para_programacao.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 28,
+      "pergunta": "O que são agentes de IA e quais são seus tipos?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula07_introducao_a_agentes_agentes_de_ia_do_conceito_a_pratica.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 29,
+      "pergunta": "O que é o Transformer e qual sua importância para LLMs?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula10_transformer.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 30,
+      "pergunta": "O que é multimodalidade em IA?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula08_introducao_a_multimodalidade_inteligencia_artificial_multimodal_fundamentos_e_aplicacoes.pptx"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 31,
+      "pergunta": "O que é uma rede neural convolucional (CNN)?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula05_redes_convolucionais.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 32,
+      "pergunta": "O que é um Vision Transformer (ViT)?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula08_visiontransformers_vit.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 33,
+      "pergunta": "O que é detecção e segmentação de objetos em visão computacional?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula10_deteccao_e_segmentacao_de_objetos_pai_detecao_e_segmentacao_de_objetos.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 34,
+      "pergunta": "O que faz um modelo CLIP?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula09_modelos_multimodais_deeplearning_multimodal.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 35,
+      "pergunta": "O que é um modelo text-to-text?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula08_introducao_a_multimodalidade_modelos_text_to_text_uma_abordagem_unificada_para_nlp.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 36,
+      "pergunta": "Como o RAG funciona em produção segundo o material do projeto?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "proj_aula02_projeto_rag_rag_que_funciona_em_producao.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 37,
+      "pergunta": "Qual a diferença entre inner join e left join em SQL?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "tdp_aula05_joins_e_combinacoes_complexas_06.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 38,
+      "pergunta": "Como atenção self-attention se relaciona com o Transformer?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "nlp_aula10_transformer.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 39,
+      "pergunta": "Qual a relação entre transfer learning e fine-tuning de redes neurais?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "pai_aula06_transfer_learning_transferlearning.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 40,
+      "pergunta": "Como agentes de IA podem ser usados no desenvolvimento de projetos de software?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "proj_aula05_agentes_de_ia_para_desenvolvimento_de_projetos.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 41,
+      "pergunta": "Qual destes itens NÃO é um conceito de bancos de dados: chave primária, subquery, validade ou fundo de investimento?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "tdp_aula04_sql_para_consulta_de_dados_dql_05.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 42,
+      "pergunta": "O TensorFlow é uma biblioteca de qual área: processamento de imagens, genética ou literatura?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "dpia_aula06_numpy_na_pratica.pdf"
+      ],
+      "deve_abster": false
+    },
+    {
+      "id": 43,
+      "pergunta": "O que é GAN discriminativo e qual sua principal aplicação?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true
+    },
+    {
+      "id": 44,
+      "pergunta": "Qual o melhor investimento para render 15% ao ano com seguranca total?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true
+    },
+    {
+      "id": 45,
+      "pergunta": "Qual foi o erro alcançado pelo ensemble de redes residuais no conjunto de teste do ImageNet?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula06_transfer_learning_deepresiduallearningforimagerecognition.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O ensemble de redes residuais alcançou 3,57% de erro no conjunto de teste do ImageNet, resultado que venceu o 1º lugar na tarefa de classificação do ILSVRC 2015.",
+        "fonte": "Deep Residual Learning for Image Recognition\nKaiming He Xiangyu Zhang Shaoqing Ren Jian Sun\nMicrosoft Research\n{kahe, v-xiangz, v-shren, jiansun}@microsoft.com\nAbstract\nDeeper neural networks are more",
+        "motivo": "O trecho informa que o ensemble alcançou 3.57% de erro no conjunto de teste do ImageNet."
+      }
+    },
+    {
+      "id": 46,
+      "pergunta": "O que são stopwords?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula08_dados_nao_estruturados_2_analise_sentimentos_filmes.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Stopwords são palavras muito comuns que não agregam significado, como 'de', 'a', 'o', 'que'.",
+        "fonte": "as **Stopwords** (palavras muito comuns que não agregam significado, como \"de\", \"a\", \"o\", \"que\"). # celula 11\nfrom wordcloud import WordCloud\nimport nltk\nfrom nltk.corpus import stopwords\n# Pegando as",
+        "motivo": "O trecho define stopwords como palavras muito comuns que não agregam significado, citando "
+      }
+    },
+    {
+      "id": 47,
+      "pergunta": "No pipeline de processamento de imagem apresentado, o que deve ser feito com uma imagem que não passa na validação Pydantic?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula03_slides_ia_multimodal.pptx"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Conforme o trecho, 'toda imagem que não passar na validação deve ser encaminhada para revisão humana — nunca descartada silenciosamente. Falhas são dados valiosos.'",
+        "fonte": "BLOCO 2 · EXERCÍCIO PRÁTICO\nPipeline\nImagem → JSON → Banco de Dados\nImagem de Entrada\nFoto, scan, print ou documento digitalizado\nPré-processamento\nResize · Crop · Deskew · Contraste · Segmentação\nPro",
+        "motivo": "O trecho afirma que toda imagem que não passar na validação deve ser encaminhada para revi"
+      }
+    },
+    {
+      "id": 48,
+      "pergunta": "Quem inventou o algoritmo perceptron e em que ano isso aconteceu?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "dpia_aula01_intro_ia.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Frank Rosenblatt inventou o algoritmo perceptron em 1957. Este foi o precursor das redes neurais modernas.",
+        "fonte": "Early AI\n1950: Alan Turing desenvolveu o teste de Turing para testar a capacidade\nDas máquinas em apresentar um comportamento inteligente.\n1956: Inteligência Artificial foi aceita como um campo na\nCon",
+        "motivo": "O trecho informa que Frank Rosenblatt inventou o algoritmo perceptron em 1957."
+      }
+    },
+    {
+      "id": 49,
+      "pergunta": "Por que é importante instruir o modelo a responder apenas com base no contexto em um sistema RAG?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula03_llm_rag_basico_openai.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Essa instrução ('responda só com base no contexto') é a parte mais importante do prompt de um sistema RAG, pois faz o modelo se ancorar nos documentos em vez de 'inventar' usando conhecimento genérico, evitando alucinação.",
+        "fonte": "r in buscar_chunks_relevantes(\"que é uma rede neural?\", k=5):\nprint()\n# celula 14\n## 7. Montando o prompt e gerando a resposta (a parte \"G\" do RAG)\nAgora juntamos as duas peças:\n1. Buscamos os `k` chu",
+        "motivo": "O trecho afirma que essa instrução faz o modelo se ancorar nos documentos em vez de invent"
+      }
+    },
+    {
+      "id": 50,
+      "pergunta": "Quantos fabricantes de pás eólicas o Brasil possui e qual é a capacidade anual de produção?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula02_projeto_rag_eolica.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O Brasil possui 4 fabricantes de pás, com capacidade anual de produzir 10.400 unidades, nos estados do CE, PE e SP.",
+        "fonte": "mostra a figura da direita acima (na\nFrança), contemplando 3 pás, característica das atuais usinas. O Brasil conta atualmente com 9 fabricantes de turbinas eólicas, com\ncapacidade anual de produção de",
+        "motivo": "O trecho informa 4 fabricantes de pás e capacidade anual de 10.400 unidades."
+      }
+    },
+    {
+      "id": 51,
+      "pergunta": "O que é chain of thought prompting e qual efeito ele tem sobre a resposta do modelo?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula05_introducao_a_prompt_engineering.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "É a técnica que induz o modelo a seguir um raciocínio passo a passo, fazendo com que ele reflita sobre cada etapa antes de avançar. Segundo o trecho, isso melhora significativamente a qualidade do raciocínio em tarefas lógicas e ajuda a reduzir alucinações.",
+        "fonte": "Técnicas de Engenharia de Prompt\nChain of thought prompting (Prompt em Cadeia de pensamento)\nBasicamente, vamos induzir o modelo a seguir um raciocínio passo a passo. Com isso, ao invés de\ngerar uma r",
+        "motivo": "Trecho define chain of thought prompting e descreve seus efeitos na resposta do modelo."
+      }
+    },
+    {
+      "id": 52,
+      "pergunta": "Como o modelo de SQL conversacional gerencia múltiplos turnos de refinamento de consulta?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula11_text_to_text_em_llms_do_conceito_a_aplicacao_empresarial.pptx"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O modelo mantém o esquema e a query anterior na memória, aplicando apenas as modificações solicitadas (Diff) sem perder a lógica base.",
+        "fonte": "Conversational SQL\nConstruindo a consulta perfeita camada por camada\nTURN 1\nMostre o total de vendas por produto.\nTURN 2\nFiltre apenas para a categoria 'Eletrônicos'.\nTURN 3\nOrdene pelos mais vendidos",
+        "motivo": "O trecho explica que o modelo mantém o esquema e a query anterior na memória, aplicando ap"
+      }
+    },
+    {
+      "id": 53,
+      "pergunta": "Quantas disciplinas compõem o Master IAG & LLM 2025-2 da PUC-Rio, segundo o índice geral do curso?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "curso_indice.md"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O curso possui 8 disciplinas, conforme o trecho: 'Master IAG & LLM 2025-2 · PUC-Rio · 8 disciplinas · cronograma de 95 aulas'.",
+        "fonte": "author: POS_GenAI · Curso\ndate: August 15, 2026\n# POS_GenAI · Índice Geral do Curso\n*Master IAG & LLM 2025-2 · PUC-Rio · 8 disciplinas · cronograma de 95 aulas (algumas canceladas/feriados)*\n## Como u",
+        "motivo": "O trecho informa explicitamente '8 disciplinas' no índice geral do curso."
+      }
+    },
+    {
+      "id": 54,
+      "pergunta": "O que é mAP em detecção de objetos e como ele é calculado a partir dos APs?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula10_deteccao_e_segmentacao_de_objetos_pai_detecao_e_segmentacao_de_objetos.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "mAP é a média dos APs de cada classe; por exemplo, no COCO com 80 classes, é a média de 80 APs. O trecho afirma: 'mean AP (mAP): Sobre todas as classes, Média dos APs de cada classe, Ex: 80 classes no COCO → média de 80 APs.'",
+        "fonte": "Classificação de cada detecção:\n● TP - IoU ≥ limite e classe correta;\n● FP - bbox errada, classe errada ou duplicata;\n● FN - Objeto real não detectado\nPrecisão (P):\n● Dos que o modelo disse existir, q",
+        "motivo": "O trecho define mAP como a média dos APs de todas as classes."
+      }
+    },
+    {
+      "id": 55,
+      "pergunta": "No ensemble usado para classificar cada região, quantas ConvNets foram utilizadas e qual foi a melhoria de acurácia obtida?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula06_transfer_learning_goingdeeperwithconvolutions.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Foi usado um ensemble de 6 ConvNets, que melhorou os resultados de 40% para 43,9% de acurácia, conforme o trecho: \"we use an ensemble of 6 ConvNets when classifying each region which improves results from 40% to 43.9% accuracy.\"",
+        "fonte": "size was\nincreased by 2×. This halves the proposals coming from the selective search algorithm. We added\nback 200 region proposals coming from multi-box [5] resulting, in total, in about 60% of the pr",
+        "motivo": "O trecho informa que foi usado um ensemble de 6 ConvNets, melhorando a acurácia de 40% par"
+      }
+    },
+    {
+      "id": 56,
+      "pergunta": "Quantas menções por dia a operadora de telecomunicações recebia nas redes sociais?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula07_dados_nao_estruturados.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A operadora recebia 200 mil menções/dia em Twitter, Facebook, Instagram e Reclame Aqui.",
+        "fonte": "Caso Real: Monitoramento de Marca em Redes Sociais com NLP\nEmpresa: Operadora de telecomunicações com 50 milhões de clientes. Problema: Reclamações viralizavam nas redes sociais antes que a\nempresa pu",
+        "motivo": "O trecho informa 200 mil menções/dia em Twitter, Facebook, Instagram e Reclame Aqui."
+      }
+    },
+    {
+      "id": 57,
+      "pergunta": "Qual é a função dos embeddings posicionais no Vision Transformer (ViT), conforme o trecho?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula08_visiontransformers_vit.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A função é preservar a informação espacial dos patches, somando embeddings posicionais aprendidos a cada patch embedding, uma vez que o Transformer não possui noção inerente de ordem.",
+        "fonte": "Position Embeddings\nO Transformer não possui noção inerente de ordem. Para preservar a informação espacial dos patches, somamos\nembeddings posicionais aprendidos a cada patch embedding.\nPosicionais 1D",
+        "motivo": "O trecho afirma que os embeddings posicionais são somados para preservar a informação espa"
+      }
+    },
+    {
+      "id": 58,
+      "pergunta": "No trecho, qual é a resposta esperada para 'A coin is heads up. Maybelle flips the coin. Shalonda does not flip the coin. Is the coin still heads up?'",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula05_introducao_a_prompt_engineering_artigo2.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A resposta é não, porque a moeda foi virada 1 vez, um número ímpar, e 'The coin started heads up, so after an odd number of flips, it will be tails up.'",
+        "fonte": "Table 23: Few-shot exemplars for full chain of thought prompt for the coinﬂip task. PROMPT FOR COIN FLIP\nQ: Q: A coin is heads up. Ka ﬂips the coin. Sherrie ﬂips the coin. Is the coin still heads up? ",
+        "motivo": "O trecho contém exatamente essa pergunta e a resposta esperada: não."
+      }
+    },
+    {
+      "id": 59,
+      "pergunta": "O que a Figura 25 do artigo mostra sobre o desempenho dos bilhetes premiados da arquitetura Lenet para MNIST?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula06_transfer_learning_thelotterytickethypothesis.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A Figura 25 mostra o desempenho dos bilhetes premiados da arquitetura Lenet para MNIST quando ruído gaussiano é adicionado às inicializações, considerando múltiplos de desvio padrão 0.5, 1, 2 e 3.",
+        "fonte": "Published as a conference paper at ICLR 2019\nwinning ticket reinit noise 0.5 noise 1.0 noise 2.0 noise 3.0\nPercent of Weights Remaining\n10K\n15K\n20KEarly-Stop Iteration (Test)\nPercent of Weights Remain",
+        "motivo": "O trecho contém a legenda da Figura 25, que descreve o desempenho dos bilhetes premiados d"
+      }
+    },
+    {
+      "id": 60,
+      "pergunta": "Qual é o papel do adaptador LoRA no contexto do DPO, conforme descrito no Bloco 3?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula07_slm_manipulando.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O adaptador LoRA permite que o modelo de referência do DPO seja a mesma rede com o adaptador desligado, resultando em dois modelos pelo preço de um na memória.",
+        "fonte": "7\n# Bloco 2 — o critério que define o estilo-alvo\nSYSTEM_BASE = \"Você é um assistente prestativo. Responda de forma clara e útil.\"\ndef marcas_de_estilo(texto):\n\"\"\"Conta quantas pistas do estilo aparec",
+        "motivo": "O trecho afirma que o adaptador LoRA permite que o modelo de referência do DPO seja a mesm"
+      }
+    },
+    {
+      "id": 61,
+      "pergunta": "Qual é a descrição da tabela 'clientes' no catálogo?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula02_projeto_rag_text_to_sql_rag_agentico.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Segundo o catálogo, a tabela 'clientes' é o 'Cadastro de clientes. tipo_cliente distingue externo (real) de interno (cadastro de teste). segmento e uf.'",
+        "fonte": "TABELAS}\nCATALOGO = {\n\"pedidos\": \"Cabeçalho do pedido. valor_total já é a soma dos itens do pedido. status: confirmado, pendente ou cancelado. data_pedido é a data de competência.\",\n\"itens_pedido\": \"U",
+        "motivo": "O trecho contém a descrição da tabela 'clientes' no catálogo."
+      }
+    },
+    {
+      "id": 62,
+      "pergunta": "Qual recurso é recomendado como ponto de partida para aprender sobre transformers, segundo o trecho?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula10_transformer.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O Blog do Jay Alammar, descrito como 'a melhor explicação visual já criada sobre o tema. Comece por aqui.'",
+        "fonte": "PARTE 8:CONCLUSAO\nRecursos para Aprendizado\nOnde aprofundar seus conhecimentos\nLeitura\nCursos & Videos\nFerramentas\nGoogleColab/Kaggle\nESSENCIAL\nOURO\nBlog do Jay Alammar. A melhor explicacao visual ja\n",
+        "motivo": "O trecho recomenda o Blog do Jay Alammar como ponto de partida ao dizer 'Comece por aqui'."
+      }
+    },
+    {
+      "id": 63,
+      "pergunta": "Qual é o papel do Python no fluxo de ferramentas apresentado?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula05_agentes_de_ia_para_desenvolvimento_de_projetos.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Python executa as etapas determinísticas: download, extração, validação e geração de relatórios, conforme descrito no trecho.",
+        "fonte": "Ferramentas Utilizadas\nCada ferramenta tem um papel específico no fluxo. Todas se complementam.\nClaude Code / Codex\nAgente de desenvolvimento e execução com\nraciocínio semântico.\nVS Code / PyCharm\nAmb",
+        "motivo": "O trecho descreve o papel do Python: executar etapas determinísticas como download, extraç"
+      }
+    },
+    {
+      "id": 64,
+      "pergunta": "O que os algoritmos de Machine Learning precisam em vez de texto bruto?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula09_revisao.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Eles precisam de vetores numéricos, não de texto bruto, pois 'Algoritmos de Machine Learning são matemáticos' (fonte: nlp_aula09_revisao.pdf, página 6).",
+        "fonte": "VETORES\nMáquinas Entendem Números, Não\nPalavras\nO problema fundamental: Algoritmos de\nMachine Learning são matemáticos. Eles\nprecisam de vetores numéricos, não de texto\nbruto.\n01 FREQUÊNCIA (BOW, TF-I",
+        "motivo": "O trecho afirma que algoritmos de Machine Learning precisam de vetores numéricos, não de t"
+      }
+    },
+    {
+      "id": 65,
+      "pergunta": "Quantas entradas e atributos possui o dataset do Airbnb utilizado na aula?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula07_dados_nao_estruturados_word_cloud_cristo.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O dataset possui 35.451 entradas e 106 atributos, conforme o trecho: \"Este *dataset* tem mais de 110Mb po causa das suas 35.451 entradas e 106 atributos!\".",
+        "fonte": "</center>\nEste *dataset* tem mais de 110Mb po causa das suas 35.451 entradas e 106 atributos! Vamos importar ele todo, mas como só iremsó vou usar a coluna `summary`, que contém a \"propaganda\" do dono",
+        "motivo": "O trecho menciona 35.451 entradas e 106 atributos"
+      }
+    },
+    {
+      "id": 66,
+      "pergunta": "De que depende a eficiência e a precisão do RAG, segundo o material?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula03_llm.pptx"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A eficiência e a precisão do RAG dependem fundamentalmente da qualidade da Indexação, da velocidade e acurácia da Base Vetorial, e do Processo de Recuperação.",
+        "fonte": "RAG: O Futuro da Inteligência Artificial Fundamentada\nO RAG transforma LLMs de meros geradores de texto em\npoderosos sistemas de conhecimento\n, conectando a capacidade de raciocínio do modelo à\nfactua",
+        "motivo": "O trecho afirma que a eficiência e a precisão do RAG dependem da qualidade da Indexação, d"
+      }
+    },
+    {
+      "id": 67,
+      "pergunta": "No exemplo de subconsulta apresentado, qual cláusula é usada para encontrar os proprietários que não tiveram multas?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "oficina_tdp_aula03_tdp_07.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A cláusula NOT IN é usada, conforme mostrado no trecho: 'SELECT nomeproprietario FROM proprietario WHERE nomeproprietario NOT IN (SELECT DISTINCT p.nomeproprietario ...)'.",
+        "fonte": "● No próximo caso, vamos usar a cláusula IN/ NOT IN para procurar os proprietários que não tiveram\nmultas;\nSELECT nomeproprietario\nFROM proprietario\nWHERE nomeproprietario NOT IN(\nSELECT DISTINCT p.no",
+        "motivo": "O trecho afirma que é usada a cláusula IN/NOT IN para procurar proprietários que não tiver"
+      }
+    },
+    {
+      "id": 68,
+      "pergunta": "Qual é o tamanho da entrada e da saída da arquitetura YOLO V1 conforme o material?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula10_deteccao_e_segmentacao_de_objetos_pai_detecao_e_segmentacao_de_objetos.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A entrada é 448x448x3 e a saída é 7x7x30, como indicado no trecho: 'Entrada:448x448× 3→ Saida:7x7x30'.",
+        "fonte": "3. YOLO - V1 - Arquitetura\nTrain\nmAP\nReal-TimeDetectors\nFPS\n100Hz DPM [31]\nBackbone: Darknet (inspirado em GoogLeNet)\n30Hz DPM [31]\nFast YOLO\n2007+2012\nYOLO\n2007+2012\nEntrada:448x448× 3→ Saida:7x7x30\n",
+        "motivo": "O trecho informa Entrada:448x448x3 e Saida:7x7x30."
+      }
+    },
+    {
+      "id": 69,
+      "pergunta": "Qual é o modelo base utilizado no pipeline StableDiffusionControlNet?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula06_documentacao.md"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O modelo base é stable-diffusion-v1-5/stable-diffusion-v1-5, conforme indicado no trecho: “Modelo base: **`stable-diffusion-v1-5/stable-diffusion-v1-5`**”.",
+        "fonte": "Setup e verificação\n- Imports: `torch`, `cv2`, `numpy`, `matplotlib`, `PIL`, `google.colab.files`. - Diffusers: `ControlNetModel`, `StableDiffusionControlNetPipeline`, `UniPCMultistepScheduler`. - Con",
+        "motivo": "O trecho informa que o modelo base é stable-diffusion-v1-5/stable-diffusion-v1-5."
+      }
+    },
+    {
+      "id": 70,
+      "pergunta": "Quais são as quatro modalidades de geração de imagem apresentadas no material?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula03_slides_aula03.md"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "As quatro modalidades são: Text-to-Image (texto → imagem nova), Image-to-Image (imagem + prompt → imagem modificada), Inpainting (imagem + máscara + prompt → região substituída) e Outpainting (expande a imagem além das bordas originais), conforme listado no trecho.",
+        "fonte": "a *desruidificar* passo a\npasso, condicionado por um prompt de texto. É aqui que o texto guia. Parâmetros que o aluno controla:\n| Parâmetro | Efeito |\n| seed | reprodutibilidade (fixo = determinístico",
+        "motivo": "O trecho lista as quatro modalidades: Text-to-Image, Image-to-Image, Inpainting e Outpaint"
+      }
+    },
+    {
+      "id": 71,
+      "pergunta": "Segundo o trecho, como a escolha da função de modelagem no aprendizado de máquina pode ser automatizada?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula03_llm_aprendizado_de_maquina.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A escolha pode ser automatizada tomando para o aprendizado a função que mapeia as entradas de uma rede de neurônios em sua saída, pois definir uma rede neural é bem mais simples do que produzir analiticamente uma boa função de modelagem.",
+        "fonte": "60 CAP´ITULO 6. REDES NEURAIS DENSAS\n− confina valores no intervalo [−1.0, 1.0]\n6.6 Fun¸ c˜ ao Modelada pela Rede\nOs algoritmos de treinamento para formula¸ c˜ ao de apren-\ndizado de m´ aquina necessi",
+        "motivo": "O trecho afirma que a escolha da função de modelagem pode ser automatizada tomando a funçã"
+      }
+    },
+    {
+      "id": 72,
+      "pergunta": "No pysentimiento, qual função é usada para pré-processar tweets e como evitar a remoção de menções e emojis?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula07_dados_nao_estruturados_sentiment_analysis_in_portuguese.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A função é preprocess_tweet. Para evitar a remoção de menções e emojis, usam-se os argumentos preprocess_handles=False e demoji=False, como no exemplo: preprocess_tweet(\"📢 O Twitter removeu as postagens de @Politico por 'violar as regras de convivência' #BreakingNews\", preprocess_handles=False, demoji=False).",
+        "fonte": "module with various options for manipulating hashtags, emojis, character repetition, and so on. # celula 19\nfrom pysentimiento.preprocessing import preprocess_tweet\npreprocess_tweet(\"📢 O Twitter remov",
+        "motivo": "O trecho apresenta a função preprocess_tweet e mostra o uso de preprocess_handles=False e "
+      }
+    },
+    {
+      "id": 73,
+      "pergunta": "Qual estado brasileiro possuía a maior potência instalada de energia eólica em 02/08/2016?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula02_projeto_rag_eolica.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O estado com maior potência instalada era o Rio Grande do Norte (RN), com 7.476 MW, conforme a tabela 'Situação em 02/08/2016'.",
+        "fonte": "montadas em torres de 50 m. Já se estuda a\nconstrução de um aerogerador 100% nacional, com 3,3 MW. Operação Construção A iniciar\nconstrução\nA contratar p/\nContratado = 16.633 MW (90% no NE)\nSituação e",
+        "motivo": "O trecho mostra RN com 7.476 MW, a maior potência instalada."
+      }
+    },
+    {
+      "id": 74,
+      "pergunta": "Quais são os dois componentes principais do processamento de linguagem natural?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula08_dados_nao_estruturados_2_processamento_de_linguagem_natural.pptx"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Os dois componentes principais são Entendimento de linguagem natural (NLU) e Geração de linguagem natural (NLG), conforme o trecho.",
+        "fonte": "Que é processamento de linguagem natural?\nÉ basicamente ensinar computadores a processar a linguagem humana\nDois componentes principais:\nEntendimento de linguagem natural (NLU)\nGeração de linguagem na",
+        "motivo": "O trecho lista os dois componentes principais: NLU e NLG."
+      }
+    },
+    {
+      "id": 75,
+      "pergunta": "Qual comando é usado para treinar o YOLO com o dataset carparts-seg?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula10_deteccao_e_segmentacao_de_objetos_how_to_train_ultralytics_yolo_on_carparts_segmentation_datas.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O trecho mostra o comando `model.train(data='carparts-seg.yaml', epochs=10, imgsz=640, batch=32, workers=64)`, após carregar o modelo pré-treinado `YOLO('yolo26n-seg.pt')`.",
+        "fonte": "file defines the dataset configuration, including paths, classes, and other pertinent details. 😀\n# celula 8\n# Ultralytics YOLO 🚀, AGPL-3.0 license\n# Carparts-seg dataset by Ultralytics\n# Example usage",
+        "motivo": "O trecho contém o comando model.train(data='carparts-seg.yaml', ...) e o exemplo yolo trai"
+      }
+    },
+    {
+      "id": 76,
+      "pergunta": "Por que a prática de definir o token do Hugging Face diretamente no código não é recomendada?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula07_slm_manipulando.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Por motivos de segurança, pois o token ficará exposto no código, como indicado no trecho: 'ATENÇÃO: Esta é uma prática NÃO RECOMENDADA por motivos de segurança. Seu token ficará exposto no código.'",
+        "fonte": "de\nâncora) é a mesma rede com o adaptador desligado. Dois modelos pelo preço de um na memória. # celula 9\nimport os\n# ATENÇÃO: Esta é uma prática NÃO RECOMENDADA por motivos de segurança. # Seu token ",
+        "motivo": "Por motivos de segurança: o token fica exposto no código."
+      }
+    },
+    {
+      "id": 77,
+      "pergunta": "No padrão supervisor e workers, quais são os quatro workers apresentados e qual é o papel do supervisor?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula04_multiagentes_slm.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Os quatro workers são: pesquisa (coleta fatos e evidências), extração (estrutura campos e entidades), verificação (aplica regras e validações) e resposta (redige a entrega final). O supervisor decompõe a tarefa, escolhe o próximo passo e consolida resultados.",
+        "fonte": "Supervisor e workers 11\nFORÇA DO PADRÃO Centraliza decisões, simplifica observabilidade e\nfacilita a depuração de workflows determinísticos.\nATENÇÃO: o supervisor pode se\ntornar gargalo, ponto único d",
+        "motivo": "O trecho lista os quatro workers e descreve o papel do supervisor."
+      }
+    },
+    {
+      "id": 78,
+      "pergunta": "Qual é a principal diferença entre a Estratégia 1 e a Estratégia 2 de poda iterativa descritas no trecho?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula06_transfer_learning_thelotterytickethypothesis.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Segundo o trecho, a Estratégia 2 retreina usando os pesos já treinados após cada rodada de poda, enquanto a Estratégia 1 reinicia os pesos da rede para seus valores iniciais antes de retreinar; em ambos os casos, ao final os pesos são resetados para as inicializações originais.",
+        "fonte": "parametersm⊙θj. 3. Prune s% of the parameters, creating an updated maskm′ wherePm′ = (Pm−s)%. 4. Reset the weights of the remaining portion of the network to their values inθ0. That is, let\n5. Letm = ",
+        "motivo": "O trecho afirma explicitamente que a Estratégia 2 retreina com pesos já treinados, enquant"
+      }
+    },
+    {
+      "id": 79,
+      "pergunta": "Quais ferramentas são citadas no material para realizar lematização?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula07_dados_nao_estruturados.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O trecho menciona spaCy (pt_core_news_sm/md/lg), NLTK (WordNetLemmatizer, melhor para inglês e limitado em português) e Stanza (pipeline NLP com lematização multilíngue).",
+        "fonte": "Lematização: Como Funciona, Ferramentas e Quando Usar\nCOMO FUNCIONA FERRAMENTAS DISPONÍVEIS\nspaCy: Lematizador robusto para português (pt_core_news_sm/md/lg)\nNLTK: WordNetLemmatizer (melhor para inglê",
+        "motivo": "O trecho cita spaCy, NLTK e Stanza como ferramentas disponíveis para lematização."
+      }
+    },
+    {
+      "id": 80,
+      "pergunta": "Qual alteração deve ser feita no campo descricao da tabela projeto, conforme o Exercício 6?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "tdp_aula03_sql_ddl.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "No Exercício 6, deve-se alterar o nome do campo descricao na tabela projeto para descproj.",
+        "fonte": "Linguagem DDL - Exercicios\nOqtdhoras\n●Exercicio 5 - Crie a tabela cargo, de acordo com o\nmodelo ao lado;\nidfunc\nidproj\nnomefunc\nnomeproj\nfuncionario\nparticipa\nprojeto\ngenero\ndtnascimento\norcamento\n●Ex",
+        "motivo": "O trecho indica alterar o nome do campo descricao na tabela projeto para descproj no Exerc"
+      }
+    },
+    {
+      "id": 81,
+      "pergunta": "Qual é o cenário apresentado no exercício de análise de demonstração financeira?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "dpia_aula06_numpy_na_pratica.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O cenário é: 'Você é um cientista de dados trabalhando para uma empresa de consultoria. Um de seus colegas do departamento de auditoria pediu sua ajuda para avaliar o demonstrativo financeiro de uma organização X.'",
+        "fonte": "EXERCÍCIO: ANÁLISE DE DEMONSTRAÇÃO FINANCEIRA\nCenário: Você é um cientista de dados trabalhando para uma\nempresa de consultoria. Um de seus colegas do departamento\nde auditoria pediu sua ajuda para av",
+        "motivo": "O trecho descreve explicitamente o cenário: você é um cientista de dados em uma empresa de"
+      }
+    },
+    {
+      "id": 82,
+      "pergunta": "Quais são as três primeiras tarefas difíceis listadas no Bloco 4 do material?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula07_slmmodelo_pequeno.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "As três primeiras tarefas difíceis listadas são 'Conhecimento específico', 'Cálculo em várias etapas' e 'Raciocínio com pegadinha', conforme o trecho: 'Bloco 4 — quatro tarefas em que ele costuma tropeçar'.",
+        "fonte": "Leia cada resposta abaixo com desconfiança e tente identificar o erro antes de olhar o comentário. # celula 11\n# Bloco 4 — quatro tarefas em que ele costuma tropeçar\ntarefas_dificeis = [\n(\"Conheciment",
+        "motivo": "O trecho lista as três primeiras tarefas difíceis do Bloco 4: Conhecimento específico, Cál"
+      }
+    },
+    {
+      "id": 83,
+      "pergunta": "O que é janela de contexto em um LLM?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula11_text_to_text_em_llms_do_conceito_a_aplicacao_empresarial.pptx"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Conforme o material, é o limite máximo de tokens (palavras) que o modelo pode processar de uma vez.",
+        "fonte": "Contexto e Memória\nA Ilusão de Continuidade: O Modelo Lê Tudo de Novo\nSTATELESS (SEM ESTADO)\nLLMs não têm memória nativa. Eles não \"lembram\" o que você disse há 10 segundos. Para manter uma conversa, ",
+        "motivo": "O trecho define janela de contexto como o limite máximo de tokens que o modelo pode proces"
+      }
+    },
+    {
+      "id": 84,
+      "pergunta": "Qual é a orientação do material sobre como armazenar a chave da API OpenAI?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula06_recuperacao_avancada_com_rag_usando_ocr_2_aula_rag_multiplos_pdfs_ocr_tesseract_easyocr.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A orientação é nunca colocar a chave hard-coded em repositórios públicos; deve-se definir a variável de ambiente OPENAI_API_KEY e usar `assert os.getenv('OPENAI_API_KEY')` para garantir que foi definida.",
+        "fonte": "de ambiente `OPENAI_API_KEY`. ⚠️ **Nunca** coloque sua chave hard-coded em repositórios públicos. Faça o que eu digo, mas não faça o que eu faço! hehehe\n# celula 6\nimport os\n# Se você quiser setar só ",
+        "motivo": "O trecho orienta a usar variável de ambiente OPENAI_API_KEY e nunca colocar a chave hard-c"
+      }
+    },
+    {
+      "id": 85,
+      "pergunta": "Qual tipo de perda foi usada no treinamento dos ConvNets de localização em vez da regressão logística?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "pai_aula06_transfer_learning_inception.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Foi usada uma perda Euclidiana, que penaliza o desvio dos parâmetros do bounding box preditos em relação ao ground-truth, conforme o trecho: 'replace the logistic regression objective with a Euclidean loss'.",
+        "fonte": "e-class regression, SCR (Sermanet et al.,\n2014)) or is class-speciﬁc (per-class regression, PCR). Inthe former case, the last layer is 4-D, while\nin the latter it is 4000-D (since there are 1000 class",
+        "motivo": "O trecho afirma que a regressão logística foi substituída por uma perda Euclidiana no trei"
+      }
+    },
+    {
+      "id": 86,
+      "pergunta": "Segundo o material, por que a próxima etapa (texto livre → ficha estruturada) não pode usar expressão regular?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "proj_aula01_multimodal_project_lab02_voz_para_ordem_de_servico.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Porque, ao comparar a referência e a transcrição do técnico Jonas, números por extenso como \"oitenta e sete\" viram dígitos e geram inconsistência; por isso a próxima etapa precisa de um modelo interpretando, não de expressão regular.",
+        "fonte": "K dois zero um disparou em oitenta e sete graus, '\n'mas o termometro portatil marca setenta e dois. Acho que e o RTD.'),\naudios = []\nfor nome, voz, vel, texto in RELATOS:\nr = client.audio.speech.creat",
+        "motivo": "Porque a transcrição apresenta inconsistências (números por extenso viram dígitos), exigin"
+      }
+    },
+    {
+      "id": 87,
+      "pergunta": "No exemplo do material, qual é a diferença entre o prompt ruim e o prompt bom para explicar RAG?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula09_revisao.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "No exemplo, o prompt ruim é apenas 'Explique o que é RAG', enquanto o prompt bom orienta a atuar como Engenheiro de ML Sênior, explicar para uma audiência de executivos, usar uma analogia simples, evitar jargões técnicos e focar nos benefícios de negócio.",
+        "fonte": "EXEMPLO\nA Diferença que a Engenharia Faz\nPOR QUE FUNCIONA?\n❌ PROMPT RUIM\n\"Explique o que é RAG.\"\n✅ PROMPT BOM\n\"Atue como um Engenheiro de ML Sênior . Explique o conceito\nde RAG para uma audiência de e",
+        "motivo": "O trecho apresenta os dois prompts e as diferenças."
+      }
+    },
+    {
+      "id": 88,
+      "pergunta": "Qual porcentagem dos óbitos por neoplasias decorre do câncer de pulmão, conforme o trecho?",
+      "estrato": "rotineira",
+      "docs_esperados": [
+        "nlp_aula04_rag_cardoso_9786586545494_10.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "De acordo com o trecho, 18,4% dos óbitos por todos os tipos de neoplasias decorrem do câncer de pulmão (Bray et al., 2018).",
+        "fonte": "todos os tipos de neoplasias, 18,4% dos\nóbitos decorrem do câncer de pulmão (Bray et al., 2018). Estudos recentes têm revelado um aumento de 12,5% nas taxas de morta-\nlidade causadas por neoplasias de",
+        "motivo": "O trecho informa que 18,4% dos óbitos decorrem do câncer de pulmão."
+      }
+    },
+    {
+      "id": 89,
+      "pergunta": "Qual destes itens NÃO está relacionado ao Censo Escolar: ensino regular, educação especial, educação de jovens e adultos (EJA) ou Copa do Mundo?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "proj_aula02_projeto_rag_press_kit_censo_escolar_2018.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Copa do Mundo. O trecho afirma que o Censo Escolar abrange \"ensino regular; educação especial; educação de jovens e adultos (EJA); e educação profissional\", não incluindo eventos esportivos.",
+        "fonte": "voltar ao menu\nCenso Escolar\nCenso Escolar\nPrincipal pesquisa estatística sobre a educa-\nção básica, o Censo Escolar é coordenado\npelo Inep e realizado em regime de colabo-\nração entre as secretarias ",
+        "motivo": "O trecho lista ensino regular, educação especial e EJA como abrangidos pelo Censo Escolar,"
+      }
+    },
+    {
+      "id": 90,
+      "pergunta": "Qual destes itens NÃO está relacionado aos conceitos de espalhamento de dados apresentados no trecho sobre quantis e boxplot: quartis, decis, percentis ou teoria da relatividade?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "dpia_aula08_manipulacao_dados_nocoes_de_estatistica_feito_em_aula2.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A teoria da relatividade, pois o trecho aborda quantis como quartis, decis e percentis, além do boxplot, que são ferramentas estatísticas para visualizar a distribuição e espalhamento dos dados.",
+        "fonte": "celula 16\nUm modo bastante comum de definir o espalhamento dos dados é pelos quantis. Os quantis mais importantes e empregados são:\n- Quartis à dividem os dados em 4 partes iguais, sendo que cada part",
+        "motivo": "O trecho cita quartis, decis e percentis, mas não menciona teoria da relatividade."
+      }
+    },
+    {
+      "id": 91,
+      "pergunta": "Qual destes itens NÃO está relacionado às tarefas em que um modelo pequeno costuma tropeçar, conforme o trecho: conhecimento específico, cálculo em várias etapas, raciocínio com pegadinha ou copa do mundo?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "proj_aula07_slmmodelo_pequeno.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O item fora do domínio é 'copa do mundo'; o trecho lista apenas 'conhecimento específico', 'cálculo em várias etapas' e 'raciocínio com pegadinha' como tarefas difíceis.",
+        "fonte": "Leia cada resposta abaixo com desconfiança e tente identificar o erro antes de olhar o comentário. # celula 11\n# Bloco 4 — quatro tarefas em que ele costuma tropeçar\ntarefas_dificeis = [\n(\"Conheciment",
+        "motivo": "O trecho lista conhecimento específico, cálculo em várias etapas e raciocínio com pegadinh"
+      }
+    },
+    {
+      "id": 92,
+      "pergunta": "Qual destes itens NÃO está relacionado aos componentes de um aerogerador típico: pás, nacele, torre ou teoria da relatividade?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "proj_aula02_projeto_rag_eolica.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Teoria da relatividade, pois o trecho lista pás, nacele e torre como partes do aerogerador típico, e a teoria da relatividade não é um componente de aerogerador nem está relacionada ao domínio da energia eólica.",
+        "fonte": "montadas em torres de 50 m. Já se estuda a\nconstrução de um aerogerador 100% nacional, com 3,3 MW. Operação Construção A iniciar\nconstrução\nA contratar p/\nContratado = 16.633 MW (90% no NE)\nSituação e",
+        "motivo": "O trecho lista pás, nacele e torre como componentes do aerogerador típico, mas não mencion"
+      }
+    },
+    {
+      "id": 93,
+      "pergunta": "No trecho sobre manipulação de modelos com PEFT/LoRA, qual destes itens NÃO está relacionado ao que é apresentado: LoraConfig, get_peft_model, disable_adapter ou teoria da relatividade?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "proj_aula07_slm_manipulando.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O item fora do domínio é 'teoria da relatividade'; o trecho apresenta LoraConfig, get_peft_model e disable_adapter.",
+        "fonte": "peft, pode ser necessário\n# reiniciar o ambiente de execução após esta instalação/atualização. import subprocess\nimport sys\nsubprocess.run([sys.executable, \"-m\", \"pip\", \"install\", \"--upgrade\", \"torcha",
+        "motivo": "O trecho menciona LoraConfig, get_peft_model e disable_adapter, mas não menciona teoria da"
+      }
+    },
+    {
+      "id": 94,
+      "pergunta": "Professor, qual destes itens NÃO está relacionado aos conteúdos da disciplina PAI · Processamento e Análise de Imagens: Introdução à Redes Neurais Artificiais, Redes Convolucionais, Transfer Learning ou Teoria da Relatividade?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "curso_indice.md"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O item fora do domínio é Teoria da Relatividade. Conforme o índice, a disciplina PAI lista 'Introdução à Redes Neurais Artificiais', 'Redes Convolucionais' e 'Transfer Learning' como aulas, mas não menciona Teoria da Relatividade.",
+        "fonte": "author: POS_GenAI · Curso\ndate: August 15, 2026\n# POS_GenAI · Índice Geral do Curso\n*Master IAG & LLM 2025-2 · PUC-Rio · 8 disciplinas · cronograma de 95 aulas (algumas canceladas/feriados)*\n## Como u",
+        "motivo": "O trecho lista os conteúdos da disciplina PAI e não inclui Teoria da Relatividade."
+      }
+    },
+    {
+      "id": 95,
+      "pergunta": "Qual destes itens NÃO está relacionado ao RAG: Indexação, Base Vetorial, Processo de Recuperação ou capital do Japão?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "nlp_aula03_llm.pptx"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Capital do Japão é o item fora do domínio; os demais são citados no trecho como dependências do RAG: 'A eficiência e a precisão do RAG dependem fundamentalmente da qualidade da Indexação, da velocidade e acurácia da Base Vetorial, e do Processo de Recuperação'.",
+        "fonte": "RAG: O Futuro da Inteligência Artificial Fundamentada\nO RAG transforma LLMs de meros geradores de texto em\npoderosos sistemas de conhecimento\n, conectando a capacidade de raciocínio do modelo à\nfactua",
+        "motivo": "O trecho relaciona Indexação, Base Vetorial e Processo de Recuperação ao RAG; capital do J"
+      }
+    },
+    {
+      "id": 96,
+      "pergunta": "Qual destes itens NÃO está relacionado à cadeia de fabricantes de componentes eólicos no Brasil descrita no trecho: fabricantes de turbinas, fabricantes de pás, fabricantes de torres ou receita de bolo?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "proj_aula02_projeto_rag_eolica.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O item fora do domínio é 'receita de bolo'. O trecho cita '9 fabricantes de turbinas eólicas', '4 fabricantes de pás' e '12 fabricantes de torres', que são componentes da indústria eólica; receita de bolo não tem relação com o assunto.",
+        "fonte": "mostra a figura da direita acima (na\nFrança), contemplando 3 pás, característica das atuais usinas. O Brasil conta atualmente com 9 fabricantes de turbinas eólicas, com\ncapacidade anual de produção de",
+        "motivo": "O trecho menciona fabricantes de turbinas, pás e torres, mas não menciona receita de bolo."
+      }
+    },
+    {
+      "id": 97,
+      "pergunta": "Qual destes itens NÃO está relacionado aos primeiros marcos da Inteligência Artificial: teste de Turing, perceptron, algoritmo de damas de Arthur Samuel ou Copa do Mundo de Futebol?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "dpia_aula01_intro_ia.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Copa do Mundo de Futebol é o item fora do domínio; os demais (teste de Turing, perceptron e algoritmo de damas de Arthur Samuel) são citados no trecho como marcos iniciais da IA.",
+        "fonte": "Early AI\n1950: Alan Turing desenvolveu o teste de Turing para testar a capacidade\nDas máquinas em apresentar um comportamento inteligente.\n1956: Inteligência Artificial foi aceita como um campo na\nCon",
+        "motivo": "O trecho lista teste de Turing, perceptron e algoritmo de damas de Arthur Samuel como marc"
+      }
+    },
+    {
+      "id": 98,
+      "pergunta": "Qual destes itens NÃO está relacionado ao monitoramento de marca em redes sociais com NLP apresentado no caso real: coleta em tempo real, análise de sentimento, detecção de tópicos ou fundo de investimento?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "tdp_aula07_dados_nao_estruturados.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O item fora do domínio é 'fundo de investimento', pois o trecho descreve a solução NLP implementada com etapas de coleta em tempo real, pré-processamento, análise de sentimento e detecção de tópicos, sem qualquer relação com investimentos financeiros.",
+        "fonte": "Caso Real: Monitoramento de Marca em Redes Sociais com NLP\nEmpresa: Operadora de telecomunicações com 50 milhões de clientes. Problema: Reclamações viralizavam nas redes sociais antes que a\nempresa pu",
+        "motivo": "O trecho lista coleta em tempo real, análise de sentimento e detecção de tópicos; fundo de"
+      }
+    },
+    {
+      "id": 99,
+      "pergunta": "Qual destes itens NÃO está relacionado ao conteúdo de DDL apresentado no trecho: criar tabela, alterar tipo de coluna, apagar coluna, ou teoria da relatividade?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "tdp_aula03_sql_ddl.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Teoria da relatividade, pois o trecho trata de exercícios de DDL como 'Crie a tabela cargo', 'Altere o tipo da coluna nomefunc' e 'Apague a coluna CBO', não havendo menção a teoria da relatividade.",
+        "fonte": "Linguagem DDL - Exercicios\nOqtdhoras\n●Exercicio 5 - Crie a tabela cargo, de acordo com o\nmodelo ao lado;\nidfunc\nidproj\nnomefunc\nnomeproj\nfuncionario\nparticipa\nprojeto\ngenero\ndtnascimento\norcamento\n●Ex",
+        "motivo": "O trecho menciona criar tabela, alterar tipo de coluna e apagar coluna, mas não teoria da "
+      }
+    },
+    {
+      "id": 100,
+      "pergunta": "Qual destes itens NÃO está relacionado à análise de sentimentos com abordagem léxica apresentada no trecho: classificação de sentimento, score (Pos/Neg), desafio prático usando VADER ou cotação de ação?",
+      "estrato": "negativa",
+      "docs_esperados": [
+        "tdp_aula07_dados_nao_estruturados.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Cotação de ação, pois o trecho trata de 'analisar_sentimento', 'score', 'scores positivos, negativos e neutros' e do 'desafio prático usando VADER', sem qualquer menção a cotação de ação.",
+        "fonte": "score_negativo\n# PASSO 3: Testar com exemplos reais\ntextos_teste = [\n\"Este produto é excelente! Adorei a qualidade, recomendo muito.\",\n\"Péssima experiência. Produto com defeito e atendimento horrível.",
+        "motivo": "O trecho menciona classificação de sentimento, score (Pos/Neg) e desafio prático usando VA"
+      }
+    },
+    {
+      "id": 101,
+      "pergunta": "Qual o resultado do ultimo jogo do Flamengo?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 102,
+      "pergunta": "Qual a receita de um bolo de cenoura?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 103,
+      "pergunta": "Como funciona a fotossintese das plantas?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 104,
+      "pergunta": "Onde fica a capital da Australia e qual sua populacao?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 105,
+      "pergunta": "Qual e o melhor celular do mercado atualmente?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 106,
+      "pergunta": "Quem e o atual presidente da Argentina?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 107,
+      "pergunta": "Quem venceu a ultima Copa America de futebol?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 108,
+      "pergunta": "Qual a cotacao atual do dolar frente ao real?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 109,
+      "pergunta": "Qual a previsao do tempo para amanha em Sao Paulo?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 110,
+      "pergunta": "Explique o funcionamento do sistema imunologico humano.",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 111,
+      "pergunta": "Como calcular o imposto de renda no Brasil em 2026?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 112,
+      "pergunta": "Qual a populacao atual da cidade de Nova York?",
+      "estrato": "adversarial",
+      "docs_esperados": [],
+      "deve_abster": true,
+      "_auditoria": {
+        "resposta_esperada": "NAO_SEI",
+        "fonte": "",
+        "motivo": "fora do corpus"
+      }
+    },
+    {
+      "id": 113,
+      "pergunta": "Como a centralização de decisões no supervisor, que simplifica a observabilidade e a depuração, se relaciona com o risco de ele se tornar gargalo ou ponto único de falha no fluxo de workers?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "proj_aula04_multiagentes_slm.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O trecho mostra que a força do padrão é centralizar decisões, simplificando observabilidade e depuração de workflows determinísticos, mas essa mesma centralização gera atenção porque o supervisor pode se tornar gargalo, ponto único de falha ou origem de decisões mal roteadas.",
+        "fonte": "Supervisor e workers 11\nFORÇA DO PADRÃO Centraliza decisões, simplifica observabilidade e\nfacilita a depuração de workflows determinísticos.\nATENÇÃO: o supervisor pode se\ntornar gargalo, ponto único d",
+        "motivo": "O trecho aponta a centralização como força que simplifica observabilidade e depuração, mas"
+      }
+    },
+    {
+      "id": 114,
+      "pergunta": "Qual é a relação entre os quartis usados pelo describe() para classificar o espalhamento dos dados e a representação gráfica do boxplot, considerando também o que as hastes verticais indicam sobre mínimo e máximo?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "dpia_aula08_manipulacao_dados_nocoes_de_estatistica_feito_em_aula2.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O método describe() usa os quartis para classificar o espalhamento dos dados, e o boxplot é um modo gráfico de representar esse espalhamento via quartis; na figura, o local onde a haste vertical começa indica o mínimo e onde termina indica o máximo, excetuando possíveis outliers.",
+        "fonte": "celula 16\nUm modo bastante comum de definir o espalhamento dos dados é pelos quantis. Os quantis mais importantes e empregados são:\n- Quartis à dividem os dados em 4 partes iguais, sendo que cada part",
+        "motivo": "O trecho afirma que o describe() usa quartis para classificar o espalhamento e que o boxpl"
+      }
+    },
+    {
+      "id": 115,
+      "pergunta": "No contexto de Chain of Thought prompting, qual é a relação entre induzir o modelo a seguir um raciocínio passo a passo e a redução de alucinações em tarefas que exigem lógica, como cálculos ou tomada de decisão?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "nlp_aula05_introducao_a_prompt_engineering.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O trecho afirma que a abordagem \"faz com que o modelo responda, pause para 'pensar', e só então continue\", o que \"ajuda inclusive a reduzir as chamadas 'alucinações'\". Além disso, \"melhora significativamente a qualidade do raciocínio, especialmente em tarefas que exigem lógica, como tomada de decisão, cálculos, estatísticas\". Portanto, o raciocínio passo a passo, ao forçar o modelo a refletir antes de prosseguir, torna-o mais coerente e preciso, reduzindo alucinações e melhorando o desempenho nessas tarefas.",
+        "fonte": "Técnicas de Engenharia de Prompt\nChain of thought prompting (Prompt em Cadeia de pensamento)\nBasicamente, vamos induzir o modelo a seguir um raciocínio passo a passo. Com isso, ao invés de\ngerar uma r",
+        "motivo": "O trecho afirma que induzir raciocínio passo a passo força o modelo a refletir antes de pr"
+      }
+    },
+    {
+      "id": 116,
+      "pergunta": "Qual é a diferença entre o teste de Turing (1950) e o perceptron de Frank Rosenblatt (1957) no contexto da IA inicial?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "dpia_aula01_intro_ia.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O teste de Turing buscava avaliar a capacidade das máquinas de apresentar comportamento inteligente, enquanto o perceptron foi o precursor das redes neurais modernas.",
+        "fonte": "Early AI\n1950: Alan Turing desenvolveu o teste de Turing para testar a capacidade\nDas máquinas em apresentar um comportamento inteligente.\n1956: Inteligência Artificial foi aceita como um campo na\nCon",
+        "motivo": "O trecho descreve o teste de Turing como teste de comportamento inteligente e o perceptron"
+      }
+    },
+    {
+      "id": 117,
+      "pergunta": "No trecho, como a junção entre as tabelas ocorrencia, carro e proprietario dentro da subconsulta se relaciona com a cláusula NOT IN para identificar os proprietários que não tiveram multas?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "oficina_tdp_aula03_tdp_07.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A subconsulta junta as tabelas ocorrencia, carro e proprietario para obter os nomes de quem tem multas; a cláusula NOT IN filtra os proprietários da tabela proprietario que não estão nessa lista, retornando os sem multas, como indicado no trecho: 'usar a cláusula IN/ NOT IN para procurar os proprietários que não tiveram multas'.",
+        "fonte": "● No próximo caso, vamos usar a cláusula IN/ NOT IN para procurar os proprietários que não tiveram\nmultas;\nSELECT nomeproprietario\nFROM proprietario\nWHERE nomeproprietario NOT IN(\nSELECT DISTINCT p.no",
+        "motivo": "O trecho mostra a subconsulta unindo ocorrencia, carro e proprietario pelas chaves placa e"
+      }
+    },
+    {
+      "id": 118,
+      "pergunta": "Qual é a relação entre o momento de early-stopping (iteração de menor perda de validação) e a acurácia de teste dos bilhetes premiados, e como isso se compara à acurácia de treino ao final do treinamento?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "pai_aula06_transfer_learning_thelotterytickethypothesis.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "No trecho, os bilhetes premiados 'both arrive at early-stopping sooner and reach higher test accuracy at this point', ou seja, antecipam o early-stopping com maior acurácia de teste nesse ponto. Já a acurácia de treino ao final é afirmada como '100% for all but the most heavily pruned networks', contrastando com a acurácia de teste no early-stopping.",
+        "fonte": "the same order in which each experiment\nreaches a particular test accuracy threshold in Figure 3. Throughout this paper, in order to contextualize this learning speed, we also present the test accurac",
+        "motivo": "O trecho afirma que bilhetes premiados chegam ao early-stopping mais cedo e atingem maior "
+      }
+    },
+    {
+      "id": 119,
+      "pergunta": "Qual a diferença entre a função do prompt \"garden image\" e a da imagem de controle gerada pelo Canny no pipeline do ControlNet?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "proj_aula06_documentacao.md"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O prompt \"garden image\" define o que se deseja gerar (conteúdo), enquanto a imagem de controle com bordas Canny é usada pelo ControlNet como restrição estrutural da nova imagem, conforme o trecho: \"Essa é a imagem de controle: o ControlNet usa as bordas como restrição estrutural da nova imagem.\"",
+        "fonte": "Setup e verificação\n- Imports: `torch`, `cv2`, `numpy`, `matplotlib`, `PIL`, `google.colab.files`. - Diffusers: `ControlNetModel`, `StableDiffusionControlNetPipeline`, `UniPCMultistepScheduler`. - Con",
+        "motivo": "O trecho informa que o prompt 'garden image' define o que se deseja gerar, enquanto a imag"
+      }
+    },
+    {
+      "id": 120,
+      "pergunta": "Qual é a diferença entre o modelo 'yolo26n-seg.pt' carregado para treinamento na célula 10 e o modelo 'best.pt' carregado nas células 13 e 16?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "pai_aula10_deteccao_e_segmentacao_de_objetos_how_to_train_ultralytics_yolo_on_carparts_segmentation_datas.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O 'yolo26n-seg.pt' é um modelo pré-treinado usado como ponto de partida, indicado por 'Load a pretrained model (recommended for training)', enquanto 'best.pt' é o modelo fine-tuned salvo após o treinamento, indicado por 'load a fine-tuned model', usado para predição e exportação.",
+        "fonte": "file defines the dataset configuration, including paths, classes, and other pertinent details. 😀\n# celula 8\n# Ultralytics YOLO 🚀, AGPL-3.0 license\n# Carparts-seg dataset by Ultralytics\n# Example usage",
+        "motivo": "O trecho indica que yolo26n-seg.pt é um modelo pré-treinado recomendado para treinamento, "
+      }
+    },
+    {
+      "id": 121,
+      "pergunta": "Qual é a relação entre o risco de injeção de uma fonte externa aberta e a necessidade de avaliar a decisão do agente sobre a fonte, conforme o trecho?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "proj_aula02_slides_aula02.md"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O trecho alerta que fonte externa aberta representa 'risco de injeção (página adulterada)' e, por isso, defende 'avaliar a decisão', pois 'resposta certa pela fonte errada é sorte — e sorte não escala'. Assim, a exposição a fontes abertas torna essencial julgar se o agente escolheu bem a fonte.",
+        "fonte": "falha — tabela não é texto\n2. Antes de consultar, a planilha precisa virar **dado** (pandas)\n3. Capacidade 1: consultar sob **contrato** — o modelo preenche\nformulário, o software valida e executa\n4. ",
+        "motivo": "O trecho liga fonte externa aberta a risco de injeção e diz que a medida é avaliar a decis"
+      }
+    },
+    {
+      "id": 122,
+      "pergunta": "Qual é a relação entre pedidos.valor_total e as linhas de itens_pedido, e por que não devo somar pedidos.valor_total depois de juntar as duas tabelas?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "proj_aula02_projeto_rag_text_to_sql_rag_agentico.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Segundo o catálogo, pedidos.valor_total 'já é a soma dos itens do pedido'; itens_pedido tem 'preco_unitario e desconto por linha'. Por isso, 'NÃO somar pedidos.valor_total depois de juntar com esta tabela'.",
+        "fonte": "TABELAS}\nCATALOGO = {\n\"pedidos\": \"Cabeçalho do pedido. valor_total já é a soma dos itens do pedido. status: confirmado, pendente ou cancelado. data_pedido é a data de competência.\",\n\"itens_pedido\": \"U",
+        "motivo": "O trecho afirma que pedidos.valor_total já é a soma dos itens do pedido e que não se deve "
+      }
+    },
+    {
+      "id": 123,
+      "pergunta": "No pipeline apresentado, como a etapa de Validação Pydantic se relaciona com o tratamento de falha descrito?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "proj_aula03_slides_ia_multimodal.pptx"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A Validação Pydantic verifica tipos, campos obrigatórios e null explícito; se a validação falhar, a imagem é encaminhada para revisão humana, nunca descartada silenciosamente, pois falhas são dados valiosos.",
+        "fonte": "BLOCO 2 · EXERCÍCIO PRÁTICO\nPipeline\nImagem → JSON → Banco de Dados\nImagem de Entrada\nFoto, scan, print ou documento digitalizado\nPré-processamento\nResize · Crop · Deskew · Contraste · Segmentação\nPro",
+        "motivo": "A validação Pydantic define tipos, campos obrigatórios e null explícito; se a imagem não p"
+      }
+    },
+    {
+      "id": 124,
+      "pergunta": "Qual é a relação entre o critério de early-stopping, a noção de aprendizado “mais rápido” e a ordem em que os experimentos atingem um limiar de acurácia de teste, segundo o trecho?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "pai_aula06_transfer_learning_thelotterytickethypothesis.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Segundo o trecho, a validação cai, forma um fundo e depois sobe; o critério de early-stopping identifica esse fundo. As redes que chegam a esse momento mais cedo são consideradas “mais rápidas”, e a ordem em que os experimentos atingem o critério é a mesma em que atingem um limiar de acurácia de teste.",
+        "fonte": "Published as a conference paper at ICLR 2019\nRandom Reinit (Oneshot) Winning Ticket (Oneshot) Random Reinit (Iterative) Winning Ticket (Iterative)\nPercent of Weights Remaining\n10K\n15K\n20K\n25K\n30K\n35KE",
+        "motivo": "O trecho afirma que o early-stopping identifica o fundo da perda de validação, que redes q"
+      }
+    },
+    {
+      "id": 125,
+      "pergunta": "Como a instrução de responder 'Não encontrei isso nos PDFs enviados' se relaciona com a exigência de citar arquivo e página, e de que forma o build_context_snippet ajuda nessa citação?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "nlp_aula05_introducao_a_prompt_engineering_2_aula_rag_multiplos_pdfs.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O prompt instrui o modelo a dizer 'Não encontrei isso nos PDFs enviados' quando não houver informação e, quando possível, citar arquivo e página como (arquivo X, p. Y); o build_context_snippet prepara o contexto com [arquivo {src} | página {page}], fornecendo a origem que permite essa citação.",
+        "fonte": "'Não encontrei isso nos PDFs enviados.'\nQuando possível, cite arquivo e página como (arquivo X, p. Y).\"\"\"\nparts = []\nfor d in retrieved_docs:\npage = d.metadata.get(\"page\")\nsrc = d.metadata.get(\"source",
+        "motivo": "fallback: 1 termos do doc na pergunta"
+      }
+    },
+    {
+      "id": 126,
+      "pergunta": "Como a etapa de buscar os k chunks mais relevantes se relaciona com a instrução de responder apenas com base no contexto para evitar alucinações em um sistema RAG?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "nlp_aula03_llm_rag_basico_openai.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A busca fornece os trechos que servem de contexto, e a instrução de responder apenas com base nesse contexto é o que faz o modelo se ancorar nos documentos em vez de 'inventar' usando conhecimento genérico, evitando alucinação.",
+        "fonte": "r in buscar_chunks_relevantes(\"que é uma rede neural?\", k=5):\nprint()\n# celula 14\n## 7. Montando o prompt e gerando a resposta (a parte \"G\" do RAG)\nAgora juntamos as duas peças:\n1. Buscamos os `k` chu",
+        "motivo": "O trecho explica que a busca retorna os chunks usados como contexto e a instrução faz o mo"
+      }
+    },
+    {
+      "id": 127,
+      "pergunta": "No exemplo, como a diferença entre o prompt ruim e o prompt bom se relaciona com a combinação de papel, audiência, analogia e foco em benefícios de negócio ao explicar RAG?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "nlp_aula09_revisao.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "No trecho, o prompt ruim é apenas 'Explique o que é RAG.', enquanto o prompt bom combina 'Atue como um Engenheiro de ML Sênior', audiência de executivos, analogia simples, evitar jargões técnicos e foco nos benefícios de negócio.",
+        "fonte": "EXEMPLO\nA Diferença que a Engenharia Faz\nPOR QUE FUNCIONA?\n❌ PROMPT RUIM\n\"Explique o que é RAG.\"\n✅ PROMPT BOM\n\"Atue como um Engenheiro de ML Sênior . Explique o conceito\nde RAG para uma audiência de e",
+        "motivo": "O trecho contrasta o prompt ruim genérico com o prompt bom, que especifica papel, audiênci"
+      }
+    },
+    {
+      "id": 128,
+      "pergunta": "Qual é a relação entre a construção da consulta em múltiplos turnos e a memória de contexto no Conversational SQL, e como isso permite modificar a query sem recomeçar do zero?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "nlp_aula11_text_to_text_em_llms_do_conceito_a_aplicacao_empresarial.pptx"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "A memória de contexto mantém o esquema e a query anterior na memória, aplicando apenas as modificações solicitadas (Diff) sem perder a lógica base. Assim, a cada turno a consulta é construída camada por camada, do Turn 1 ao Turn 3, até chegar ao Final Query State.",
+        "fonte": "Conversational SQL\nConstruindo a consulta perfeita camada por camada\nTURN 1\nMostre o total de vendas por produto.\nTURN 2\nFiltre apenas para a categoria 'Eletrônicos'.\nTURN 3\nOrdene pelos mais vendidos",
+        "motivo": "O trecho afirma que a memória de contexto mantém o esquema e a query anterior, aplicando a"
+      }
+    },
+    {
+      "id": 129,
+      "pergunta": "Qual é a diferença entre aprender funções residuais com referência às entradas da camada e aprender funções não referenciadas, e como essa diferença se relaciona com a dificuldade de treinar redes mais profundas?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "pai_aula06_transfer_learning_deepresiduallearningforimagerecognition.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O trecho afirma que o framework \"reformula as camadas para aprender funções residuais com referência às entradas da camada, em vez de aprender funções não referenciadas\". Essa reformulação facilita o treinamento de redes substancialmente mais profundas, pois as redes residuais \"são mais fáceis de otimizar, e podem ganhar acurácia com profundidade consideravelmente aumentada\".",
+        "fonte": "Deep Residual Learning for Image Recognition\nKaiming He Xiangyu Zhang Shaoqing Ren Jian Sun\nMicrosoft Research\n{kahe, v-xiangz, v-shren, jiansun}@microsoft.com\nAbstract\nDeeper neural networks are more",
+        "motivo": "O trecho afirma que redes mais profundas são mais difíceis de treinar e que a estrutura re"
+      }
+    },
+    {
+      "id": 130,
+      "pergunta": "No projeto, qual a relação entre as colunas canônicas e a visualização determinística do Brasil, e como isso se compara ao carregamento de PDFs e links públicos complementares?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "proj_aula02_projeto_rag_rag_agentico_inep_media_alunos_turma.ipynb"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "As colunas canônicas (REQUIRED_COLUMNS) orientam a normalização dos arquivos ATU, e a visualização é determinística e usa exclusivamente os arquivos ATU oficiais normalizados; em contraste, os PDFs e links públicos são carregados como fontes complementares separadas.",
+        "fonte": "normalizadas: {len(atu):,}')\nprint('Colunas canônicas:', REQUIRED_COLUMNS)\n# celula 7\n#@title 5. Visualizar uma comparação determinística do Brasil\nbrasil = atu[\ndisplay(brasil)\nplot_df = brasil.set_i",
+        "motivo": "fallback: 2 termos do doc na pergunta"
+      }
+    },
+    {
+      "id": 131,
+      "pergunta": "O trecho afirma que escolher uma boa função de modelagem não é tarefa fácil, mas que definir uma rede neural é bem mais simples. Como esses dois pontos se relacionam na automatização do aprendizado de máquina?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "nlp_aula03_llm_aprendizado_de_maquina.pdf"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "O trecho explica que 'Escolher uma boa função para essa modelagem não é tarefa fácil, mas isso pode ser automatizado, tomando para o aprendizado a função que mapeia as entradas de uma rede de neurônios em sua saída.' E complementa que 'a tarefa de definir uma rede neural é bem mais simples do que produzir analiticamente uma boa função de modelagem', mostrando que a rede neural substitui a difícil escolha analítica por uma definição automatizada e mais simples.",
+        "fonte": "60 CAP´ITULO 6. REDES NEURAIS DENSAS\n− confina valores no intervalo [−1.0, 1.0]\n6.6 Fun¸ c˜ ao Modelada pela Rede\nOs algoritmos de treinamento para formula¸ c˜ ao de apren-\ndizado de m´ aquina necessi",
+        "motivo": "O trecho afirma que escolher uma boa função é difícil, mas pode ser automatizado usando a "
+      }
+    },
+    {
+      "id": 132,
+      "pergunta": "Qual é a relação entre a natureza stateless dos LLMs e a janela de contexto, e de que forma as estratégias de truncamento, sumarização e RAG ajudam a lidar com essa relação?",
+      "estrato": "composta",
+      "docs_esperados": [
+        "nlp_aula11_text_to_text_em_llms_do_conceito_a_aplicacao_empresarial.pptx"
+      ],
+      "deve_abster": false,
+      "_auditoria": {
+        "resposta_esperada": "Os LLMs são stateless e não têm memória nativa, então é preciso reenviar todo o histórico a cada interação; a janela de contexto define o limite máximo de tokens processáveis de uma vez, e as estratégias de truncamento, sumarização e RAG servem para gerenciar esse histórico, reduzindo o impacto do aumento linear de custo e latência.",
+        "fonte": "Contexto e Memória\nA Ilusão de Continuidade: O Modelo Lê Tudo de Novo\nSTATELESS (SEM ESTADO)\nLLMs não têm memória nativa. Eles não \"lembram\" o que você disse há 10 segundos. Para manter uma conversa, ",
+        "motivo": "O trecho explica que LLMs são stateless e exigem reenvio do histórico, cujo limite é a jan"
+      }
+    }
+  ]
+}
