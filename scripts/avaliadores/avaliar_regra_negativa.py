@@ -11,7 +11,17 @@ opções no contexto recuperado), isolado do src/ (nenhuma mudança no pipeline)
 
   V1 — checagem no TOP-5 (contexto real da geração); absent==1 → responde;
   V2 — checagem no POOL (top-60 RRF);
-  V4 — checagem nos DOCS COMPLETOS recuperados (top-5 doc) — VENCEDORA (7/14, 0 erros);
+  V4 — checagem nos DOCS COMPLETOS recuperados (top-5 doc);
+  V5 — VENCEDORA: V4 + matcher robusto nos docs completos:
+       (a) co-ocorrência de TODOS os tokens de conteúdo da opção numa janela de
+           14 tokens (lema-lite = remove "s" final em ambos os lados; stopwords
+           ignoradas do lado da opção) — resgata "fabricantes de torres" (occ
+           textual "quanto às torres, há 12 fabricantes"), "algoritmo de damas
+           de Arthur Samuel" ("publicou um algoritmo para um programa de damas"),
+           "score (Pos/Neg)" ("score: +3 (pos: 3, neg: 0)");
+       (b) mapa de sinônimos SQL pt→en (DDL): "criar tabela"→"create table",
+           "alterar tipo de coluna"→"alter column", "apagar coluna"→"drop column"
+           — resgata a #99 (SQL inglês no doc, pergunta em pt);
   V3 — V1 + fallback de menor ocorrência (absent==0 → op com menos ocorrências;
        absent>=2 → op com zero ocorrências, se única).
 
@@ -136,6 +146,89 @@ def regra_v3(opcoes: list[str], texto: str):
     return menos, occ, "V3: menor ocorrência"
 
 
+# --- V5: matcher robusto (co-ocorrência por janela + sinônimos SQL) ----------
+STOP = {
+    "a", "o", "as", "os", "de", "do", "da", "dos", "das", "em", "no", "na",
+    "nos", "nas", "com", "para", "por", "e", "ou", "um", "uma", "ao", "aos",
+    "que", "se", "s", "à", "às",
+}
+JANELA = 14  # tokens; cobre spans reais observados (#97: 9; #100 score..neg: ~4)
+
+
+def tokenizar(t: str) -> list[str]:
+    return [x for x in re.split(r"[^a-z0-9]+", norm(t)) if len(x) >= 2]
+
+
+def lema(tok: str) -> str:
+    """Lema-lite: remove 's' final (torres→torre, fabricantes→fabricante).
+    Aplicado nos DOIS lados (tokens da opção e do texto) — consistência basta."""
+    return tok[:-1] if len(tok) > 3 and tok.endswith("s") else tok
+
+
+def coocorrencia_janela(opcao: str, texto: str) -> bool:
+    """TODOS os tokens de conteúdo da opção aparecem (lema) num span <= JANELA
+    no texto (ordem livre). Sem isso, ausente."""
+    toks_op = [lema(t) for t in tokenizar(opcao) if t not in STOP]
+    if len(toks_op) < 2:
+        return False
+    toks_txt = [lema(t) for t in tokenizar(texto)]
+    posicoes: list[int] = []
+    for t in toks_op:
+        ocorre = [i for i, x in enumerate(toks_txt) if x == t]
+        if not ocorre:
+            return False
+        posicoes.append(ocorre)
+    # todas as combinações: exige um caminho com span <= JANELA
+    import itertools
+    for comb in itertools.product(*posicoes):
+        if max(comb) - min(comb) <= JANELA:
+            return True
+    return False
+
+
+SQL_SINONIMOS: dict[str, list[str]] = {
+    "criar tabela": ["create table", "criar tabela", "crie a tabela"],
+    "alterar tipo de coluna": ["alter column", "alterar tipo", "altere o tipo", "alter type"],
+    "apagar coluna": ["drop column", "apagar coluna", "apague a coluna"],
+}
+
+
+def presente_v5(opcao: str, texto: str) -> tuple[bool, str]:
+    """(presente?, via) — literal | janela | sql | ausente."""
+    if ocorrencias(opcao, texto) > 0:
+        return True, "literal"
+    for sinonimo in SQL_SINONIMOS.get(norm(opcao), []):
+        if ocorrencias(sinonimo, texto) > 0:
+            return True, "sql"
+    if coocorrencia_janela(opcao, texto):
+        return True, "janela"
+    return False, "ausente"
+
+
+def regra_v5(opcoes: list[str], texto: str):
+    """V5 = V1/decidir sobre docs completos com matcher robusto."""
+    occ = {}
+    for o in opcoes:
+        presente, via = presente_v5(o, texto)
+        if via == "literal":
+            n = ocorrencias(o, texto)
+        elif via == "janela":
+            n = ocorrencias(o, texto) or 1  # ausência literal, presença por janela
+        elif via == "sql":
+            n = max((ocorrencias(s, texto) for s in SQL_SINONIMOS.get(norm(o), [])), default=0) or 1
+        else:
+            n = 0
+        occ[o] = {"occ": n, "via": via}
+    ausentes = [o for o, v in occ.items() if not v["occ"]]
+    if len(ausentes) == 1:
+        return ausentes[0], occ, "V5: ausente única"
+    if len(ausentes) >= 2:
+        return None, occ, f"ambígua ({len(ausentes)} ausentes)"
+    if len(ausentes) == len(opcoes):
+        return None, occ, "todas ausentes (fora do corpus → abster)"
+    return None, occ, "todas presentes"
+
+
 def contexto(chunks: list[dict], top: list[dict]) -> str:
     return "\n".join(str(c.get("texto") or "") for c in top)
 
@@ -183,6 +276,8 @@ def main() -> None:
         ("V1_top5", regra, "txt_top5"),
         ("V2_pool", regra, "txt_pool"),
         ("V4_docs_completos", regra, "txt_docs"),
+        ("V5_docs_completos", regra_v5, "txt_docs"),
+        ("V5_top5", regra_v5, "txt_top5"),
         ("V3_top5+menor", regra_v3, "txt_top5"),
     )
     for nome, fn, campo in VARIANTES:
@@ -211,13 +306,26 @@ def main() -> None:
     adver = [p for p in golden if p.get("estrato") == "adversarial"]
     disparos = [p["id"] for p in adver if detectar_template(p["pergunta"])]
     print(f"\nadversarial: {len(adver)} perguntas · template disparou em {disparos} (esperado: poucas)")
-    # sondas sintéticas: TODAS as opções fora do corpus → exigir abstenção nas 3 variantes
+    # adversarial REAL com template: a regra V5 (docs completos) deve ABSTER
+    col_adver = []
+    for p in adver:
+        if not detectar_template(p["pergunta"]):
+            continue
+        top5 = recuperar(p["pergunta"], chunks, top_k=5, rerank=False)
+        docs_top5 = sorted({c.get("arquivo") for c in top5})
+        txt = "\n".join(c.get("texto") or "" for c in chunks if c.get("arquivo") in docs_top5)
+        pred, occ, motivo = regra_v5(parse_opcoes(p["pergunta"]), txt)
+        col_adver.append({"id": p["id"], "pergunta": p["pergunta"],
+                          "pred": pred, "absteve_ok": pred is None, "motivo": motivo})
+        print(f"adversarial #{p['id']}: pred={pred!r} ({motivo})")
+    # sondas sintéticas: TODAS as opções fora do corpus → exigir abstenção
     colisoes = []
     for pergunta, esperado in SINTETICAS_COLISAO:
         top5 = recuperar(pergunta, chunks, top_k=5, rerank=False)
-        txt = contexto(chunks, top5)
+        docs_top5 = sorted({c.get("arquivo") for c in top5})
+        txt = "\n".join(c.get("texto") or "" for c in chunks if c.get("arquivo") in docs_top5)
         opcoes = parse_opcoes(pergunta)
-        pred, occ, motivo = regra(opcoes, txt)
+        pred, occ, motivo = regra_v5(opcoes, txt)
         colisoes.append({"pergunta": pergunta, "opcoes": opcoes, "pred": pred,
                          "absteve_ok": pred is None, "motivo": motivo, "occ": occ})
         print(f"colisão: {pergunta[:70]} → pred={pred!r} ({motivo})")
@@ -245,7 +353,7 @@ def main() -> None:
 
     ev = {"alvo_ids": ids_alvo, "tipo_a": TIPO_A, "dados": dados,
           "variantes": {k: v for k, v in res.items()},
-          "colisoes": colisoes, "projecao": proj}
+          "colisoes": colisoes, "col_adver": col_adver, "projecao": proj}
     SAIDA.write_text(json.dumps(ev, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     print(f"\njson: {SAIDA}")
 
