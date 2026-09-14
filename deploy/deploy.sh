@@ -185,6 +185,7 @@ rsync -a \
   --exclude 'deploy/build' \
   --exclude 'deploy/.env' \
   --exclude 'deploy/mcp_colab' \
+  --exclude 'deploy/mcp_deploy' \
   --exclude 'data' \
   --exclude '*.log' \
   "$RAIZ/" "$BUILD_DIR/"
