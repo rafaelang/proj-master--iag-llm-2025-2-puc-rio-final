@@ -15,25 +15,53 @@ from projeto_final.rag.index import construir_indices
 from projeto_final.rag.retrieve import recuperar
 
 
-def test_ingest_nao_vazio():
-    paginas = ingest(config.RAW_DIR)
+TEXTO_FIXTURE = (
+    "O RAG une a recuperacao de trechos relevantes do corpus com a geracao "
+    "aumentada por contexto. O indice combina BM25 (lexico) com embeddings "
+    "densos (semantico) e funde os dois rankings por RRF. O sistema responde "
+    "com citacao [n] da fonte e abstem-se quando a pergunta esta fora do "
+    "corpus. Esta e a base dos testes de fronteira natural de chunking." * 2
+)
+
+
+def test_ingest_nao_vazio(tmp_path):
+    """Contrato de ingest no formato minimo (fixture rapida; o corpus completo
+    nao e re-ingerido nesta suite)."""
+    (tmp_path / "a.md").write_text(TEXTO_FIXTURE, encoding="utf-8")
+    paginas = ingest(tmp_path)
     assert len(paginas) > 0
     assert all("doc_id" in p and "texto" in p for p in paginas)
 
 
-def test_chunk_fronteira_natural():
-    paginas = ingest(config.RAW_DIR)
+def test_chunk_fronteira_natural(tmp_path):
+    (tmp_path / "a.md").write_text(TEXTO_FIXTURE, encoding="utf-8")
+    paginas = ingest(tmp_path)
     chunks = chunk_por_fronteira(paginas)
     assert len(chunks) > 0
     assert all("id" in c and "doc_id" in c and "texto" in c for c in chunks)
 
 
-def test_indices_constroem():
-    paginas = ingest(config.RAW_DIR)
-    chunks = chunk_por_fronteira(paginas)
-    bm25, embeddings, ids = construir_indices(chunks, force=True)
+def test_indices_constroem(tmp_path):
+    """Construcao BM25+embeddings em base propria (tmp) — nunca rebuilda o
+    indice de producao; acrescenta sanidade de leitura do indice oficial."""
+    chunks = [
+        {"id": i, "doc_id": f"d{i % 3}.pdf", "pagina": (i % 5) + 1,
+         "texto": "RAG une recuperacao e geracao aumentada por contexto. " * 4}
+        for i in range(15)
+    ]
+    base = tmp_path / "idx"
+    bm25, embeddings, ids = construir_indices(chunks, force=True, base=base)
     assert embeddings.shape[0] == len(chunks)
     assert len(ids) == len(chunks)
+    # persistencia: leitura volta identica
+    from projeto_final.rag.index import carregar_indices
+    _, emb2, ids2 = carregar_indices(base)
+    assert list(ids2) == ids
+    # sanidade (somente leitura) do indice de producao, se existir
+    if config.RAG_BM25_PATH.exists() and config.RAG_EMBEDDINGS_PATH.exists():
+        from projeto_final.rag.pipeline import carregar_chunks
+        _, emb_prod, ids_prod = carregar_indices(config.RAG_DIR)
+        assert emb_prod.shape[0] == len(ids_prod) == len(carregar_chunks())
 
 
 def test_recuperar_dedup_chunks():
@@ -82,8 +110,14 @@ def test_formatar_referencias_renumera_e_monta_rodape():
 
 
 def test_recupera_chunks():
-    paginas = ingest(config.RAW_DIR)
-    chunks = chunk_por_fronteira(paginas)
+    """Recuperacao RRF usando o corpus/indice oficiais persistidos (sem
+    re-ingest e sem rebuild — rapido e nao-destrutivo)."""
+    import pytest
+    if not (config.RAG_BM25_PATH.exists() and config.RAG_EMBEDDINGS_PATH.exists()
+            and config.RAG_CHUNK_PATH.exists()):
+        pytest.skip("indice/corpus de producao ausentes (rode a ingestao/construcao)")
+    from projeto_final.rag.pipeline import carregar_chunks
+    chunks = carregar_chunks()
     # rerank=False: teste basico do RRF, sem baixar o cross-encoder (~1.1 GB)
     top = recuperar("RAG retrieval augmented generation", chunks, top_k=5, rerank=False)
     assert len(top) == 5

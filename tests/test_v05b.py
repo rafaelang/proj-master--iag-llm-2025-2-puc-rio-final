@@ -147,12 +147,20 @@ class TestManifesto:
         ids_v05 = {q["id"] for q in v05["perguntas"]}
         ids_v05b = {q["id"] for q in perg["perguntas"]}
         assert ids_v05.issubset(ids_v05b)
+        # Correcoes de docs_esperados feitas NA v0.5b (congeladas no golden v0.5b
+        # e preservadas pela v0.6 — nunca re-editar): #13 pergunta sobre o artigo
+        # "attention is all you need" apontava no v0.5 para
+        # proj_aula04_multiagentes_slm.pdf (erro de mira); corrigida para o doc
+        # que efetivamente contem o trecho (palavras-chave de vision transformers).
+        CORRECOES_V05B = {
+            13: ["pai_aula08_visiontransformers_attention_is_all_you_need.pdf"],
+        }
         # perguntas congeladas preservadas textualmente
         orig = {q["id"]: q for q in v05["perguntas"]}
         for q in perg["perguntas"]:
             if q["id"] in orig:
                 assert q["pergunta"] == orig[q["id"]]["pergunta"]
-                assert q["docs_esperados"] == orig[q["id"]]["docs_esperados"]
+                assert q["docs_esperados"] == CORRECOES_V05B.get(q["id"], orig[q["id"]]["docs_esperados"])
 
 
 # ---------------------------------------------------------- evidencia v0.5b (pura)
