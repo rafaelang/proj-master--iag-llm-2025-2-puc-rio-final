@@ -153,6 +153,17 @@ def resumir(linhas: list[dict]) -> dict:
     for l in linhas:
         por_estrato.setdefault(l.get("estrato") or "?", []).append(l)
     resumo["por_estrato"] = {e: _met(rs) for e, rs in sorted(por_estrato.items())}
+    # P2 (plano do orientador, v0.6): tabela CRUZADA rota×estrato — atribui cada falha
+    # à célula (roteamento × gerador), sem alterar o schema existente (aditivo).
+    # Células: n, acertos/julgadas, acuracia, alucinacoes, abstencao_correta.
+    cruzada: dict[str, dict[str, dict]] = {}
+    for r in sorted({l.get("rota") or "?" for l in linhas}):
+        cruzada[r] = {}
+        for e in sorted({l.get("estrato") or "?" for l in linhas}):
+            cel = [l for l in linhas if (l.get("rota") or "?") == r and (l.get("estrato") or "?") == e]
+            if cel:
+                cruzada[r][e] = _met(cel)
+    resumo["cruzada_rota_estrato"] = cruzada
     return resumo
 
 
