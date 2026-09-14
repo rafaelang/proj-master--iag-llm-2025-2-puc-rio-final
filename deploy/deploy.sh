@@ -49,10 +49,9 @@ else
   : "${DEEPSEEK_API_KEY:?Defina DEEPSEEK_API_KEY no ambiente, em deploy/.env ou no .env da raiz}"
 fi
 
-if ! command -v python >/dev/null 2>&1 && [[ -x "$RAIZ/.venv/bin/python" ]]; then
+if [[ -x "$RAIZ/.venv/bin/python" ]]; then
   export PATH="$RAIZ/.venv/bin:$PATH"
-fi
-if ! command -v python >/dev/null 2>&1; then
+elif ! command -v python >/dev/null 2>&1; then
   echo "ERRO: python nao encontrado (use o .venv do projeto ou ative o ambiente)." >&2
   exit 1
 fi
@@ -153,7 +152,7 @@ print("   space publico pronto:", repo_id)
 for key, value in (("DEEPSEEK_API_KEY", os.getenv("DEEPSEEK_API_KEY", "")),
                    ("HF_TOKEN_READ", hf_read),
                    ("HF_DATA_REPO", dataset_id),
-                   # Public demo: roteador/simples via flash (deepseek-chat) para
+                   # Public demo: roteador/simples via flash (deepseek-flash) para
                    # latencia baixa no gateway; o SLM local fica p/ uso local/CLI.
                    ("AGENTE_ROTEADOR", "flash"),
                    ("AGENTE_SIMPLES", "flash"),

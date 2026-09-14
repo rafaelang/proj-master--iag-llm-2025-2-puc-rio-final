@@ -1,7 +1,7 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v0.5b · Expansão do corpus ✅ **CONCLUÍDA** (corpus 19× maior: 193 docs PDF/MD/IPYNB/PPTX, 3.401 chunks; golden set expandido para 44 perguntas; mini-experimento e SLM 2×2 re-medidos no corpus expandido — decisão **"não treinar"** mantida, RAG+frontier permanece produção; docs/v05b.md + v05b_evidencia.md; v0.5/v0.1–v0.4 intactas)
+> **Status:** v1.0 · Produção ✅ **CONCLUÍDA** — Space público [`assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (URL pública funcionando, docker/cpu-upgrade) + corpus privado em dataset separado; custo por mil consultas **US$ 0,27** (cascade) / US$ 1,50 (pro forçado); docs/v10.md + v10_evidencia.md. Roadmap v0.1→v1.0 fechado (v0.1 voz → v0.6 avaliação → v1.0 produção).
 > **Repositório base de consulta:** `projeto2/` (protótipo de experimentação)
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens, roteamento simples/complexo entre SLM local e LLM remoto, e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
@@ -45,7 +45,21 @@ ONNX/CPU + LLM remoto DeepSeek + SLM local):
   `{texto, resposta, audio_base64}` — WAV só para entradas de áudio/imagem.
 
 Cada release fecha com **evidência medida** em `docs/` (`v0X.md` +
-`v0X_evidencia.md`), testes `pytest` e tag no Git. Próxima: **v0.5 · Adaptação**.
+`v0X_evidencia.md`), testes `pytest` e tag no Git.
+
+- **v0.5 · Adaptação** — comparativo prompt/RAG/fine-tuning/pré-treino com
+  decisão **"não treinar"** (o destilado LoRA piora acurácia por super-cautela,
+  `docs/v05.md`). v0.5b expande o corpus para 193 docs / 3.401 chunks e o
+  golden para 44Q (`docs/v05b.md`).
+- **v0.6 · Avaliação** — avaliação **por estrato** com golden 132Q
+  (roteadora 0.609 → composta 0.586 → negativa 0.125 → adversarial 0.833);
+  regra determinística V5 resgata a negativa (2/16 → 11/14); régua
+  doc (0.659) × página (0.605) mostra a página como limitante; TCO
+  0.00027/Q (`docs/v06.md` + `v06_evidencia.md`).
+- **v1.0 · Produção** — deploy em **Space público** + **dataset privado**
+  (corpus fora do repo), custo por mil consultas, e três defeitos de produção
+  corrigidos no smoke test (nomes de modelo obsoletos, SIGPIPE no boot,
+  timeout de LLM) — ver §Arquitetura da v1.0 e `docs/v10.md`.
 
 ---
 
@@ -436,6 +450,49 @@ Mais detalhes em `docs/v05.md` e `docs/v05_evidencia.md`.
 
 ---
 
+## Arquitetura da v1.0 (Produção)
+
+A v1.0 **não altera o pipeline** (v0.1 → v0.6): ela o empacota para produção
+numa estrutura de duas camadas, mede o **custo por mil consultas** e corrige os
+defeitos de produção que o smoke test do Space expôs.
+
+```mermaid
+flowchart LR
+    subgraph PUB["Space PÚBLICO assistente-master-iag (docker, cpu-upgrade)"]
+        API["FastAPI /chat<br/>áudio·imagem·texto → multiagente"]
+        ROTE["roteador flash<br/>(deepseek-flash)"]
+        SIM["simples: flash<br/>(deepseek-flash)"]
+        CMP["complexa: pro<br/>(deepseek-v4-pro)"]
+        API --> ROTE --> SIM --> CMP
+    end
+    subgraph PRIV["Dataset PRIVADO assistente-master-iag-dados"]
+        RAW["data/raw (corpus)"]
+        IDX["índices processed/rag*, rag_v3"]
+        SLM["slm_models (GGUF)"]
+    end
+    PUB -- "boot: snapshot_download<br/>(secret HF_TOKEN_READ)" --> PRIV
+    CMP --> DS["DeepSeek API<br/>(deepseek-flash / deepseek-v4-pro)"]
+```
+
+- **Corpus privado:** o repo público do Space **não** contém `data/` — o
+  `deploy.sh` sobe raw + índices para o dataset `assistente-master-iag-dados`
+  (privado) e o container baixa em runtime (`deploy/entrypoint.sh`,
+  `HF_TOKEN_READ`). Não expõe PDFs/notebooks do curso (LGPD/direitos autorais).
+- **Modelos remotos em produção:** `AGENTE_ROTEADOR=flash`,
+  `AGENTE_SIMPLES=flash`, `AGENTE_COMPLEXA=pro` (secrets do Space); o SLM local
+  (Qwen 2.5-1.5B GGUF) roda só em local/CLI.
+- **Custo por mil consultas:** cascade default **US$ 0,27** (roteador R2 local
+  decide ~85% a 0 custo) · frontier `pro` forçado **US$ 1,50** (teto).
+- **Defeitos corrigidos no smoke test:** (1) nomes de modelo obsoletos
+  (`deepseek-chat`/`deepseek-v4-flash` → `deepseek-flash`; o endpoint DeepSeek
+  expõe só `deepseek-flash` e `deepseek-v4-pro`); (2) SIGPIPE no boot do
+  container (`set -o pipefail` + tqdm/`ls|head` → `disable_progress_bars` + retry
+  + `ls|wc`); (3) timeout no cliente LLM (degradação graciosa → `NAO_SEI`).
+
+Mais detalhes em `docs/v10.md` e `docs/v10_evidencia.md`.
+
+---
+
 ## 6. Status
 
 | Release | Status |
@@ -447,8 +504,8 @@ Mais detalhes em `docs/v05.md` e `docs/v05_evidencia.md`.
 | v0.4 · Agentes | ✅ **CONCLUÍDA** — fluxo heterogêneo (roteador SIMPLES/COMPLEXA + SLM local Qwen2.5-1.5B na rota simples + deepseek-v4-pro na complexa; fallback cruzado); estudo de roteadores com default `cascade` (R2 TF-IDF+XGB→R1, θ=0.60); R1 slm mede abstenção correta 0.950 e o default `cascade` mede 0.850 (decisão por custo, docs/v04.md §11); Python 3.14 + llama-cpp-python + scikit-learn/xgboost; `/chat` e `/chat/imagem` usam os agentes por padrão (`AGENTES_HABILITADO`); endpoints `/rag/perguntar` e `/rag/imagem/analisar` removidos. |
 | v0.5 · Adaptação | ✅ **CONCLUÍDA** — comparativo (prompt/RAG/fine-tuning/pré-treino) com **decisão: não treinar**; mini-experimento prompt-only × RAG com **juiz de correção** (R3: prompt-only alucina 2× fora do corpus e nunca cita; RAG 0 alucinações + 100% citação); **destilação LoRA com curadoria** (R5) no Colab T4 — dataset curado 29 Q&A (21 ancorados + 10 compostos + 8 abstenção), adapter 8,7 MB, 22–32 s de GPU, **train_loss 2.447**; matriz 2×2 (base × destilado × sem/com RAG) medida com juiz: destilado reduz alucinações (5→4) mas **piora acurácia** (0.40→0.30) por super-cautela; **auditoria do juiz aprovada** (consistência, viés de comprimento, rubrica — R3); **DPO não executado** (R6: sem preferência real); TCO 3 cenários (R7). |
 | v0.5b · Expansão do corpus | ✅ **CONCLUÍDA** — corpus expandido de 10 → 193 docs (PDF/MD/IPYNB/PPTX, 3.401 chunks, 2.380 páginas); golden set expandido para **44 perguntas** (20 congeladas + 24 novas); índice reconstruído; mini-experimento no corpus expandido: RAG **0.705** de acurácia (frontier) com **100% de citação** vs prompt-only 0.884 (0% citação, 3 alucinações); **destilação LoRA re-medida** (dataset curado 42 Q&A, train_loss 2.488, adapter ~8,7 MB): SLM destilado 0.364 de acurácia com RAG vs base 0.295 — melhora o SLM mas **continua longe do frontier** e **não reduz alucinações**; decisão **"não treinar" mantida**, RAG+frontier permanece produção; follow-up registrado: reavaliar rerank/top_k no corpus denso. |
-| v0.6 · Avaliação | ⏳ |
-| v1.0 · Produção | ⏳ |
+| v0.6 · Avaliação | ✅ **CONCLUÍDA** — relatório **por estrato** no golden 132Q (rotineira 0.609 / composta 0.586 / negativa 0.125 / adversarial 0.833; fim-a-fim cascade 0.575 → **0.661 projetado** com a regra V5); falha encontrada pelo aluno: a **negativa tipo A** (juiz não dá leniência → 0.125) e a **página** como limitante real (doc 0.659 × página 0.605); auditoria do juiz aprovada (P0); alvos v1.0 definidos em `docs/v06.md` §4; golden congelado (perguntas_v06.json); testes 86 passed. |
+| v1.0 · Produção | ✅ **CONCLUÍDA** — Space público [`rafaelang/assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (docker, cpu-upgrade, sleep 1h) + dataset privado `assistente-master-iag-dados` (corpus fora do repo); URL pública respondendo (`/saude` = 3.517 chunks); **custo por mil consultas US$ 0,27** (cascade) / US$ 1,50 (pro); correções de produção (nomes de modelo `deepseek-flash`/`deepseek-v4-pro`, SIGPIPE no boot, timeout no cliente LLM); `huggingface_hub` nas deps; `docs/v10.md` + `v10_evidencia.md`. |
 
 ---
 

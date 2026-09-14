@@ -11,7 +11,7 @@ Modelos parametrizaveis (env/CLI, nao fixos no codigo):
 
 Mapeamento:
   slm     = Qwen2.5-1.5B-Instruct local (GGUF Q4_K_M, CPU, custo zero)
-  flash   = config.AGENTE_MODELO_FLASH  (deepseek-v4-flash)
+  flash   = config.AGENTE_MODELO_FLASH  (deepseek-flash)
   pro     = config.AGENTE_MODELO_PRO    (deepseek-v4-pro)
   tfidf   = roteador classico local (TF-IDF char_wb 3-5 + XGBoost, <1 ms, ~10 MB)
   cascade = R3: tfidf decide; INDETERMINADO (baixa margem) -> R1 slm decide

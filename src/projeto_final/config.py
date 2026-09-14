@@ -75,7 +75,7 @@ RAG_RERANK = os.getenv("RAG_RERANK", "false").lower() == "true"
 # LLM
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
 JUIZ_MODEL = os.getenv("JUIZ_MODEL", "deepseek-v4-pro")
 # v0.3 - visao multimodal (descricao de imagens enviadas no chat)
 DEEPSEEK_VISION_MODEL = os.getenv("DEEPSEEK_VISION_MODEL", "deepseek-v4-flash-vision-exp")
@@ -106,11 +106,12 @@ SLM_TEMPERATURE = float(os.getenv("SLM_TEMPERATURE", "0.2"))
 SLM_N_GPU_LAYERS = int(os.getenv("SLM_N_GPU_LAYERS", "0"))
 
 # v0.4 - Agentes (roteador SIMPLES/COMPLEXA + geradores com fallback).
-# Mapeamento: slm = local · flash = deepseek-v4-flash (API, texto) ·
+# Mapeamento: slm = local · flash = deepseek-flash (API, texto) ·
 # pro = deepseek-v4-pro (API). Modelos escolhiveis por env/CLI.
-AGENTE_MODELO_FLASH = os.getenv("AGENTE_MODELO_FLASH", "deepseek-v4-flash")
+# (v1.0: endpoint expoe apenas deepseek-flash e deepseek-v4-pro — ver GET /models).
+AGENTE_MODELO_FLASH = os.getenv("AGENTE_MODELO_FLASH", "deepseek-flash")
 AGENTE_MODELO_PRO = os.getenv("AGENTE_MODELO_PRO", "deepseek-v4-pro")
-# Roteador: slm (Qwen local, few-shot) | flash (deepseek-v4-flash API) |
+# Roteador: slm (Qwen local, few-shot) | flash (deepseek-flash API) |
 # tfidf (classico local: TF-IDF char_wb + XGBoost — estudo v0.4) |
 # cascade (R3: tfidf decide; INDETERMINADO -> R1 slm decide).
 # DEFAULT = cascade@0.60 (decisao do estudo v0.4 por custo/latencia: ~85% das

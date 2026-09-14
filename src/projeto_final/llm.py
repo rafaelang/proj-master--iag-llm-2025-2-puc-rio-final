@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import time
 import unicodedata
@@ -11,7 +12,7 @@ from openai import OpenAI
 
 from projeto_final import config
 
-DEFAULT_MODELO = "deepseek-chat"
+DEFAULT_MODELO = "deepseek-flash"
 MAX_PALAVRAS = 30
 MAX_TOKENS = 100
 MAX_TOKENS_RAG = 400
@@ -38,7 +39,15 @@ def _cliente() -> OpenAI:
         if not chave or chave.startswith("sk-") is False:
             logger.warning("DEEPSEEK_API_KEY nao configurada corretamente")
             raise RuntimeError("DEEPSEEK_API_KEY nao configurada")
-        _cliente_cache = OpenAI(api_key=chave, base_url=config.DEEPSEEK_BASE_URL)
+        _cliente_cache = OpenAI(
+            api_key=chave,
+            base_url=config.DEEPSEEK_BASE_URL,
+            # v1.0 (degradacao graciosa): sem timeout a chamada a uma API remota
+            # fora do ar pendura ate o default do SDK (~10 min) e o /chat fica
+            # travado. Com timeout+retry, falha rapido e cai no fallback/abstencao.
+            timeout=float(os.getenv("LLM_TIMEOUT_S", "90")),
+            max_retries=int(os.getenv("LLM_MAX_RETRIES", "1")),
+        )
         logger.debug("Cliente DeepSeek inicializado: {}", config.DEEPSEEK_MODEL)
     return _cliente_cache
 
@@ -77,7 +86,7 @@ def responder_com_contexto(pergunta: str, contexto: str, sistema: str | None = N
     """Envia pergunta + contexto ao LLM e retorna (resposta, metadados).
 
     `modelo` permite escolher o modelo por chamada (usado pelos agentes da v0.4:
-    flash/pro); padrao = config.DEEPSEEK_MODEL (deepseek-chat). `max_tokens`
+    flash/pro); padrao = config.DEEPSEEK_MODEL (deepseek-flash). `max_tokens`
     permite dar orcamento maior a modelos de raciocinio (ex.: pro na v0.4).
     """
     t0 = time.time()

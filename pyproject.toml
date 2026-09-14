@@ -11,6 +11,7 @@ dependencies = [
     "fastapi>=0.141.1",
     "fastembed>=0.8.0",
     "faster-whisper>=1.2.1",
+    "huggingface_hub>=0.40.0",
     "llama-cpp-python>=0.3.35",
     "loguru>=0.7.3",
     "openai>=3.6.0",
@@ -24,6 +25,11 @@ dependencies = [
     "scikit-learn>=1.9.0",
     "uvicorn>=0.52.4",
     "xgboost>=3.4.1",
+]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.400",
 ]
 
 [project.scripts]
