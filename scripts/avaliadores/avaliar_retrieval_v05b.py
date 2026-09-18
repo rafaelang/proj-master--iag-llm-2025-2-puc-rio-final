@@ -23,7 +23,7 @@ from loguru import logger
 
 from projeto_final import config
 from projeto_final.rag.pipeline import carregar_chunks
-from projeto_final.rag.retrieve import recuperar
+from projeto_final.rag.retrieve import recuperar, POOL_RERANK
 
 GOLDEN = config.RAG_GOLDEN_SET
 # Emprestimos de nome derivam da versão do golden (v05b → v05b_retrieval.md;
@@ -100,7 +100,7 @@ def gerar_evidencia(sem: dict, com: dict) -> str:
         f"> Dataset: `{GOLDEN.name}` ({s['n_perguntas']} perguntas, "
         f"{s['n_com_docs_esperados']} com `docs_esperados`).",
         "> Retriever: BM25 próprio + fastembed + RRF (BM25 1.0 × denso 1.5, k=60, imagem 1.15)",
-        f"> RERANK: jina-reranker-v2-base-multilingual · pool over-fetch {retrieve.POOL_RERANK} · top_k {TOP_K}.",
+        f"> RERANK: jina-reranker-v2-base-multilingual · pool over-fetch {POOL_RERANK} · top_k {TOP_K}.",
         "",
         "## Resultado — RERANK on × off",
         "",
