@@ -127,6 +127,199 @@
     <div class="hint">A transcricao da sua fala, a descricao da imagem ou a sua pergunta digitada e a resposta do assistente aparecem aqui.</div>
 
     <section class="about">
+      <h2>Sobre a v1.0 - Producao (deploy publico)</h2>
+      <p>
+        A v1.0 empacota o pipeline (v0.1 &rarr; v0.6) para producao numa estrutura de
+        <strong>duas camadas</strong>: Space publico <code>rafaelang/assistente-master-iag</code>
+        (codigo, sem corpus) + dataset <strong>privado</strong> com raw/indices baixados no boot
+        (LGPD/direitos autorais). Modelos em producao = so remotos
+        (<code>roteador/simples=flash</code>, <code>complexa=pro</code>); custo por mil consultas
+        <strong>US$ 0.27</strong> (cascade) / US$ 1.50 (pro forcado). Corrigiu 3 defeitos do smoke
+        test (nomes de modelo obsoletos, SIGPIPE no boot, timeout do cliente LLM).
+      </p>
+      <ul class="highlights">
+        <li>Re-medicao no golden 132Q (Colab T4): fim-a-fim 0.571 real / <strong>0.659 com V5</strong>.</li>
+        <li>recall@5 DOC 0.659 (estavel) · PAGINA 0.605 (limitante real).</li>
+        <li>adversarial <strong>0.833</strong>; TCO <strong>US$ 0.00014/Q</strong> (&le; 0.001 alvo).</li>
+        <li>Duelo de SLMs: 0.5B rejeitado (recusa 0.167); 3B rejeitado por ora; <strong>1.5B mantido</strong>.</li>
+      </ul>
+      <table class="result-table wrap">
+        <thead>
+          <tr><th>Regua (golden 132Q)</th><th>v1.0</th><th>Alvo</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>fim-a-fim cascade</td><td>0.571 (0.659 com V5)</td><td>&ge; 0.70</td></tr>
+          <tr><td>recall@5 DOC</td><td>0.659</td><td>&ge; 0.75</td></tr>
+          <tr><td>recall@5 PAGINA</td><td>0.605</td><td>&ge; 0.70</td></tr>
+          <tr><td>negativa tipo A (V5)</td><td>11/14 (0.786)</td><td>&ge; 0.80</td></tr>
+          <tr><td>adversarial</td><td>0.833</td><td>&ge; 0.80</td></tr>
+          <tr><td>TCO por consulta</td><td>US$ 0.00014</td><td>&le; 0.001</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="about">
+      <h2>Sobre a v0.6 - Avaliacao (golden 132Q)</h2>
+      <p>
+        A v0.6 fecha a <strong>regua oficial de avaliacao</strong>: golden congelado de
+        <strong>132Q</strong> (69 rotineira / 29 composta / 16 negativa / 18 adversarial),
+        avaliacao <strong>por estrato</strong> (nao so a media) e a falha encontrada pelo aluno:
+        a <strong>negativa tipo A</strong>. No "qual destes NAO..." a resposta e o item
+        <strong>ausente</strong> — o SLM absteria por construcao (regra 3 do prompt). A correcao
+        foi a <strong>regra deterministica V5</strong> (pos-retrieval, US$ 0): literal &#8746; janela
+        14 tokens &#8746; mapa pt&rarr;SQL, respondendo so com ausente unica.
+      </p>
+      <ul class="highlights">
+        <li>Baseline cascade por estrato: rotineira 0.609 · composta 0.586 · negativa <strong>0.125</strong> · adversarial <strong>0.833</strong>.</li>
+        <li>Regra V5: negativa 2/16 &rarr; <strong>11/14 (0.786)</strong>; 0 erros; fim-a-fim projetado 0.575 &rarr; <strong>0.661</strong>.</li>
+        <li>Regua <strong>DOC 0.659 &times; PAGINA 0.605</strong> — a pagina e o limitante real.</li>
+        <li>Alvos oficiais v1.0 definidos aqui; golden congelado (perguntas_v06.json); pytest 86 green.</li>
+      </ul>
+      <table class="result-table wrap">
+        <thead>
+          <tr><th>Estrato</th><th>n</th><th>Acur.</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>rotineira</td><td>69</td><td>0.609</td></tr>
+          <tr><td>composta</td><td>29</td><td>0.586</td></tr>
+          <tr><td>negativa (antes da V5)</td><td>16</td><td>0.125</td></tr>
+          <tr><td>adversarial</td><td>18</td><td>0.833</td></tr>
+          <tr><td>total (cascade)</td><td>127</td><td>0.575</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="about">
+      <h2>Sobre a v0.5 / v0.5b - Adaptacao (decisao "nao treinar")</h2>
+      <p>
+        A v0.5 comparou as <strong>4 abordagens</strong> (prompt / RAG / fine-tuning-LoRA /
+        pre-treino) com juiz auditado e decidiu <strong>"nao treinar"</strong> — a falha e de
+        fato (grounding), nao de forma. A v0.5b expandiu o corpus para <strong>193 docs /
+        3.401 chunks</strong> e o golden para <strong>44Q</strong>, re-medindo no retriever real:
+        o RAG continua o unico com <strong>citacao (100%) + abstencao</strong>; a destilacao LoRA
+        (42 itens curados) melhora o SLM (0.295&rarr;0.364 com RAG) mas nao reduz alucinacoes e
+        fica longe do frontier — <strong>decisao mantida</strong>.
+      </p>
+      <ul class="highlights">
+        <li>Mini-exp v0.5b (frontier, 44Q): prompt-only 0.884 / 0% citacao / 3 aluc. &times; RAG 0.705 / <strong>100% citacao</strong> / 2 aluc.</li>
+        <li>Matriz 2&times;2 (com RAG): SLM base 0.295 vs destilado 0.364; frontier RAG <strong>0.705</strong>.</li>
+        <li>Checklist go/no-go (slide 32): score 1-2 "sim" &rarr; "nao treinar ainda".</li>
+        <li>DPO nao executado (sem preferencia real; slide 21); TCO 3 cenarios fecha para API.</li>
+      </ul>
+      <table class="result-table wrap">
+        <thead>
+          <tr><th>Gerador (v0.5b, com RAG)</th><th>Acuracia</th><th>Aluc.</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>SLM base (Qwen2.5-1.5B)</td><td>0.295</td><td>8</td></tr>
+          <tr><td>SLM destilado (LoRA curado 42)</td><td>0.364</td><td>9</td></tr>
+          <tr><td>Frontier (RAG)</td><td><strong>0.705</strong></td><td>2</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="about">
+      <h2>Sobre a v0.4 - Agentes (SLM local + LLM remoto)</h2>
+      <p>
+        A v0.4 implementa um <strong>fluxo heterogeneo de agentes</strong>: um <strong>roteador</strong>
+        (padrao <strong>cascade</strong>: o clasificador local TF-IDF+XGBoost decide a rota SIMPLES/COMPLEXA
+        pela confianca; perguntas <strong>INDETERMINADAS</strong> sobem ao SLM Qwen2.5-1.5B few-shot) e
+        geradores: a rota simples e respondida por um <strong>SLM local de verdade</strong> (Qwen2.5-1.5B-Instruct,
+        GGUF Q4_K_M, 100% CPU, custo zero) via RAG v0.3, e a rota complexa pelo LLM remoto
+        <code>deepseek-v4-pro</code> — com <strong>fallback cruzado</strong> sob falha e abstencao
+        com motivo. O fluxo roda na API no endpoint unico <code>/chat</code> (audio, imagem ou texto),
+        ativo por padrao (<code>AGENTES_HABILITADO=true</code>).
+      </p>
+      <ul class="highlights">
+        <li>Roteador SLM (R1) com <strong>few-shot pt-BR</strong>: 13 simples / 7 complexas no golden set (sem few-shot, o Qwen 1.5B tendia a 19/20 COMPLEXA).</li>
+        <li><strong>Estudo do roteador</strong> (docs/v04.md §11): default <code>cascade</code> (R2 TF-IDF char_wb+XGBoost decide ~85% a &lt;2 ms/US$ 0; INDETERMINADO -&gt; SLM; θ=0.60). R1 slm media 0.950 de abstencao correta; cascade mede 0.850 (decisao por custo/latencia).</li>
+        <li>Modelos parametrizaveis (CLI/env): roteador <code>{slm,flash,tfidf,cascade}</code> e geradores <code>{slm,flash,pro}</code> (flash=deepseek-v4-flash, pro=deepseek-v4-pro).</li>
+        <li>Comportamento sob falha testado sem API (6 cenarios com mock): falha no gerador cai para a outra rota; ambas falham -&gt; abstencao.</li>
+      </ul>
+      <table class="result-table wrap">
+        <thead>
+          <tr><th>Metrica</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Abstencao correta (20) — roteador R1 (slm)</td><td>0.950</td></tr>
+          <tr><td>Abstencao correta (20) — default cascade (R2→R1)</td><td>0.850</td></tr>
+          <tr><td>Roteador padrao</td><td>cascade (TF-IDF char_wb+XGB decide; INDETERMINADO -&gt; SLM; θ=0.60)</td></tr>
+          <tr><td>Rotas</td><td>13 simples (SLM local) + 7 complexas (pro)</td></tr>
+          <tr><td>Agentes usados</td><td>gerador-slm 13 · gerador-pro 7</td></tr>
+          <tr><td>Fallbacks</td><td>0</td></tr>
+          <tr><td>Latencia media (geradores)</td><td>64.96 s (R1) / 66.16 s (cascade)</td></tr>
+          <tr><td>Custo das rotas simples</td><td>US$ 0.00 (local)</td></tr>
+          <tr><td>SLM local</td><td>Qwen2.5-1.5B-Instruct (GGUF Q4_K_M, CPU)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="about">
+      <h2>Sobre a v0.3 - Imagem (visao + OCR local)</h2>
+      <p>
+        Na v0.3 o assistente passou a <strong>ler imagens</strong>. Figuras dos PDFs do
+        curso (diagramas, modelos e slides) sao extraidas com PyMuPDF, deduplicadas
+        por sha1 (275 unicas) e lidas por <strong>OCR local RapidOCR (ONNX/CPU)</strong>;
+        as 22 figuras uteis entram no indice RAG (corpus texto+imagem com
+        <strong>294 chunks</strong>). Neste chat, o botao "Enviar imagem" usa o modelo de
+        visao <code>deepseek-v4-flash-vision-exp</code> para descrever a figura, envia a
+        descricao ao RAG e devolve a resposta falada — mesmo fluxo do audio.
+      </p>
+      <ul class="highlights">
+        <li>Conteudo da figura no top-5: <strong>0.000</strong> (texto-only) -&gt; <strong>1.000</strong> (texto+imagem).</li>
+        <li><strong>3/3</strong> casos do golden set em que a visao corrigiu o texto (o texto abstinha-se com NAO_SEI).</li>
+        <li>OCR/figuras 100% locais (CPU/ONNX) — custo zero; audio, imagem e texto usam o mesmo <code>/chat</code> (API unificada v0.4) sobre o corpus texto+imagem.</li>
+        <li>As respostas terminam com o <strong>rodape de referencias</strong> (<code>[1] doc.pdf</code> ...) e a voz TTS padrao e <code>pt_BR-cadu-medium</code>.</li>
+      </ul>
+      <table class="result-table">
+        <thead>
+          <tr><th>Metrica</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Figuras unicas extraidas (dedup sha1)</td><td>275</td></tr>
+          <tr><td>Figuras uteis indexadas</td><td>22</td></tr>
+          <tr><td>Corpus texto+imagem</td><td>294 chunks</td></tr>
+          <tr><td>Conteudo da figura no top-5 (texto-only)</td><td>0.000</td></tr>
+          <tr><td>Conteudo da figura no top-5 (texto+imagem)</td><td>1.000</td></tr>
+          <tr><td>Casos em que a visao corrigiu o texto</td><td>3/3</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="about">
+      <h2>Sobre a v0.2 - RAG com citacao</h2>
+      <p>
+        A partir da v0.2, o assistente usa <strong>Retrieval-Augmented Generation (RAG)</strong>:
+        a pergunta (texto ou transcricao de voz) recupera trechos dos PDFs do curso por
+        <strong>busca hibrida</strong> (BM25 lexico + embeddings semanticos, fusionados por RRF,
+        com deduplicacao de chunks). A resposta cita as fontes com marcadores <code>[N]</code> no
+        texto e fecha com o <strong>rodape de referencias</strong> no final
+        (<code>[1] arquivo.pdf</code>, <code>[2] ...</code>), abstendo-se (<code>NAO_SEI</code>)
+        quando o corpus nao responder.
+      </p>
+      <ul class="highlights">
+        <li>Embeddings 100% locais com <code>fastembed</code> (CPU, ONNX).</li>
+        <li>Corpus limpo (anti-garbage) em <strong>272 chunks</strong> de texto; rerank testado e desativado (piorava o MRR).</li>
+        <li>Dataset unico da v0.2: 20 perguntas do projeto2 (rotineiras, compostas, negativas, adversariais).</li>
+      </ul>
+      <table class="result-table">
+        <thead>
+          <tr><th>Metrica</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Recall@5 (16 com docs esperados)</td><td>1.000</td></tr>
+          <tr><td>MRR</td><td>0.969</td></tr>
+          <tr><td>Acuracia end-to-end (20, juiz deepseek-v4-pro)</td><td>0.700</td></tr>
+          <tr><td>Abstencao correta (20)</td><td>0.800</td></tr>
+          <tr><td>Abstencao indevida (16)</td><td>0.250</td></tr>
+          <tr><td>Citacao presente (12 nao-abstidas)</td><td>1.000</td></tr>
+          <tr><td>Auditoria de citacao (fiel/fora/fantasma)</td><td>10/2/0</td></tr>
+          <tr><td>Chunks indexados (texto)</td><td>272</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="about">
       <h2>Sobre o projeto e a avaliacao (v0.1)</h2>
       <p>
         Este chat percorre o pipeline <strong>ASR -&gt; LLM -&gt; TTS</strong>: sua fala e
@@ -171,107 +364,6 @@
         <li>Comparacao: transcrição <strong>sem</strong> e <strong>com</strong> vocabulario de dominio.</li>
         <li>Resultados medidos localmente com faster-whisper small (CPU).</li>
       </ul>
-    </section>
-
-    <section class="about">
-      <h2>Sobre a v0.2 - RAG com citacao</h2>
-      <p>
-        A partir da v0.2, o assistente usa <strong>Retrieval-Augmented Generation (RAG)</strong>:
-        a pergunta (texto ou transcricao de voz) recupera trechos dos PDFs do curso por
-        <strong>busca hibrida</strong> (BM25 lexico + embeddings semanticos, fusionados por RRF,
-        com deduplicacao de chunks). A resposta cita as fontes com marcadores <code>[N]</code> no
-        texto e fecha com o <strong>rodape de referencias</strong> no final
-        (<code>[1] arquivo.pdf</code>, <code>[2] ...</code>), abstendo-se (<code>NAO_SEI</code>)
-        quando o corpus nao responder.
-      </p>
-      <ul class="highlights">
-        <li>Embeddings 100% locais com <code>fastembed</code> (CPU, ONNX).</li>
-        <li>Corpus limpo (anti-garbage) em <strong>272 chunks</strong> de texto; rerank testado e desativado (piorava o MRR).</li>
-        <li>Dataset unico da v0.2: 20 perguntas do projeto2 (rotineiras, compostas, negativas, adversariais).</li>
-      </ul>
-      <table class="result-table">
-        <thead>
-          <tr><th>Metrica</th><th>Valor</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Recall@5 (16 com docs esperados)</td><td>1.000</td></tr>
-          <tr><td>MRR</td><td>0.969</td></tr>
-          <tr><td>Acuracia end-to-end (20, juiz deepseek-v4-pro)</td><td>0.700</td></tr>
-          <tr><td>Abstencao correta (20)</td><td>0.800</td></tr>
-          <tr><td>Abstencao indevida (16)</td><td>0.250</td></tr>
-          <tr><td>Citacao presente (12 nao-abstidas)</td><td>1.000</td></tr>
-          <tr><td>Auditoria de citacao (fiel/fora/fantasma)</td><td>10/2/0</td></tr>
-          <tr><td>Chunks indexados (texto)</td><td>272</td></tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section class="about">
-      <h2>Sobre a v0.3 - Imagem (visao + OCR local)</h2>
-      <p>
-        Na v0.3 o assistente passou a <strong>ler imagens</strong>. Figuras dos PDFs do
-        curso (diagramas, modelos e slides) sao extraidas com PyMuPDF, deduplicadas
-        por sha1 (275 unicas) e lidas por <strong>OCR local RapidOCR (ONNX/CPU)</strong>;
-        as 22 figuras uteis entram no indice RAG (corpus texto+imagem com
-        <strong>294 chunks</strong>). Neste chat, o botao "Enviar imagem" usa o modelo de
-        visao <code>deepseek-v4-flash-vision-exp</code> para descrever a figura, envia a
-        descricao ao RAG e devolve a resposta falada — mesmo fluxo do audio.
-      </p>
-      <ul class="highlights">
-        <li>Conteudo da figura no top-5: <strong>0.000</strong> (texto-only) -&gt; <strong>1.000</strong> (texto+imagem).</li>
-        <li><strong>3/3</strong> casos do golden set em que a visao corrigiu o texto (o texto abstinha-se com NAO_SEI).</li>
-        <li>OCR/figuras 100% locais (CPU/ONNX) — custo zero; audio, imagem e texto usam o mesmo <code>/chat</code> (API unificada v0.4) sobre o corpus texto+imagem.</li>
-        <li>As respostas terminam com o <strong>rodape de referencias</strong> (<code>[1] doc.pdf</code> ...) e a voz TTS padrao e <code>pt_BR-cadu-medium</code>.</li>
-      </ul>
-      <table class="result-table">
-        <thead>
-          <tr><th>Metrica</th><th>Valor</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Figuras unicas extraidas (dedup sha1)</td><td>275</td></tr>
-          <tr><td>Figuras uteis indexadas</td><td>22</td></tr>
-          <tr><td>Corpus texto+imagem</td><td>294 chunks</td></tr>
-          <tr><td>Conteudo da figura no top-5 (texto-only)</td><td>0.000</td></tr>
-          <tr><td>Conteudo da figura no top-5 (texto+imagem)</td><td>1.000</td></tr>
-          <tr><td>Casos em que a visao corrigiu o texto</td><td>3/3</td></tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section class="about">
-      <h2>Sobre a v0.4 - Agentes (SLM local + LLM remoto)</h2>
-      <p>
-        A v0.4 implementa um <strong>fluxo heterogeneo de agentes</strong>: um <strong>roteador</strong>
-        (padrao <strong>cascade</strong>: o clasificador local TF-IDF+XGBoost decide a rota SIMPLES/COMPLEXA
-        pela confianca; perguntas <strong>INDETERMINADAS</strong> sobem ao SLM Qwen2.5-1.5B few-shot) e
-        geradores: a rota simples e respondida por um <strong>SLM local de verdade</strong> (Qwen2.5-1.5B-Instruct,
-        GGUF Q4_K_M, 100% CPU, custo zero) via RAG v0.3, e a rota complexa pelo LLM remoto
-        <code>deepseek-v4-pro</code> — com <strong>fallback cruzado</strong> sob falha e abstencao
-        com motivo. O fluxo roda na API no endpoint unico <code>/chat</code> (audio, imagem ou texto),
-        ativo por padrao (<code>AGENTES_HABILITADO=true</code>).
-      </p>
-      <ul class="highlights">
-        <li>Roteador SLM (R1) com <strong>few-shot pt-BR</strong>: 13 simples / 7 complexas no golden set (sem few-shot, o Qwen 1.5B tendia a 19/20 COMPLEXA).</li>
-        <li><strong>Estudo do roteador</strong> (docs/v04.md §11): default <code>cascade</code> (R2 TF-IDF char_wb+XGBoost decide ~85% a &lt;2 ms/US$ 0; INDETERMINADO -&gt; SLM; θ=0.60). R1 slm media 0.950 de abstencao correta; cascade mede 0.850 (decisao por custo/latencia).</li>
-        <li>Modelos parametrizaveis (CLI/env): roteador <code>{slm,flash,tfidf,cascade}</code> e geradores <code>{slm,flash,pro}</code> (flash=deepseek-v4-flash, pro=deepseek-v4-pro).</li>
-        <li>Comportamento sob falha testado sem API (6 cenarios com mock): falha no gerador cai para a outra rota; ambas falham -&gt; abstencao.</li>
-      </ul>
-      <table class="result-table wrap">
-        <thead>
-          <tr><th>Metrica</th><th>Valor</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Abstencao correta (20) — roteador R1 (slm)</td><td>0.950</td></tr>
-          <tr><td>Abstencao correta (20) — default cascade (R2→R1)</td><td>0.850</td></tr>
-          <tr><td>Roteador padrao</td><td>cascade (TF-IDF char_wb+XGB decide; INDETERMINADO -&gt; SLM; θ=0.60)</td></tr>
-          <tr><td>Rotas</td><td>13 simples (SLM local) + 7 complexas (pro)</td></tr>
-          <tr><td>Agentes usados</td><td>gerador-slm 13 · gerador-pro 7</td></tr>
-          <tr><td>Fallbacks</td><td>0</td></tr>
-          <tr><td>Latencia media (geradores)</td><td>64.96 s (R1) / 66.16 s (cascade)</td></tr>
-          <tr><td>Custo das rotas simples</td><td>US$ 0.00 (local)</td></tr>
-          <tr><td>SLM local</td><td>Qwen2.5-1.5B-Instruct (GGUF Q4_K_M, CPU)</td></tr>
-        </tbody>
-      </table>
     </section>
   </div>
 
