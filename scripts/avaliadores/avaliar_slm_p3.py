@@ -73,7 +73,7 @@ def avaliar(variante: str, incremental: bool = True,
         perguntas = perguntas[inicio:]
 
     chunks = carregar_chunks()
-    cliente = OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL)
+    cliente = llm_mod.cliente()
 
     saida = SAIDA_DIR / f"slm_p3_{variante}.jsonl"
     done_ids = set()

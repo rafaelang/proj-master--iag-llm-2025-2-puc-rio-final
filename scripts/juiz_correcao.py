@@ -51,7 +51,9 @@ JUIZ_SYS = (
 
 
 def _cliente() -> OpenAI:
-    return OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL)
+    return OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL,
+                  default_headers={"x-opencode-session": os.getenv("OPENCODE_SESSION_ID", "projeto-final-assistente"),
+                                   "User-Agent": "projeto-final-assistente/1.0"})
 
 
 def avaliar(pergunta: str, fontes: list[str], resposta: str, cliente: OpenAI) -> dict | None:

@@ -122,7 +122,7 @@ def _recall(l: dict) -> float | None:
 def avaliar() -> dict:
     perguntas = json.loads(GOLDEN.read_text(encoding="utf-8"))["perguntas"]
     chunks = carregar_chunks()
-    cliente = OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL)
+    cliente = llm_mod.cliente()
     sistema = config.ler_prompt("v0.2/rag_sistema.txt") or ""
 
     linhas = []

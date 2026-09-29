@@ -32,6 +32,7 @@ from pathlib import Path
 from openai import OpenAI
 
 from projeto_final import config
+from projeto_final import llm as llm_mod
 
 RAIZ = Path(__file__).resolve().parent.parent.parent
 GOLDEN = RAIZ / "data/golden_set/rag/perguntas_v06.json"
@@ -62,7 +63,7 @@ JUIZ_SYS = (
 
 
 def _cliente() -> OpenAI:
-    return OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL)
+    return llm_mod.cliente()
 
 
 def juiz(pergunta: str, fontes: list[str], resposta: str, cliente: OpenAI) -> dict | None:

@@ -79,16 +79,37 @@ def juiz(pergunta: str, fontes: list[str], resposta: str, cliente: OpenAI) -> di
         logger.error("Juiz falhou: {}", e)
         return None
     txt = (r.choices[0].message.content or "").strip()
-    m = re.search(r"\{.*\}", txt, re.S)
-    if not m:
+    j = _extrair_veredito(txt)
+    if j is None:
         return None
-    try:
-        j = json.loads(m.group())
-        return {"nota": int(j.get("nota", 0)), "correta": bool(j.get("correta")),
-                "alucinou": bool(j.get("alucinou")),
-                "justificativa": j.get("justificativa", "")}
-    except Exception:
-        return None
+    return {"nota": int(j.get("nota", 0)), "correta": bool(j.get("correta")),
+            "alucinou": bool(j.get("alucinou")),
+            "justificativa": j.get("justificativa", "")}
+
+
+def _extrair_veredito(txt: str) -> dict | None:
+    """Extrai o veredito JSON {nota,correta,alucinou,...} de forma robusta.
+
+    O parse anterior (regex greedy `{.*}`) quebrava quando a resposta do juiz
+    trazia texto/reasoning com chaves antes do JSON, ou justificativa longa —
+    falhava 100% das respostas respondidas na v0.7 (280/516). Usa o decoder do
+    proprio json: procura o primeiro objeto JSON bem-formado que carregue as
+    chaves do veredito.
+    """
+    import json as _json
+
+    dec = _json.JSONDecoder()
+    idx = txt.find("{")
+    while idx != -1:
+        try:
+            obj, _ = dec.raw_decode(txt[idx:])
+        except _json.JSONDecodeError:
+            idx = txt.find("{", idx + 1)
+            continue
+        if isinstance(obj, dict) and {"nota", "correta", "alucinou"} <= set(obj):
+            return obj
+        idx = txt.find("{", idx + 1)
+    return None
 
 
 def gerar_prompt_only(pergunta: str, cliente: OpenAI) -> str:
@@ -105,7 +126,7 @@ def gerar_prompt_only(pergunta: str, cliente: OpenAI) -> str:
 def avaliar_mini_experimento() -> dict:
     perguntas = json.loads(GOLDEN.read_text(encoding="utf-8"))["perguntas"]
     chunks = carregar_chunks()
-    cliente = OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL)
+    cliente = llm_mod.cliente()
 
     linhas = []
     for q in perguntas:

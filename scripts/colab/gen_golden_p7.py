@@ -1,23 +1,25 @@
-"""P5 · Lab — gerar candidatos do golden expandido (v0.6, ≥100 casos).
+"""v0.7 · Gerar candidatos do golden expandido (~500 casos) — receita P5.
 
-Expande o golden v0.5b (44Q) para >=100 casos com estratos balanceados, ancorados
-no corpus real (chunks.json) e no mesmo criterio_rotulo.md (congelado). Gera:
+Mesma mecanica do P5 (`gen_golden_p5.py`), evoluida para o golden v0.7:
+  - preserva a receita: ancoragem em chunks reais + juiz de ancoragem (pro) +
+    fallback deterministico + dedup por pergunta normalizada;
+  - saida propria (`data/processed/v07_ab/golden_v07_candidatos.json`), nao toca
+    o P5/v0.6;
+  - lista adversarial expandida (fora do corpus, escrita a mao — sem API).
 
-  rotineira : pergunta direta respondivel por 1 chunk rico (docs_esperados=[doc])
-  composta  : pergunta que junta/compara 2+ chunks de docs distintos
-  negativa  : pergunta "qual NAO e / nao esta relacionado" (distrator fora do dominio)
-  adversarial: pergunta FORA do corpus (docs_esperados=[], deve_abster=true)
+Estratos e alvo (novos, alem das 132 congeladas da v0.6):
+  rotineira 200 · composta 80 · negativa 50 · adversarial 50  (total ~512)
 
-Curadoria automatica (reuso do gen_dataset.py): juiz de ancoragem verifica que a
-pergunta e respondivel pelo doc esperado; regras deterministicas filtram (tamanho,
-formato de pergunta); dedup por pergunta normalizada. Cada candidato guarda a
-RESPOSTA_ESPERADA e o trecho fonte (auditoria/revisao humana antes de congelar).
-
-Saida: data/processed/v05b_ab/golden_v06_candidatos.json
+Saida (dado intermediario, fora do Git):
+  data/processed/v07_ab/golden_v07_candidatos.json
   [{"pergunta","estrato","docs_esperados","deve_abster","resposta_esperada",
     "fonte_chunks","motivo"}]
-Roda localmente (usa API DeepSeek pro + indice local). Uma execucao por estrato
-com --alvo n.
+
+Roda localmente (API DeepSeek pro + indice local). Uma execucao por estrato com --alvo n:
+  python scripts/colab/gen_golden_p7.py --estrato rotineira --alvo 200
+  python scripts/colab/gen_golden_p7.py --estrato composta  --alvo 80
+  python scripts/colab/gen_golden_p7.py --estrato negativa  --alvo 50
+  python scripts/colab/gen_golden_p7.py --estrato adversarial --alvo 50
 """
 from __future__ import annotations
 
@@ -46,14 +48,86 @@ cliente = OpenAI(api_key=API_KEY, base_url=config.DEEPSEEK_BASE_URL,
 GEN_MODELO = os.environ.get("GEN_MODELO", config.AGENTE_MODELO_PRO)
 JUIZ_MODELO = os.environ.get("JUIZ_MODELO", config.JUIZ_MODEL)
 SEED = int(os.environ.get("SEED", "42"))
-SAIDA = config.PROCESSED_DIR / "v05b_ab" / "golden_v06_candidatos.json"
-MIN_CHUNK = 260          # chunk minimo para servir de fonte (texto substancial)
+SAIDA = config.PROCESSED_DIR / "v07_ab" / "golden_v07_candidatos.json"
+MIN_CHUNK = 260  # chunk minimo para servir de fonte (texto substancial)
 
-# extratores
 NEG_DISTRATORES = [
     "fundo de investimento", "previsao do tempo", "receita de bolo",
     "cotacao de acao", "teoria da relatividade", "capital do Japao",
     "copa do mundo", "time de futebol",
+]
+
+# Fora do corpus (deve abster). Expandido p/ o golden v0.7 (~70 itens).
+ADVERSARIAIS = [
+    "Qual a previsao do tempo para amanha em Sao Paulo?",
+    "Quem venceu a ultima Copa America de futebol?",
+    "Qual a cotacao atual do dolar frente ao real?",
+    "Qual a receita de um bolo de cenoura?",
+    "Explique o funcionamento do sistema imunologico humano.",
+    "Qual a populacao atual da cidade de Nova York?",
+    "Quem e o atual presidente da Argentina?",
+    "Como calcular o imposto de renda no Brasil em 2026?",
+    "Qual e o melhor celular do mercado atualmente?",
+    "Como funciona a fotossintese das plantas?",
+    "Qual o resultado do ultimo jogo do Flamengo?",
+    "Onde fica a capital da Australia e qual sua populacao?",
+    "Qual o melhor investimento para renda fixa em 2026?",
+    "Quais os sintomas da dengue?",
+    "Como trocar o pneu de um carro?",
+    "Qual a idade minima para dirigir na California?",
+    "Quem escreveu Dom Casmurro?",
+    "Qual a formula da agua e por que e importante?",
+    "Como preparar um currículo para o LinkedIn?",
+    "Qual o valor do salario minimo em Portugal?",
+    "Como funciona a energia solar residencial?",
+    "Quem foi a primeira pessoa a pisar na Lua?",
+    "Qual a capital da Bolivia?",
+    "Como plantar e cuidar de um bonsai?",
+    "Qual a historia da rede social Instagram?",
+    "O que e o efeito estufa e quais suas causas?",
+    "Qual o codigo de area telefonico do Rio de Janeiro?",
+    "Como fazer uma viagem internacional com pouco dinheiro?",
+    "Quais as regras do volei de praia?",
+    "Qual o nome do maior deserto do mundo?",
+    "Como funciona o seguro desemprego no Brasil?",
+    "Qual o melhor exercicio para emagrecer?",
+    "Quem fundou a Apple e em que ano?",
+    "Qual a diferenca entre cafe arabica e robusta?",
+    "Como resolver problemas de conexao wifi em casa?",
+    "Qual a taxa de desemprego atual nos Estados Unidos?",
+    "O que e a teoria da evolucao de Darwin?",
+    "Como declarar criptomoedas no imposto de renda?",
+    "Qual a receita do pato no tucupi?",
+    "Como escolher um curso de ingles online?",
+    "Qual a populacao mundial em 2026?",
+    "Quais os beneficios do jejum intermitente?",
+    "Como funciona o sistema de pontos do SUS?",
+    "Qual o autor do livro O Pequeno Principe?",
+    "Como montar um planejamento financeiro pessoal?",
+    "Qual a capital da Nova Zelandia?",
+    "Como limpar e conservar panelas de ferro?",
+    "Quais os efeitos do cafe na saude?",
+    "O que e o Bolsa Familia e quem tem direito?",
+    "Como configurar um roteador de internet?",
+    "Qual a melhor epoca para plantar milho no Brasil?",
+    "Como funciona o pagamento por aproximacao (NFC)?",
+    "Quem ganhou o Premio Nobel da Paz em 2024?",
+    "Qual a altura da Torre Eiffel?",
+    "Como tratar uma gripe resfriado em casa?",
+    "Qual o pais com mais campeonatos de Formula 1?",
+    "Como funciona o transporte por aplicativo no transito?",
+    "Qual a diferenca entre PIB e IDH?",
+    "O que e a ginastica artistica e suas modalidades?",
+    "Como economizar energia eletrica em casa?",
+    "Qual o papel do FMI na economia mundial?",
+    "Como fazer um orcamento de reforma?",
+    "Qual a capital da Coreia do Sul?",
+    "Quais os passos para abrir uma empresa no Brasil?",
+    "Como funciona o voto em segundo turno?",
+    "Qual o melhor time de basquete da NBA?",
+    "Como escolher uma faculdade de medicina?",
+    "Qual o valor do frete de uma encomenda internacional?",
+    "Quais as especies de orquideas mais comuns no Brasil?",
 ]
 
 
@@ -95,7 +169,6 @@ def normalizar(q: str) -> str:
 
 
 def _juiz_ancoragem(pergunta: str, trecho: str, doc: str) -> tuple[bool, str]:
-    """Verifica se a pergunta e respondivel pelo trecho/doc (ancoragem)."""
     sys_cur = (
         "Voce e um curador de um dataset de avaliacao. Recebe PERGUNTA e TRECHO "
         "(de um material do curso). Responda se a pergunta pode ser respondida "
@@ -113,13 +186,10 @@ def _juiz_ancoragem(pergunta: str, trecho: str, doc: str) -> tuple[bool, str]:
             except Exception:
                 pass
         time.sleep(1)
-    # fallback determinístico: aceita se termos do(s) doc(s) aparecem na pergunta
     termos = [t for t in re.findall(r"[a-záéíóúâêôçãõ]{4,}", doc.lower().replace(".pdf", "").replace("_", " "))]
     n = sum(1 for t in set(termos) if t in pergunta.lower())
     return (n >= 1, f"fallback: {n} termos do doc na pergunta")
 
-
-# ----------------------------------------------------------- geradores por estrato
 
 GEN_SYS = (
     "Voce gera PERGUNTAS DE AVALIACAO para um assistente sobre o curso Master IAG "
@@ -160,22 +230,6 @@ def gerar_negativa(chunk: dict, distrator: str) -> list[dict]:
     return _extrair_json(_chat(GEN_MODELO, GEN_SYS, user, max_tokens=900))
 
 
-ADVERSARIAIS = [
-    "Qual a previsao do tempo para amanha em Sao Paulo?",
-    "Quem venceu a ultima Copa America de futebol?",
-    "Qual a cotacao atual do dolar frente ao real?",
-    "Qual a receita de um bolo de cenoura?",
-    "Explique o funcionamento do sistema imunologico humano.",
-    "Qual a populacao atual da cidade de Nova York?",
-    "Quem e o atual presidente da Argentina?",
-    "Como calcular o imposto de renda no Brasil em 2026?",
-    "Qual e o melhor celular do mercado atualmente?",
-    "Como funciona a fotossintese das plantas?",
-    "Qual o resultado do ultimo jogo do Flamengo?",
-    "Onde fica a capital da Australia e qual sua populacao?",
-]
-
-
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--estrato", choices=["rotineira", "composta", "negativa", "adversarial"], required=True)
@@ -185,21 +239,12 @@ def main() -> None:
     random.seed(SEED)
     chunks = carregar_chunks()
     ricos = [c for c in chunks if len(c.get("texto", "")) >= MIN_CHUNK]
-    if a.estrato == "composta":
-        # usa UM chunk rico por candidato (como a rotineira), mas o prompt pede
-        # pergunta COMPARATIVA/RELACIONAL entre 2+ conceitos DENTRO do trecho
-        # (padrão do golden atual: #12 "diferença prompt engineering x fine-tuning"
-        # tem docs_esperados com 1 doc que cobre os dois conceitos).
-        random.shuffle(ricos)
-        fontes = [("composta", c) for c in ricos]
-    else:
-        random.shuffle(ricos)
-        fontes = [(a.estrato, c) for c in ricos]
+    random.shuffle(ricos)
+    fontes = [(a.estrato, c) for c in ricos]
 
     candidatos = []
     n_gerados = 0
     if a.estrato == "adversarial":
-        # fora do corpus: nao usa chunks, nao precisa ancoragem; deve abster
         random.shuffle(ADVERSARIAIS)
         for p in ADVERSARIAIS:
             candidatos.append({
@@ -209,20 +254,17 @@ def main() -> None:
                 "motivo": "fora do corpus",
             })
         n_gerados = len(candidatos)
-        # pula o loop de chunks (adversarial nao gera a partir de trechos)
         fontes = []
 
     for item in fontes:
         if a.alvo and len(candidatos) >= a.alvo:
             break
-        if item[0] == "composta":
-            _, c1 = item
+        _, c1 = item
+        if a.estrato == "composta":
             itens = gerar_composta(c1)
-        elif item[0] == "rotineira":
-            _, c1 = item
+        elif a.estrato == "rotineira":
             itens = gerar_rotineira(c1)
         else:  # negativa
-            _, c1 = item
             dist = random.choice(NEG_DISTRATORES)
             itens = gerar_negativa(c1, dist)
         n_gerados += 1
@@ -235,23 +277,18 @@ def main() -> None:
                 continue
             if len(pergunta) > 240:
                 continue
-            docs_esp = [c1["doc_id"]]
-            fonte = [c1["texto"][:200]]
-            trecho_juiz = c1["texto"][:4000]
-            doc = c1["doc_id"]
-            ancorada, motivo = _juiz_ancoragem(pergunta, trecho_juiz, doc)
+            ancorada, motivo = _juiz_ancoragem(pergunta, c1["texto"][:4000], c1["doc_id"])
             if not ancorada:
                 print(f"  [rejeitada] nao ancorada: {pergunta[:60]} ({motivo})", flush=True)
                 continue
             candidatos.append({
                 "pergunta": pergunta, "estrato": a.estrato,
-                "docs_esperados": docs_esp, "deve_abster": False,
-                "resposta_esperada": resp, "fonte_chunks": fonte,
+                "docs_esperados": [c1["doc_id"]], "deve_abster": False,
+                "resposta_esperada": resp, "fonte_chunks": [c1["texto"][:200]],
                 "motivo": motivo,
             })
             print(f"  [ok] {pergunta[:70]}", flush=True)
 
-    # dedup por pergunta normalizada
     vistos = {}
     for c in candidatos:
         k = normalizar(c["pergunta"])

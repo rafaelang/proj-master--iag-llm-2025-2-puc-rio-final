@@ -32,7 +32,9 @@ API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 if not API_KEY:
     raise SystemExit("DEEPSEEK_API_KEY não configurada em /content/.env")
-client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+client = OpenAI(api_key=API_KEY, base_url=BASE_URL,
+                default_headers={"x-opencode-session": os.getenv("OPENCODE_SESSION_ID", "projeto-final-assistente"),
+                                 "User-Agent": "projeto-final-assistente/1.0"})
 
 GEN_MODELO = os.environ.get("GEN_MODELO", "deepseek-v4-pro")
 JUIZ_MODELO = os.environ.get("JUIZ_MODELO", "deepseek-v4-pro")

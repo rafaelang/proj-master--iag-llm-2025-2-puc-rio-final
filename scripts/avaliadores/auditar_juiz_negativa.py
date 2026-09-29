@@ -42,6 +42,7 @@ from pathlib import Path
 from openai import OpenAI
 
 from projeto_final import config
+from projeto_final import llm as llm_mod
 
 RAIZ = Path(__file__).resolve().parent.parent.parent
 CASCADE = RAIZ / "data/processed/v05b_ab/cascade_v06_p2.jsonl"
@@ -177,7 +178,7 @@ def montar_tabela() -> dict:
 # -------------------------------------------------- etapa 2: sondas rlaif
 
 def _juiz_cliente() -> OpenAI:
-    return OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL)
+    return llm_mod.cliente()
 
 
 def _juiz(pergunta: str, fontes: list[str], resposta: str, cliente: OpenAI) -> dict | None:

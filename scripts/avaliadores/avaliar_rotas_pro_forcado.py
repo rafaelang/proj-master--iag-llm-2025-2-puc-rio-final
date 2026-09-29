@@ -33,7 +33,7 @@ from pathlib import Path
 from loguru import logger
 from openai import OpenAI
 
-from projeto_final import agentes, config
+from projeto_final import agentes, config, llm as llm_mod
 from projeto_final.rag.pipeline import carregar_chunks
 
 RAIZ = Path(__file__).resolve().parent.parent.parent
@@ -62,7 +62,7 @@ def rodar(ids: list[int]) -> None:
     if not orig:
         raise SystemExit("cascade_v06_p2.jsonl não encontrado ou sem os IDs alvo")
     chunks = carregar_chunks()
-    cliente = OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL)
+    cliente = llm_mod.cliente()
 
     done = set()
     if SAIDA.exists():

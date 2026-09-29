@@ -68,7 +68,9 @@ def main() -> None:
                  if int(q["id"]) in FROZEN_SIMPLES_IDS]
     perguntas.sort(key=lambda q: int(q["id"]))
     chunks = carregar_chunks()
-    cliente = OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL)
+    cliente = OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL,
+                     default_headers={"x-opencode-session": os.getenv("OPENCODE_SESSION_ID", "projeto-final-assistente"),
+                                      "User-Agent": "projeto-final-assistente/1.0"})
 
     linhas = []
     for q in perguntas:

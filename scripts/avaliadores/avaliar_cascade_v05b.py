@@ -27,7 +27,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from projeto_final import agentes, config
+from projeto_final import agentes, config, llm as llm_mod
 from projeto_final.rag.pipeline import carregar_chunks
 
 GOLDEN = config.RAG_GOLDEN_SET
@@ -57,7 +57,7 @@ def avaliar(roteador: str = "cascade", simples: str = "slm", complexa: str = "pr
     if fim is not None:
         perguntas = perguntas[inicio:fim]
     chunks = carregar_chunks()
-    cliente = OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL)
+    cliente = llm_mod.cliente()
 
     done_ids = set()
     if incremental and SAIDA_JSONL.exists():

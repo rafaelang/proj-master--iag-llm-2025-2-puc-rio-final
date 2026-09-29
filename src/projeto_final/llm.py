@@ -36,12 +36,22 @@ def _cliente() -> OpenAI:
     global _cliente_cache
     if _cliente_cache is None:
         chave = config.DEEPSEEK_API_KEY
-        if not chave or chave.startswith("sk-") is False:
+        # Aceita chaves DeepSeek (sk-) e do gateway OpenCode Go/Zen (oc_sk_)
+        # quando DEEPSEEK_BASE_URL aponta para um endpoint OpenAI-compativel.
+        if not chave or not chave.strip():
             logger.warning("DEEPSEEK_API_KEY nao configurada corretamente")
             raise RuntimeError("DEEPSEEK_API_KEY nao configurada")
         _cliente_cache = OpenAI(
             api_key=chave,
             base_url=config.DEEPSEEK_BASE_URL,
+            # Gateway OpenCode Go/Zen: exige x-opencode-session (ID estavel por
+            # conversa, otimiza roteamento/prompt-cache) e UA proprio — sem isso
+            # o Go responde 400 MissingSessionID.
+            default_headers={
+                "x-opencode-session": os.getenv(
+                    "OPENCODE_SESSION_ID", "projeto-final-assistente"),
+                "User-Agent": "projeto-final-assistente/1.0",
+            },
             # v1.0 (degradacao graciosa): sem timeout a chamada a uma API remota
             # fora do ar pendura ate o default do SDK (~10 min) e o /chat fica
             # travado. Com timeout+retry, falha rapido e cai no fallback/abstencao.
@@ -50,6 +60,16 @@ def _cliente() -> OpenAI:
         )
         logger.debug("Cliente DeepSeek inicializado: {}", config.DEEPSEEK_MODEL)
     return _cliente_cache
+
+
+def cliente() -> OpenAI:
+    """Cliente OpenAI compartilhado (headers do gateway OpenCode Go/Zen).
+
+    Avaliadores/scripts devem usar `llm.cliente()` em vez de construir um
+    `OpenAI(...)` avulso — o gateway Go/Zen exige `x-opencode-session` em TODA
+    chamada (400 MissingSessionID sem ele).
+    """
+    return _cliente()
 
 
 def responder(pergunta: str, sistema: str | None = None) -> tuple[str, dict]:

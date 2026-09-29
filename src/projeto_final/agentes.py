@@ -158,7 +158,13 @@ def _gerar_slm(pergunta: str, chunks: list[dict], top_k: int = 5,
 
 
 def _gerar_api(pergunta: str, chunks: list[dict], modelo: str, top_k: int = 5) -> dict:
-    """Gerador remoto (flash/pro): recupera no corpus e responde com a API."""
+    """Gerador remoto (flash/pro): recupera no corpus e responde com a API.
+
+    Retry-on-empty (v0.7): o gateway OpenCode Go/Zen retornou, em carga
+    concorrente, completions VAZIOS (completion_tokens=0, sem erro) — 287/516 na
+    fronteira v0.7. Antes de devolver vazio, tenta de novo (backoff + orcamento
+    maior na 2a tentativa para modelos de raciocinio).
+    """
     t0 = time.time()
     recuperados = recuperar(pergunta, chunks, top_k=top_k, base=None)
     if not recuperados:
@@ -170,6 +176,15 @@ def _gerar_api(pergunta: str, chunks: list[dict], modelo: str, top_k: int = 5) -
     texto, meta = llm_mod.responder_com_contexto(
         pergunta, contexto, sistema=sistema, modelo=modelo, max_tokens=max_tokens
     )
+    for tentativa in (2, 3):
+        if (texto or "").strip():
+            break
+        logger.warning("Gerador {} retornou vazio (tentativa {}/3); re-tentando", modelo, tentativa)
+        time.sleep(3 * tentativa)
+        texto, meta = llm_mod.responder_com_contexto(
+            pergunta, contexto, sistema=sistema, modelo=modelo,
+            max_tokens=(int(max_tokens or 400) * 2 if tentativa == 2 else max_tokens),
+        )
     return {
         "resposta": texto, "chunks": recuperados, "contexto": contexto,
         "uso": meta.get("uso"), "latencia_s": round(time.time() - t0, 2),
