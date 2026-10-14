@@ -25,24 +25,26 @@ e **se abstém** (`NAO_SEI` + motivo) quando a pergunta está fora do corpus.
 
 ## 3. Arquitetura final (v1.0)
 
+**Dois modos, o mesmo pipeline RAG:**
+
+- **Produção (Space público):** roteador **`flash`** → rota **simples = `flash`**, **complexa = `pro`**. Só modelos remotos (sem SLM).
+- **Local/CLI (default do código):** roteador **`cascade`** (R2 TF-IDF+XGB → R1 SLM) → rota **simples = SLM local Qwen 1.5B** (US$ 0), **complexa = `pro`**.
+
 ```
 voz (faster-whisper) ─┐
-imagem (RapidOCR + visão multimodal) ─┤→ /chat → roteador cascade ─→ SIMPLES: SLM local Qwen 1.5B
-texto ─────────────────┘                        │                   └─ (produção: deepseek-flash)
-                                                └─ INDETERMINADO → R1 SLM few-shot   COMPLEXA: deepseek-v4-pro
+imagem (RapidOCR + visão) ─┤→ /chat → roteador ─┬─ produção: flash ──→ simples: deepseek-v4.1-flash
+texto ────────────────────┘                     │                     complexa: deepseek-v4-pro
+                                                └─ local: cascade (R2→R1) ─→ simples: SLM Qwen 1.5B (US$ 0)
                                       RAG: BM25 pt-BR + fastembed (MiniLM-L12-v2) + RRF ponderado
-                                            corpus 193 docs · 3.401 chunks · 22 figuras
+                                            corpus 193 docs · 3.517 chunks · 22 figuras
                                       fallback cruzado; ambas falham → abstenção com motivo
 ```
 
-- **Roteador `cascade`** (default, θ=0.60): R2 TF-IDF+XGB local decide ~85% das
-  perguntas a **<2 ms / US$ 0**; `INDETERMINADO` → R1 SLM few-shot.
-- **Retrieval**: BM25 próprio pt-BR + embeddings locais (fastembed) + fusão RRF
-  ponderada; índice texto+imagem (22 figuras via OCR local RapidOCR/ONNX).
-- **Geração**: SLM local Qwen2.5-1.5B GGUF (100% CPU) na simples · `deepseek-v4-pro`
-  na complexa; resposta com citações `[N] doc_id, página X`.
-- **Deploy**: Space público (docker, cpu-upgrade) **sem corpus** + dataset privado
-  baixado no boot (`snapshot_download` com `HF_TOKEN_READ`); só modelos remotos.
+- **Roteador**: em produção, **`flash`** (classifica por LLM); o **default do código** é o **`cascade`** (R2 TF-IDF+XGB local a <2 ms / US$ 0, `INDETERMINADO` → R1 SLM few-shot).
+- **Retrieval**: BM25 próprio pt-BR + embeddings locais (fastembed) + fusão RRF ponderada; índice texto+imagem (22 figuras via OCR local RapidOCR/ONNX).
+- **Geração**: produção = **`deepseek-v4.1-flash`** (simples) · **`deepseek-v4-pro`** (complexa); local = SLM Qwen2.5-1.5B GGUF (CPU, US$ 0) na simples. Resposta com citações `[N] doc_id, página X`.
+- **Por que API (`flash`/`pro`) e não SLM self-host em produção:** break-even (§5.1) — na demanda do projeto a API custa menos que manter infra própria.
+- **Deploy**: Space público (docker, cpu-upgrade) **sem corpus** + dataset privado baixado no boot (`snapshot_download` com `HF_TOKEN_READ`).
 
 ## 4. Trajetória v0.1 → v1.0 (marcos e evidência medida)
 
@@ -107,6 +109,30 @@ re-medir com IC menor, mantendo golden e critério **congelados**:
 Cenários de roteador (mesma régua de 34 itens): **Kev** 0.647 · **Laya** zero-shot
 0.647 (ECE 0.052) · **Laya fine-tuned** 0.676 (ECE 0.337) — **nenhum bate o cascade
 R1/R2** (0.912/0.941). Detalhes em `docs/v07.md` + `docs/v07_evidencia.md`.
+
+### 5.1 Custo e break-even por resposta (justificativa do `flash`/`pro`)
+
+No fluxo **deployado** (roteador `flash` + simples `flash` + complexa `pro`), a preços
+oficiais atuais (`flash` US$ 0,15/0,60 · `pro` US$ 0,66/1,98 por 1M tok, off-peak):
+
+| Item | Valor |
+|---|---|
+| Tokens/resposta (in/out) | roteador 266/73 · simples 1.383/429 · complexa 1.653/769 |
+| **Custo/resposta (off-peak)** | **US$ 0,00079** ≈ **US$ 0,79 / mil** (peak ≈ US$ 1,58) |
+| Parte local (roteador + rota simples) | US$ 0,00050/resposta |
+
+**Break-even (self-host do SLM vs API)** = infra mensal ÷ US$ 0,00050:
+
+| Infra/mês (self-host do SLM) | Break-even (respostas/mês) |
+|---|---|
+| US$ 30 (CPU dedicada) | ≈ 60.000 |
+| US$ 70 (CPU maior) | ≈ 141.000 |
+| US$ 150 (GPU T4) | ≈ 301.000 |
+
+> **Justificativa:** usar `flash`/`pro` é mais barato que manter infra própria na demanda
+> do projeto (< 10 mil respostas/mês: API ~US$ 8 vs infra US$ 30+). O self-host do SLM só
+> compensa a partir de **~60–140 mil respostas/mês**. Preços e conta completa em
+> `docs/notas/v07_tco.md`.
 
 ## 6. Decisões técnicas-chave (com justificativa medida)
 

@@ -1,7 +1,7 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v1.0 · Produção ✅ **CONCLUÍDA** — Space público [`assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (URL pública funcionando, docker/cpu-upgrade) + corpus privado em dataset separado; custo por mil consultas **US$ 0,27** (cascade) / US$ 1,50 (pro forçado); docs/v10.md + v10_evidencia.md. Roadmap v0.1→v1.0 fechado (v0.1 voz → v0.6 avaliação → v1.0 produção).
+> **Status:** v1.0 · Produção ✅ **CONCLUÍDA** — Space público [`assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (URL pública funcionando, docker/cpu-upgrade) + corpus privado em dataset separado; custo por mil consultas **US$ 0,79** (fluxo deployado flash/pro) / **US$ 0,29** (modo local cascade+SLM); docs/v10.md + v10_evidencia.md. Roadmap v0.1→v1.0 fechado (v0.1 voz → v0.6 avaliação → v1.0 produção).
 > **Protótipo de exploração (fora deste repositório):** `projeto2/` — PoC usada como referência técnica; **não faz parte desta entrega**.
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens, roteamento simples/complexo entre SLM local e LLM remoto, e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
@@ -422,7 +422,7 @@ Componentes:
   em falha assume SIMPLES. O Qwen 1.5B sem few-shot tendia a 19/20 COMPLEXA;
   com o prompt versionado a distribuição ficou **13 simples / 7 complexas**.
 - **Geradores e mapeamento:** rota simples → SLM local · rota complexa →
-  `deepseek-v4-pro` · opção `flash` → `deepseek-v4-flash`
+  `deepseek-v4-pro` · opção `flash` → `deepseek-v4.1-flash`
   (`AGENTE_MODELO_FLASH`/`AGENTE_MODELO_PRO` com defaults próprios, independentes
   de `DEEPSEEK_MODEL`/`JUIZ_MODEL`).
   Escolha **parametrizável por env/CLI** (`AGENTE_ROTEADOR/SIMPLES/COMPLEXA` e
@@ -513,8 +513,8 @@ defeitos de produção que o smoke test do Space expôs.
 flowchart LR
     subgraph PUB["Space PÚBLICO assistente-master-iag (docker, cpu-upgrade)"]
         API["FastAPI /chat<br/>áudio·imagem·texto → multiagente"]
-        ROTE["roteador flash<br/>(deepseek-flash)"]
-        SIM["simples: flash<br/>(deepseek-flash)"]
+        ROTE["roteador flash<br/>(deepseek-v4.1-flash)"]
+        SIM["simples: flash<br/>(deepseek-v4.1-flash)"]
         CMP["complexa: pro<br/>(deepseek-v4-pro)"]
         API --> ROTE --> SIM --> CMP
     end
@@ -524,7 +524,7 @@ flowchart LR
         SLM["slm_models (GGUF)"]
     end
     PUB -- "boot: snapshot_download<br/>(secret HF_TOKEN_READ)" --> PRIV
-    CMP --> DS["DeepSeek API<br/>(deepseek-flash / deepseek-v4-pro)"]
+    CMP --> DS["DeepSeek API<br/>(deepseek-v4.1-flash / deepseek-v4-pro)"]
 ```
 
 - **Corpus privado:** o repo público do Space **não** contém `data/` — o
@@ -532,13 +532,16 @@ flowchart LR
   (privado) e o container baixa em runtime (`deploy/entrypoint.sh`,
   `HF_TOKEN_READ`). Não expõe PDFs/notebooks do curso (LGPD/direitos autorais).
 - **Modelos remotos em produção:** `AGENTE_ROTEADOR=flash`,
-  `AGENTE_SIMPLES=flash`, `AGENTE_COMPLEXA=pro` (secrets do Space); o SLM local
-  (Qwen 2.5-1.5B GGUF) roda só em local/CLI.
-- **Custo por mil consultas:** cascade default **US$ 0,27** (roteador R2 local
-  decide ~85% a 0 custo) · frontier `pro` forçado **US$ 1,50** (teto).
+  `AGENTE_SIMPLES=flash`, `AGENTE_COMPLEXA=pro` (secrets do Space) — a **rota
+  simples é paga** (`flash`); o SLM local (Qwen 2.5-1.5B GGUF) roda só em
+  local/CLI, onde o roteador default é o `cascade` (R2→R1).
+- **Custo por mil consultas:** fluxo **deployado** (roteador `flash` + simples
+  `flash` + complexa `pro`) **US$ 0,79/mil** (off-peak); no modo local
+  (`cascade` + SLM na simples) cai para **US$ 0,29/mil**. Break-even do self-host
+  do SLM em **~60–140 mil respostas/mês** — `docs/notas/v07_tco.md`.
 - **Defeitos corrigidos no smoke test:** (1) nomes de modelo obsoletos
-  (`deepseek-chat`/`deepseek-v4-flash` → `deepseek-flash`; o endpoint DeepSeek
-  expõe só `deepseek-flash` e `deepseek-v4-pro`); (2) SIGPIPE no boot do
+  (IDs correntes no gateway: **`deepseek-v4.1-flash`** e `deepseek-v4-pro`);
+  (2) SIGPIPE no boot do
   container (`set -o pipefail` + tqdm/`ls|head` → `disable_progress_bars` + retry
   + `ls|wc`); (3) timeout no cliente LLM (degradação graciosa → `NAO_SEI`).
 

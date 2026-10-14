@@ -20,7 +20,7 @@ Do cascade na re-medição (132Q, `docs/notas/v10_remediacao.md` §3):
 | Custo/1.000 consultas (pro forçado) | US$ 1.50 |
 | Tokens médios por consulta complexa | ~2.166 (2.299 prompt + 1.168 completion /16Q) |
 | Mix de rotas (132Q) | 88% simples (SLM local, US$ 0) · 12% complexa (pro) |
-| Preços DeepSeek | `deepseek-v4-pro`: US$ 0.27/M in · US$ 1.10/M out |
+| Preços DeepSeek (oficiais, out/2026) | `deepseek-v4.1-flash`: US$ 0,15/M in · US$ 0,60/M out · `deepseek-v4-pro`: US$ 0,66/M in · US$ 1,98/M out (off-peak) |
 | SLM local (Qwen 1.5B GGUF) | US$ 0.00 por chamada (roda em CPU/GPU própria) |
 
 > A rota **simples custa US$ 0** (SLM local) — o custo total é dominado pela rota
@@ -78,38 +78,34 @@ só de custo (Aula 07, slide "Brasil").
 
 ---
 
-## 5. Break-even explícito (Aula 08, slide 14)
+## 5. Break-even por resposta (atualizado — fluxo deployado flash/pro)
 
-**Pergunta:** em que volume mensal compensa **self-host do SLM** (rota simples) vs
-**continuar na API**?
+> **Atualização 2026-10-14.** O cálculo original desta seção assumia a rota simples
+> **grátis** (SLM local) e dava break-even de ~1,1M consultas/mês. No fluxo **deployado**
+> (roteador `flash` · simples `flash` · complexa `pro`) a rota simples é **paga** e o
+> roteador também é uma chamada de API, então o break-even **cai para ~60–140 mil
+> respostas/mês**. Conta completa, tokens medidos e preços atuais em
+> `docs/notas/v07_tco.md`.
 
-**Premissas (os 4 números do slide 14):**
-- V = volume de consultas/mês na rota simples (88% do total)
-- Preço API da rota simples hoje = **US$ 0** (SLM local já é self-host)
-- Se a rota simples fosse **frontier** (flash/pro): ~US$ 0.0001–0.0002/consulta
-- Custo de operação self-host (GPU T4 dedicada): **US$ 150/mês** (T4 alugada) ou
-  US$ 30/mês (Colab Pro/CPU)
-- Utilização: 1 T4 atende ~50.000 consultas/mês (0.45 s/consulta × 50k ≈ 6h/dia GPU)
+**Economia por resposta** ao self-hostar a parte local (roteador + rota simples) =
+US$ 0,000084 (roteador) + 0,89 × US$ 0,000465 (simples) = **US$ 0,000498/resposta**.
 
-**Ponto de equilíbrio (self-host SLM × frontier na rota simples):**
+| Infra/mês (self-host do SLM) | Break-even (respostas/mês) |
+|---|---|
+| **US$ 30** (CPU dedicada / Space `cpu-upgrade`) | **≈ 60.000** |
+| **US$ 70** (CPU maior) | **≈ 141.000** |
+| US$ 150 (GPU T4 dedicada — teto) | ≈ 301.000 |
 
-```
-Custo self-host = US$ 150/mês (T4)  →  cobra a partir de quando a API custar ≥ 150/mês
-Frontier na rota simples ≈ US$ 0.00015/consulta
-Break-even = 150 / 0.00015 = 1.000.000 consultas/mês na rota simples ≈ 1.1M consultas/mês totais
-```
-
-| Volume total/mês | Rota simples via API | Self-host SLM | Vence |
+| Demanda total/mês | API (flash/pro) | Self-host (SLM) | Vence |
 |---|---|---|---|
-| 50k | ~US$ 7 | US$ 150 | **API** |
-| 500k | ~US$ 75 | US$ 150 | **API** |
-| 1.1M | ~US$ 150 | US$ 150 | **break-even** |
-| 5M | ~US$ 750 | US$ 150 | **self-host** |
+| 10.000 (acadêmico) | ~US$ 8 | US$ 30 | **API** |
+| 60.000 | ~US$ 47 | US$ 30 | **self-host (CPU)** |
+| 140.000 | ~US$ 111 | US$ 70 | **self-host** |
+| 300.000 | ~US$ 238 | US$ 150 | **self-host** |
 
-**Leitura:** no volume do projeto acadêmico (~<10k/mês) **self-host SLM é gratuito** de
-fato (CPU local/Colab — US$ 0). O break-even de US$ 1.1M consultas/mês só importa para
-produção comercial; abaixo disso a API vence, mas como o SLM local já custa US$ 0, o
-cascade é a melhor escolha em **todos** os cenários.
+**Leitura:** na demanda do projeto (< 10 mil/mês) a **API vence** — é a justificativa
+para usar `flash`/`pro` em vez de manter infra própria. O self-host do SLM só compensa a
+partir de **~60–140 mil respostas/mês** (CPU) ou **~300 mil** (GPU dedicada).
 
 ---
 

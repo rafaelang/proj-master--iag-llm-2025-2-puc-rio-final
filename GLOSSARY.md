@@ -77,6 +77,22 @@ Custo total por consulta, somando inferência + infraestrutura. Régua oficial d
 (≤ US$ 0,001/pergunta).
 _Avoid_: custo, preço
 
+**Resposta entregue**:
+Uma consulta respondida pelo `/chat` (inclui abstenção correta). Unidade do custo por
+resposta e do break-even.
+_Avoid_: pergunta, requisição
+
+**Break-even (self-host × API)**:
+Demanda mensal (respostas entregues) a partir da qual manter infra própria (SLM local)
+custa menos que pagar a API por token. Divide o custo mensal da infra pelo custo de API
+evitado por resposta.
+_Avoid_: ponto de equilíbrio, limite
+
+**Self-host**:
+Rodar o modelo (o SLM da rota simples) em infraestrutura própria/CPU, em vez de chamar
+a API. Justificado só acima do break-even.
+_Avoid_: local, on-premise
+
 **Space público / dataset privado**:
 A separação do deploy: o **Space** (público) contém só o código; o **dataset
 privado** guarda corpus e índices, baixados no boot (LGPD/direitos autorais).
