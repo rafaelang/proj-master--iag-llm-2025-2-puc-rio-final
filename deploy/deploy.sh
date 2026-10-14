@@ -29,14 +29,20 @@ SLEEP_TIME="3600"
 DRY_RUN="${1:-}"
 
 # ---------------------------------------------------------------- segredos/env
-if [[ -f "$ENV_FILE" ]]; then
-  set -a; # shellcheck disable=SC1090
-  source "$ENV_FILE"; set +a
-fi
-# fallback: chave DeepSeek costuma estar no .env da raiz do projeto
-if [[ -z "${DEEPSEEK_API_KEY:-}" && -f "$RAIZ/.env" ]]; then
+# 1) .env da raiz (ambiente de dev): DEEPSEEK_API_KEY/BASE_URL e nomes de modelo.
+if [[ -f "$RAIZ/.env" ]]; then
   set -a; # shellcheck disable=SC1090
   source "$RAIZ/.env"; set +a
+fi
+# 2) deploy/.env (segredos de deploy) tem precedencia — mas valor VAZIO nao apaga
+#    o que veio da raiz (ex.: DEEPSEEK_API_KEY vazio cai no gateway da raiz).
+if [[ -f "$ENV_FILE" ]]; then
+  _deepseek_key_env="${DEEPSEEK_API_KEY:-}"
+  set -a; # shellcheck disable=SC1090
+  source "$ENV_FILE"; set +a
+  if [[ -z "${DEEPSEEK_API_KEY:-}" && -n "$_deepseek_key_env" ]]; then
+    export DEEPSEEK_API_KEY="$_deepseek_key_env"
+  fi
 fi
 # token de leitura do dataset (se vazio, usa o proprio HF_TOKEN; preferir um read-only)
 HF_TOKEN_READ="${HF_TOKEN_READ:-${HF_TOKEN:-}}"
@@ -150,6 +156,15 @@ api.update_repo_settings(repo_id=repo_id, repo_type="space", private=False, toke
 print("   space publico pronto:", repo_id)
 
 for key, value in (("DEEPSEEK_API_KEY", os.getenv("DEEPSEEK_API_KEY", "")),
+                   # endpoint e nomes de modelo: com o gateway OpenCode Go a chave
+                   # e' oc_sk_ e o base_url DEVE acompanhar (senao o container chama
+                   # api.deepseek.com com chave de gateway -> 401 nas duas rotas).
+                   ("DEEPSEEK_BASE_URL", os.getenv("DEEPSEEK_BASE_URL", "")),
+                   ("DEEPSEEK_MODEL", os.getenv("DEEPSEEK_MODEL", "")),
+                   ("AGENTE_MODELO_FLASH", os.getenv("AGENTE_MODELO_FLASH", "")),
+                   ("AGENTE_MODELO_PRO", os.getenv("AGENTE_MODELO_PRO", "")),
+                   ("JUIZ_MODEL", os.getenv("JUIZ_MODEL", "")),
+                   ("DEEPSEEK_VISION_MODEL", os.getenv("DEEPSEEK_VISION_MODEL", "")),
                    ("HF_TOKEN_READ", hf_read),
                    ("HF_DATA_REPO", dataset_id),
                    # Public demo: roteador/simples via flash (deepseek-flash) para
@@ -164,7 +179,7 @@ for key, value in (("DEEPSEEK_API_KEY", os.getenv("DEEPSEEK_API_KEY", "")),
     except Exception:
         api.delete_space_secret(repo_id=repo_id, key=key, token=token)
         api.add_space_secret(repo_id=repo_id, key=key, value=value, token=token)
-print("   secrets: DEEPSEEK_API_KEY / HF_TOKEN_READ / HF_DATA_REPO definidos")
+print("   secrets: chave/base_url/modelos + HF_TOKEN_READ / HF_DATA_REPO + roteador")
 PYEOF
 fi
 
@@ -187,6 +202,13 @@ rsync -a \
   --exclude 'deploy/mcp_deploy' \
   --exclude 'data' \
   --exclude '*.log' \
+  --exclude 'docs' \
+  --exclude 'tests' \
+  --exclude 'scripts' \
+  --exclude 'AGENTS.md' \
+  --exclude 'GLOSSARY.md' \
+  --exclude 'RESUMO_ORIENTADOR.md' \
+  --exclude 'TODO.md' \
   "$RAIZ/" "$BUILD_DIR/"
 
 echo ">> Tamanho do bundle:"
@@ -229,10 +251,13 @@ git init -b main >/dev/null
 git config user.name "deploy"
 git config user.email "deploy@users.noreply.huggingface.co"
 git add -A
-git commit -q -m "deploy v0.4 - Space publico (API + agentes) + dataset privado (corpus + SLM)"
-git remote add origin "https://user:${HF_TOKEN}@huggingface.co/spaces/${SPACE_ID}"
-git fetch --quiet origin main || true
-git push --force origin main
+# Mensagem com a versao real do repo (tag+commits ou short SHA), nao mais fixa.
+VERSION="$(git -C "$RAIZ" describe --tags --always 2>/dev/null || git -C "$RAIZ" rev-parse --short HEAD 2>/dev/null || echo "sem-git")"
+git commit -q -m "deploy ${VERSION} - Space publico (API + agentes) + dataset privado (corpus + SLM)"
+# O token NAO entra no .git/config: o remote fica sem credencial e o push usa a
+# URL autenticada so na linha de comando (transiente).
+git remote add origin "https://huggingface.co/spaces/${SPACE_ID}"
+git push --force "https://user:${HF_TOKEN}@huggingface.co/spaces/${SPACE_ID}" main
 
 echo ""
 echo ">> Deploy enviado com sucesso!"
