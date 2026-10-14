@@ -6,7 +6,7 @@
 > checkpoints resident: `multilingual` (mmBERT-base ~322M, ctx 1024),
 > `typed-decisions` e `english` (ModernBERT-large ~421M).
 >
-> **Bateria repetida** de `docs/v06_roteador_kev.md` — mesmos datasets, mesmas
+> **Bateria repetida** de `docs/notas/v06_roteador_kev.md` — mesmos datasets, mesmas
 > métricas, mesmo código de comparativo — trocando **apenas o motor**: Kev-0.8B
 > → Laya. Eixos: (1) roteador SIMPLES/COMPLEXA; (2) juiz (concordância com o
 > juiz pro).
@@ -171,8 +171,8 @@ Três leituras que valem mais que a média de acurácia:
    rótulos — forbidido pela regra de não re-editar golden para melhorar métrica.
 
 Cenário encerra como **contra-evidência documentada**, no mesmo espírito do Kev
-(`docs/v06_roteador_kev.md`), do P3 do SLM (`docs/v05b_p3_slm_ab.md`) e do estudo
-do limiar (`docs/v06_rotas_estratos.md`).
+(`docs/notas/v06_roteador_kev.md`), do P3 do SLM (`docs/notas/v05b_p3_slm_ab.md`) e do estudo
+do limiar (`docs/notas/v06_rotas_estratos.md`).
 
 ## 5. Reprodução
 

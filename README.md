@@ -2,9 +2,62 @@
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
 > **Status:** v1.0 · Produção ✅ **CONCLUÍDA** — Space público [`assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (URL pública funcionando, docker/cpu-upgrade) + corpus privado em dataset separado; custo por mil consultas **US$ 0,27** (cascade) / US$ 1,50 (pro forçado); docs/v10.md + v10_evidencia.md. Roadmap v0.1→v1.0 fechado (v0.1 voz → v0.6 avaliação → v1.0 produção).
-> **Repositório base de consulta:** `projeto2/` (protótipo de experimentação)
+> **Protótipo de exploração (fora deste repositório):** `projeto2/` — PoC usada como referência técnica; **não faz parte desta entrega**.
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens, roteamento simples/complexo entre SLM local e LLM remoto, e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
+
+---
+
+## Resumo do projeto e conclusões
+
+**Resumo.** O projeto construiu, do zero e de forma incremental (v0.1 → v1.0),
+um assistente generativo **multimodal** sobre os materiais do Master IAG & LLM
+(PUC-Rio): a pergunta entra por **voz, imagem ou texto**, passa por um fluxo
+**multiagente com RAG** e sai como **resposta citando a fonte** — ou abstenção
+(`NAO_SEI`) quando está fora do corpus. Cada etapa é local quando possível
+(ASR/TTS, OCR, BM25 + embeddings, índice, SLM) e remota quando necessário
+(geração frontier DeepSeek). O resultado está **publicado** num Space público,
+[`rafaelang/assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag),
+a **US$ 0,27 por mil consultas** na cascata default.
+
+**Como foi decidido.** Cada release fechou com **evidência medida** em `docs/` e
+uma **decisão registrada** — não apenas um número:
+
+| Release | Decisão central | Resultado medido |
+|---|---|---|
+| v0.1 Voz | ASR local + vocabulário de domínio; TTS local | WER **0.2290 → 0.0863** |
+| v0.2 RAG | anti-garbage + BM25 pt-BR + RRF ponderado (rerank desativado) | recall@5 **1.000** / MRR **0.969**; e2e 0.700 |
+| v0.3 Imagem | OCR local; índice texto+imagem com peso no RRF | figura no top-5 **0.000 → 1.000**; 3/3 correções da visão |
+| v0.4 Agentes | SLM local na rota simples + pro na complexa; roteador default **cascade** | abstenção R1 **0.950**; cascade 0.850; rota simples US$ 0,00 |
+| v0.5 / v0.5b Adaptação | **não treinar** (prompt/RAG superam o destilado LoRA) | destilado 0.40 → **0.30**; SLM destilado 0.364 vs base 0.295 |
+| v0.6 Avaliação | medir **por estrato** + regra determinística V5 | composta 0.586 · negativa 0.125 → V5 resgata 11/14; página 0.605 < doc 0.659 |
+| v1.0 Produção | Space público + corpus em dataset privado | URL ativa (**3.517 chunks**); **US$ 0,27/mil** (cascade) |
+
+**Conclusões.**
+
+1. **RAG + frontier é o que funciona.** A rota sem-RAG **alucina** (v0.5: 3
+   alucinações e **0% de citação** vs 100% com RAG) e é mantida fora de produção;
+   `docs/notas/v06_roteador_laya.md` e `docs/notas/v06_roteador_kev.md` reforçam que nenhum motor
+   local bate a fronteira nessa tarefa.
+2. **"Não treinar" é a conclusão mais sustentada do projeto** — confirmada de
+   forma independente na v0.5, na v0.5b e nos cenários de roteador da v0.7 (Kev,
+   Laya zero-shot e **Laya fine-tuned**). O fine-tune do Laya melhora **dentro da
+   própria receita** (held-out 0.99 / 1.00) mas **colapsa na régua congelada**
+   (0.676 < R2 0.941 / R1 0.912), trocando erro bilateral por erro unilateral
+   confiante (11 falsos-S com confiança 1.00) e **destruindo a calibração**
+   (ECE 0.052 → 0.337). O ativo real do Laya zero-shot — probabilidade calibrada
+   — só sobrevive **sem treinar**.
+3. **O que moveu a agulha foi engenharia, não treino:** ingestão anti-garbage,
+   OCR de figuras, RRF ponderado e a regra determinística V5. Treinar perdeu
+   para pré/pós-processamento em todas as tentativas.
+4. **Os cenários negativos de roteador são evidência, não fracasso:** R2 (TF-IDF
+   + XGB, ~85% do tráfego a <2 ms e US$ 0) e R1 (0.941 / 0.912) ficam à frente de
+   todos os candidatos avaliados (flash 0.706, Kev 0.647, Laya 0.647/0.676).
+   Documentar a contra-evidência **evitou** uma troca por GPU mais caro e pior.
+5. **O limitante atual não é o modelo, é a granularidade da fonte** — a **página**
+   (0.605) rende menos que o **documento** (0.659) — e os **estratos frágeis**
+   (composta/negativa) da avaliação. É por aí, não por treino, que a próxima
+   release melhora.
 
 ---
 
@@ -511,6 +564,9 @@ Mais detalhes em `docs/v10.md` e `docs/v10_evidencia.md`.
 
 ## 7. Referências
 
-- **Protótipo de consulta:** `../projeto2/` — contém as decisões técnicas e evidências das releases anteriores.
-- **Spec oficial da disciplina:** `../projeto2/docs/spec_projeto_final.md`.
-- **Notas de planejamento:** `../TODO.md` (workspace).
+- **Resumo executivo (leia primeiro):** [`RESUMO_ORIENTADOR.md`](RESUMO_ORIENTADOR.md)
+- **Glossário do domínio:** [`GLOSSARY.md`](GLOSSARY.md)
+- **Índice da documentação:** [`docs/README.md`](docs/README.md) — pares `v0X.md` + `v0X_evidencia.md` por release.
+- **Decisões de arquitetura (ADRs):** [`docs/adr/`](docs/adr/)
+- **Notas de processo e experimentos:** [`docs/notas/`](docs/notas/)
+- **Protótipo de exploração (PoC, fora deste repositório):** `projeto2/` — referência técnica; não integra esta entrega.

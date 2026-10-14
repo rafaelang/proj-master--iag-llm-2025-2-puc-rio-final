@@ -71,7 +71,7 @@ canônicas (34 com typos), e o próprio repo de Kev reporta que ganhos mensuráv
 exigem ~400 exemplos. O R2 (TF-IDF+XGB, cascade@0.60) já entrega 0.941 a < 2 ms e
 US$ 0 sem GPU. Cenário encerra como **contra-evidência documentada** (baseline não
 batido), no mesmo espírito do P3 (prompt/LoRA do SLM) e do estudo do limiar
-(`docs/v06_rotas_estratos.md`).
+(`docs/notas/v06_rotas_estratos.md`).
 
 ## 5. Reprodução
 

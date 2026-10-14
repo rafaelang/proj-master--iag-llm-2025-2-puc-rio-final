@@ -101,8 +101,8 @@ O número em-distribuição é forte (0.99/1.0), mas a régua congelada conta a 
 Nada muda no pipeline: roteador de produção segue o cascade `R1/R2` (0.941/0.912
 > tudo medido), golden intocado, zero impacto de release. Este cenário encerra
 como **contra-evidência documentada** do fine-tuning do Laya para roteamento no
-corpus PT-BR — no mesmo espírito do Kev (`docs/v06_roteador_kev.md`), da v0.6
-(`docs/v06_roteador_laya.md`) e do SLM (`docs/v05b_p3_slm_ab.md`).
+corpus PT-BR — no mesmo espírito do Kev (`docs/notas/v06_roteador_kev.md`), da v0.6
+(`docs/notas/v06_roteador_laya.md`) e do SLM (`docs/notas/v05b_p3_slm_ab.md`).
 
 O ativo da v0.6 — **calibração do zero-shot multilingual** — segue sendo o
 único motivo para olhar o Laya de novo, e **numa direção que não depende de

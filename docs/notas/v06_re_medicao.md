@@ -89,7 +89,7 @@ rápido.
 # P1 (local, sem LLM; ~2-3 min)
 RAG_GOLDEN_SET_FILE=perguntas_v06.json python scripts/avaliadores/avaliar_retrieval_v05b.py
 
-# P2 (Colab T4 — ver docs/colab_experimentos.md; upload corpus+src+.env+jsonl parcial)
+# P2 (Colab T4 — ver docs/notas/colab_experimentos.md; upload corpus+src+.env+jsonl parcial)
 RAG_GOLDEN_SET_FILE=perguntas_v06.json SLM_N_GPU_LAYERS=99 \
   python scripts/avaliadores/avaliar_cascade_v05b.py   # incremental: pula IDs julgados
 ```

@@ -12,7 +12,7 @@
 | Aluno | Rafael Garcia |
 | Disciplina | PROJ · Master IAG & LLM 2025-2 |
 | Repositório | `github.com/rafaelang/proj-master--iag-llm-2025-2-puc-rio-final` |
-| **Status** | **v1.0 · Produção — concluída (2026-09-14)** · 79 commits · tags v0.1…v1.0 |
+| **Status** | **v1.0 · Produção — concluída (2026-09-14)** · 86 commits · tags v0.1…v1.0 |
 | URL pública | `https://rafaelang-assistente-master-iag.hf.space/` (Space `rafaelang/assistente-master-iag`) |
 | Corpus | dataset **privado** `rafaelang/assistente-master-iag-dados` (fora do repo, por LGPD/direitos autorais) |
 
@@ -56,6 +56,7 @@ texto ─────────────────┘                    
 | **v0.5b · Expansão** | corpus **10 → 193 docs** (3.401 chunks; PDF/MD/IPYNB/PPTX), golden **44Q** | decisão RAG+frontier **mantida** no corpus 19× maior |
 | **v0.6 · Avaliação** | golden **132Q** congelado, avaliação **por estrato**, plano P0–P4 do orientador | ver §5 |
 | **v1.0 · Produção** | Space público + dataset privado + **custo por mil consultas** | `/chat` **HTTP 200 em 14,7 s** com citação; **US$ 0,27 / mil** (cascade); 86 testes |
+| **v0.7 · Pós-v1.0 (apêndice)** | exploração após a produção: golden **516Q**, cenários de roteador (Kev/Laya/fine-tuned), TCO | recall@5 **0.828**; cascade **0.609** × frontier **0.832**; **"não treinar"** reconfirmada (Laya FT quebra a calibração: ECE 0.052 → 0.337) |
 
 ## 5. Avaliação (v0.6 — golden 132Q congelado, régua oficial)
 
@@ -91,6 +92,21 @@ texto ─────────────────┘                    
 > A v1.0 **não re-mede** (não altera o pipeline): ela entrega produção + custo e
 > fecha o roadmap. O re-teste fim-a-fim foi feito no Space (HTTP 200, 14,7 s, resposta
 > citada com fallback `flash→pro` — `docs/v10_evidencia.md` §1.1).
+
+### v0.7 — apêndice pós-v1.0 (golden expandido 516Q)
+
+Ampliação do golden para **516Q** (receita P5: 132 congeladas + 384 novas) para
+re-medir com IC menor, mantendo golden e critério **congelados**:
+
+| Leg (516Q) | Resultado | Custo US$/Q |
+|---|---|---|
+| Retrieval (441 com docs) | recall@5 **0.828** · MRR 0.665 | 0 |
+| Cascade (produção) | acurácia **0.609** · negativa 0.091 · adversarial 0.853 | **0.000143** |
+| Frontier RAG (contraste) | acurácia **0.832** | 0.001086 |
+
+Cenários de roteador (mesma régua de 34 itens): **Kev** 0.647 · **Laya** zero-shot
+0.647 (ECE 0.052) · **Laya fine-tuned** 0.676 (ECE 0.337) — **nenhum bate o cascade
+R1/R2** (0.912/0.941). Detalhes em `docs/v07.md` + `docs/v07_evidencia.md`.
 
 ## 6. Decisões técnicas-chave (com justificativa medida)
 
@@ -130,11 +146,15 @@ texto ─────────────────┘                    
 
 ## 8. Entregáveis
 
-- Repositório com **79 commits** e **tags v0.1…v1.0** (uma release por aula, nunca
+- Repositório com **86 commits** e **tags v0.1…v1.0** (uma release por aula, nunca
   quebrada); protótipo `projeto2/` como fonte de consulta (código reimplementado).
 - **Evidência por release** em `docs/` (máx. 2 arquivos: `v0X.md` + `v0X_evidencia.md`);
   golden congelados por release em `data/golden_set/` (entram no Git).
-- **86 testes** `pytest`; avaliadores padronizados em `scripts/avaliadores/`.
+- **Documentação de entrada:** [`README.md`](README.md) (técnico),
+  [`GLOSSARY.md`](GLOSSARY.md) (domínio) e [`docs/README.md`](docs/README.md) (índice);
+  decisões de arquitetura em [`docs/adr/`](docs/adr/); notas de processo em [`docs/notas/`](docs/notas/).
+- **Testes** `pytest` por release (`tests/test_v01…test_v07`); avaliadores padronizados
+  em `scripts/avaliadores/`.
 - **Produto vivo**: URL pública respondendo `/chat` com RAG+citação+abstenção e
   custo por mil consultas documentado.
 

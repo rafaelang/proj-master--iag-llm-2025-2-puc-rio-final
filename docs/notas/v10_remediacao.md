@@ -14,7 +14,7 @@
 A v1.0 (produção) **não re-mediu** as métricas após o deploy — o smoke test do Space
 cobria 1 pergunta. Os alvos v1.0 ficaram como **projeção** do v0.6 (ex.: fim-a-fim
 0.661 "projetado com V5"). Esta re-medição fecha a lacuna de evidência de produção
-identificada em `docs/avaliacao_aula08.md` (lacuna 3): validar (ou rebaixar) os alvos
+identificada em `docs/notas/avaliacao_aula08.md` (lacuna 3): validar (ou rebaixar) os alvos
 com medição real no golden inteiro.
 
 **Modo:** direto (sem CoT explícito) — confirmado em `main.py:305`, `slm.py:82`,
@@ -44,7 +44,7 @@ pool 60) entregam exatamente o mesmo recall@5 do v0.6. O desvio observado anteri
 > **Nota de reprodução:** o bloco `com_rerank` crashou 2× no kernel Colab (segfault do
 > cross-encoder ONNX `jina-reranker` ao processar batch grande; repro mínimo de 2 itens
 > funciona). Como produção usa `RAG_RERANK=false`, o sem-rerank é a régua — a medição
-> rerank fica documentada no v0.6 (`v06_retrieval_final.md`) e a limitação do Colab é
+> rerank fica documentada no v0.6 (`docs/notas/v06_retrieval_final.md`) e a limitação do Colab é
 > registrada, não re-medida.
 
 ---

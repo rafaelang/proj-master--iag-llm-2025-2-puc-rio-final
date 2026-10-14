@@ -22,7 +22,7 @@ Etapa 2 (API, juiz deepseek-v4-pro) — sondas rlaif REDUZIDAS nas negativas:
   S4 grounding: o juiz aceita resposta certa mesmo quando o doc esperado NÃO está
      recuperado (caso real #16/#42) — documenta a possível leniência do orientador §0.4.
 
-Decisão registrada em docs/v06_auditoria_juiz_negativa.md (aceitar juiz OU ajustar rubrica).
+Decisão registrada em docs/notas/v06_auditoria_juiz_negativa.md (aceitar juiz OU ajustar rubrica).
 
 Uso:
   python scripts/avaliadores/auditar_juiz_negativa.py --tabela-only   # só dados locais
@@ -49,7 +49,7 @@ CASCADE = RAIZ / "data/processed/v05b_ab/cascade_v06_p2.jsonl"
 RETRIEVAL = RAIZ / "data/processed/rag/retrieval_v06.json"
 GOLDEN = RAIZ / "data/golden_set/rag/perguntas_v06.json"
 SAIDA_JSON = RAIZ / "data/processed/v05b_ab/auditoria_juiz_negativa.json"
-EVIDENCIA_MD = config.DOCS_DIR / "v06_auditoria_juiz_negativa.md"
+EVIDENCIA_MD = config.DOCS_DIR / "notas" / "v06_auditoria_juiz_negativa.md"
 
 NEG_IDS = [15, 16, 41, 42, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100]
 

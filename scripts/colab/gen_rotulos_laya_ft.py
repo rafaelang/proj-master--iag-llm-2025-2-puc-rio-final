@@ -1,6 +1,6 @@
 """Gera o dataset de TREINO do fine-tune do Laya como roteador (cenario v0.7).
 
-Cenario: `docs/v06_roteador_laya_ft.md` — fine-tune de `laya-multilingual`
+Cenario: `docs/notas/v07_roteador_laya_ft.md` — fine-tune de `laya-multilingual`
 (RLCD, `research/scripts/finetune_single_device.py`) para SIMPLES/COMPLEXA.
 
 Receita (mesmo espirito do P5/P7 do golden, aplicada FORA do golden):

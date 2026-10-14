@@ -160,7 +160,7 @@ def gerar_evidencia(sem: dict, com: dict) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Avaliador de retrieval v0.5b (RERANK on × off).")
-    parser.add_argument("--no-evidencia", action="store_true", help="nao escreve docs/v05b_retrieval.md")
+    parser.add_argument("--no-evidencia", action="store_true", help="nao escreve docs/notas/v05b_retrieval.md")
     args = parser.parse_args()
 
     config.RAG_DIR.mkdir(parents=True, exist_ok=True)

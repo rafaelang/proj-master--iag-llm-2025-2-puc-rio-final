@@ -31,7 +31,7 @@ comportamento correto para adversarial. Testado com 3 sondas sintéticas.
 
 Saída:
 - data/processed/v05b_ab/regra_negativa_ev.json (dados intermediários)
-- docs/v06_negativa.md (evidência + decisão da variante e do ponto de integração)
+- docs/notas/v06_negativa.md (evidência + decisão da variante e do ponto de integração)
 
 Uso:
   python scripts/avaliadores/avaliar_regra_negativa.py
@@ -51,7 +51,7 @@ RAIZ = Path(__file__).resolve().parent.parent.parent
 GOLDEN = RAIZ / "data/golden_set/rag/perguntas_v06.json"
 CASCADE = RAIZ / "data/processed/v05b_ab/cascade_v06_p2.jsonl"
 SAIDA = RAIZ / "data/processed/v05b_ab/regra_negativa_ev.json"
-MD = RAIZ / "docs/v06_negativa.md"
+MD = RAIZ / "docs/notas/v06_negativa.md"
 
 TIPO_A = [15, 41, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100]
 

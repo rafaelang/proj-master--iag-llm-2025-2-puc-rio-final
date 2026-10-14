@@ -3,14 +3,14 @@
 > Data: 2026-09-17 · Conta de hospedagem/custo do assistente em produção, seguindo a
 > régua da Aula 07 (`SLM_em_Produção.pptx`) e da Aula 08 (slide 14 — break-even com os
 > quatro números: volume, utilização, preço da API, custo de operação). Base nos custos
-> **medidos** na re-medição v1.0 (`docs/v10_remediacao.md`) e na v1.0
+> **medidos** na re-medição v1.0 (`docs/notas/v10_remediacao.md`) e na v1.0
 > (`docs/v10_evidencia.md`).
 
 ---
 
 ## 1. Custos medidos (base da conta)
 
-Do cascade na re-medição (132Q, `docs/v10_remediacao.md` §3):
+Do cascade na re-medição (132Q, `docs/notas/v10_remediacao.md` §3):
 
 | Item | Valor |
 |---|---|
@@ -130,7 +130,7 @@ re-medição) · **US$ 1.50** (pro forçado, teto).
 
 ## 7. Fontes
 
-- Custos medidos: `docs/v10_remediacao.md` §3 (re-medição 132Q) e
+- Custos medidos: `docs/notas/v10_remediacao.md` §3 (re-medição 132Q) e
   `docs/v10_evidencia.md` §5 (v1.0).
 - Preços DeepSeek: `scripts/avaliadores/avaliar_cascade_v05b.py` (PRECO_IN/OUT).
 - Régua: `AULAS/PROJ/aula07/SLM_em_Produção.pptx` (TCO, 3 cenários, Brasil) e

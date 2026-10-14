@@ -21,7 +21,7 @@ PESO_IMAGEM_RRF = 1.15
 # P1 (melhoria_v0.5.md, Fase 3): pool 60 medido em 0.737 recall@5 no golden v0.5b
 # corrigido + indice pos-OCR (rotineira 0.880, composta 0.556, negativa 0.250);
 # pool 10 (producao antiga) = 0.632. Pool > 60 afoga no ruido (0.711). Evidencia
-# em data/processed/rag/recall_pool_*_norerank.json e docs/v05b_retrieval.md.
+# em data/processed/rag/recall_pool_*_norerank.json e docs/notas/v05b_retrieval.md.
 POOL_RERANK = 60
 # Dedup: Jaccard minimo entre dois chunks da MESMA pagina/doc para tratar como
 # duplicata (overlay de chunking e prefixos de imagem duplicam conteudo).

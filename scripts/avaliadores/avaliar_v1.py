@@ -90,7 +90,7 @@ def main() -> None:
     (proc / "resultados.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info("Resultados JSON salvos em: {}", proc / "resultados.json")
 
-    gerar_evidencia(out, config.DOCS_DIR / "v01_voz_evidencia.md")
+    gerar_evidencia(out, config.DOCS_DIR / "v01_evidencia.md")
     atualizar_index_html(out["frases"], out["resumo"], config.STATIC_DIR / "index.html")
 
 

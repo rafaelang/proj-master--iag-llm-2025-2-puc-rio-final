@@ -1,6 +1,6 @@
 # Diagnóstico das 5Q de retrieval residual — P3 residual (rota simples)
 
-Complemento do P3 (`docs/v05b_p3_slm_ab.md`): as 5Q onde nem o frontier pro responde
+Complemento do P3 (`docs/notas/v05b_p3_slm_ab.md`): as 5Q onde nem o frontier pro responde
 com o top-5 foram diagnosticadas **por página** (não só por doc), usando o índice P1
 (RAG_DIR, pool 60, OCR) e o golden v0.5b congelado.
 

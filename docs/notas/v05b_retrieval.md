@@ -1,7 +1,7 @@
 # v0.5b · P1 — Retrieval corrigido no golden expandido (recall@5 + end-to-end)
 
 > Resultado FINAL do P1 (melhoria_v0.5.md) após: auditoria de golden
-> (`docs/v05b_golden_audit.md`, correções #13/#30), fallback de OCR na ingestão
+> (`docs/notas/v05b_golden_audit.md`, correções #13/#30), fallback de OCR na ingestão
 > (índice 3.401 → **3.517 chunks**; docs escaneados/letra-a-letra recuperados) e
 > decisão de pool `POOL_RERANK=60` como over-fetch padrão (sem rerank em produção).
 >

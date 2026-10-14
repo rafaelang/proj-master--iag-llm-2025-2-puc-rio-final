@@ -2,7 +2,7 @@
 
 Spec: "o modelo grande gera o dataset da tarefa específica; treina-se um SLM".
 
-Correções da PoC aplicadas (analise_v0.5_pos_aula07.md, recomendação R5):
+Correções da PoC aplicadas (docs/notas/analise_v0.5_pos_aula07.md, recomendação R5):
 1. Curar o dataset: poda automática via LLM-as-judge de ancoragem/alucinação
    + filtros determinísticos (resposta não-vazia, mín. de tokens, pergunta real);
 2. Injetar casos de ABSTENÇÃO (perguntas fora do corpus + resposta "Não sei")

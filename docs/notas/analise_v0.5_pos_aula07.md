@@ -1,7 +1,7 @@
 # Análise pós-aula07 — Revisão da v0.5 (Adaptação) à luz do conteúdo sobre SLM
 
 > Objetivo: revisar as decisões e experimentos da **v0.5 · Adaptação** do `projeto2`
-> (ver `analise_v0.5.md`) usando como régua o conteúdo de **AULAS/PROJ/aula07** (SLM em
+> (ver `docs/notas/analise_v0.5.md`) usando como régua o conteúdo de **AULAS/PROJ/aula07** (SLM em
 > Produção e alinhamento por preferência). Para cada ponto, a referência à aula07 é
 > indicada entre parênteses — `<arquivo>`: slide/bloco/ato.
 

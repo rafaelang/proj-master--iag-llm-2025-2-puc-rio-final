@@ -17,7 +17,7 @@ Uso (Colab/local, precisa de DEEPSEEK_API_KEY):
   python scripts/avaliadores/auditoria_juiz_v10.py
 
 Saída: data/processed/v10_auditoria/auditoria_juiz_v10.json
-Evidência: docs/v10_auditoria_juiz.md (gerada pelo --gerar-md)
+Evidência: docs/notas/v10_auditoria_juiz.md (gerada pelo --gerar-md)
 """
 from __future__ import annotations
 

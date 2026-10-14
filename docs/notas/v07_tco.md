@@ -1,7 +1,7 @@
 # v0.7 · TCO completo — custo real do sistema (maior amostra medida)
 
 > Data: 2026-09-29 · Base nos custos **medidos** no golden v0.7 (516Q — maior amostra
-> até hoje), cruzados com o v1.0 (`docs/v10_tco_cenarios.md`) e a régua da Aula 07/08.
+> até hoje), cruzados com o v1.0 (`docs/notas/v10_tco_cenarios.md`) e a régua da Aula 07/08.
 > **Mudança de ambiente:** a inferência agora roda pelo **gateway OpenCode Go** (assinatura
 > fixa + limites por modelo) — há duas camadas de custo: o **preço-token** (DeepSeek direto,
 > régua histórica) e o **custo real no Go** (configuração atual).
@@ -94,7 +94,7 @@ real é **~US$ 0.14 por 1.000 consultas**.
 | Média empresa | 1–10M tokens (~100k consultas) | cascade + flash na complexa | ~US$ 14 | ~US$ 25–30 (Space cpu-upgrade/Colab) | **~US$ 40–45** |
 | Grande/regulado | > 100M tokens (~2M consultas) | self-host SLM + escalada pro | ~US$ 288 (2M × 0.00014) | GPU + MLOps (~US$ 150–250) | **~US$ 400–550** |
 
-*(Cenários herdados de `docs/v10_tco_cenarios.md`; a coluna de inferência usa o custo/Q
+*(Cenários herdados de `docs/notas/v10_tco_cenarios.md`; a coluna de inferência usa o custo/Q
 medido da v0.7.)*
 
 ---
@@ -145,4 +145,4 @@ cenários, mantendo a decisão "não treinar" quantificada (P3: LoRA 0.529 vs ba
 - Preços DeepSeek: `scripts/avaliadores/avaliar_cascade_v05b.py` (`PRECO_IN/OUT`).
 - Preços OpenCode Go: https://opencode.ai/docs/go (tabela de modelos/limites).
 - Régua: `AULAS/PROJ/aula07/SLM_em_Produção.pptx`, `AULAS/PROJ/aula08/slm_usar_treinar_alinhar.pptx`.
-- Hereditário: `docs/v10_tco_cenarios.md` (3 cenários + break-even v1.0).
+- Hereditário: `docs/notas/v10_tco_cenarios.md` (3 cenários + break-even v1.0).
