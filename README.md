@@ -9,6 +9,7 @@
 Trabalho apresentado ao curso [Master IAG & LLM](https://ica.ele.puc-rio.br/cursos/ia-generativa-large-language-models/) como pré-requisito para conclusão de curso e obtenção de crédito na disciplina "Projetos de Sistemas Inteligentes de Apoio à Decisão".
 
 - [Link para o código](https://github.com/rafaelang/proj-master--iag-llm-2025-2-puc-rio-final)
+- **Projeto (demo):** [https://rafaelang-assistente-master-iag.hf.space/](https://rafaelang-assistente-master-iag.hf.space/)
 - [Documentação técnica detalhada](README_DETALHADO.md)
 
 ---
@@ -178,7 +179,7 @@ No golden de 516 perguntas, o **frontier** (modelo remoto em todas as perguntas)
 
 #### 3.7 Produção e custo (v1.0)
 
-O assistente está publicado em [`rafaelang/assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (Docker, `cpu-upgrade`, sleep de 1 h). O endpoint `/saude` reporta **3.517 chunks**; o smoke test respondeu HTTP 200 em **14,7 s** com citação. O corpus fica em dataset privado e é baixado no boot, sem expor PDFs do curso.
+O assistente está publicado em [**https://rafaelang-assistente-master-iag.hf.space/**](https://rafaelang-assistente-master-iag.hf.space/) (Space `rafaelang/assistente-master-iag`, Docker, `cpu-upgrade`, sleep de 1 h). O endpoint `/saude` reporta **3.517 chunks**; o smoke test respondeu HTTP 200 em **14,7 s** com citação. O corpus fica em dataset privado e é baixado no boot, sem expor PDFs do curso.
 
 | Fluxo | Custo por consulta | Por mil consultas |
 |---|---|---|
@@ -211,7 +212,7 @@ Como limitações, a rota local em CPU tem latência alta para uso interativo, o
 7. Abetlen. [llama-cpp-python](https://github.com/abetlen/llama-cpp-python). Inferência local de modelos GGUF em CPU.
 8. Qwen Team. [Qwen2.5](https://github.com/QwenLM/Qwen2.5). Modelo de linguagem pequeno utilizado na rota simples.
 9. Documentação interna: [`README_DETALHADO.md`](README_DETALHADO.md), [`docs/README.md`](docs/README.md) e [`docs/adr/`](docs/adr/).
-10. Hugging Face Space: [rafaelang/assistente-master-iag](https://huggingface.co/spaces/rafaelang/assistente-master-iag).
+10. Projeto em produção: [https://rafaelang-assistente-master-iag.hf.space/](https://rafaelang-assistente-master-iag.hf.space/).
 
 ### 6. Instalação
 

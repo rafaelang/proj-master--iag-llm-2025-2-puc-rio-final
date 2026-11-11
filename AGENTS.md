@@ -11,6 +11,7 @@
 - **Orientador:** Leonardo Forero Mendoza
 - **Repositório:** https://github.com/rafaelang/proj-master--iag-llm-2025-2-puc-rio-final
 - **Space:** https://huggingface.co/spaces/rafaelang/assistente-master-iag
+- **URL do projeto (demo):** https://rafaelang-assistente-master-iag.hf.space/
 
 ## Domínio e proposta
 
