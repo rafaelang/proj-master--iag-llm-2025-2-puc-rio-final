@@ -1,643 +1,286 @@
-# Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
+# Assistente Generativo Multimodal com RAG para Materiais Didáticos do Master IAG & LLM
 
-> **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v1.0 · Produção ✅ **CONCLUÍDA** — Space público [`assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (URL pública funcionando, docker/cpu-upgrade) + corpus privado em dataset separado; custo por mil consultas **US$ 0,79** (fluxo deployado flash/pro) / **US$ 0,29** (modo local cascade+SLM); docs/v10.md + v10_evidencia.md. Roadmap v0.1→v1.0 fechado (v0.1 voz → v0.4 agentes → v0.6 avaliação → v1.0 produção) + **apêndice v0.7** (golden 516Q).
-> **Protótipo de exploração (fora deste repositório):** `projeto2/` — PoC usada como referência técnica; **não faz parte desta entrega**.
-
-**Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens, roteamento simples/complexo entre SLM local e LLM remoto, e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
+#### Aluno: [Rafael Garcia](https://github.com/rafaelang)
+#### Orientadora: [Nome da Orientadora]
 
 ---
 
-## Resumo do projeto e conclusões
+Trabalho apresentado ao curso [GenAI e LLM MASTER](https://ica.ele.puc-rio.br/cursos/ia-generativa-large-language-models/) como pré-requisito para conclusão de curso e obtenção de crédito na disciplina "Projetos de Sistemas Inteligentes de Apoio à Decisão".
 
-**Resumo.** O projeto construiu, do zero e de forma incremental (v0.1 → v1.0),
-um assistente generativo **multimodal** sobre os materiais do Master IAG & LLM
-(PUC-Rio): a pergunta entra por **voz, imagem ou texto**, passa por um fluxo
-**multiagente com RAG** e sai como **resposta citando a fonte** — ou abstenção
-(`NAO_SEI`) quando está fora do corpus. Cada etapa é local quando possível
-(ASR/TTS, OCR, BM25 + embeddings, índice, SLM) e remota quando necessário
-(geração frontier DeepSeek). O resultado está **publicado** num Space público,
-[`rafaelang/assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag),
-a **US$ 0,79 por mil consultas** no fluxo deployado (`flash`/`pro`) — **US$ 0,29/mil**
-no modo local (`cascade` + SLM na rota simples).
+- [Link para o código](https://github.com/rafaelang/proj-master--iag-llm-2025-2-puc-rio-final)
+- [Documentação técnica detalhada](README_DETALHADO.md)
 
-**Como foi decidido.** Cada release fechou com **evidência medida** em `docs/` e
-uma **decisão registrada** — não apenas um número:
+---
 
-| Release | Decisão central | Resultado medido |
+### Resumo
+
+Este trabalho constrói, de forma incremental e com evidência medida em cada etapa, um assistente generativo **multimodal** sobre os materiais didáticos do Master IAG & LLM (PUC-Rio). A pergunta pode entrar por **voz, imagem ou texto**, é processada por um fluxo **multiagente com RAG** e resulta em uma resposta que **cita a fonte** do material — ou em uma **abstenção explícita** (`NAO_SEI`) quando a pergunta está fora do corpus. O sistema combina etapas locais, executadas em CPU (ASR, TTS, OCR, BM25, embeddings e um SLM), com um LLM remoto (DeepSeek) para a geração de respostas complexas, publicadas em um Space público no Hugging Face.
+
+Metodologicamente, o projeto seguiu o roadmap da disciplina em releases sucessivas (v0.1 a v1.0), cada uma acompanhada de **golden sets congelados**, métricas objetivas (WER, recall@k, MRR, acurácia, taxa de abstenção, fidelidade de citação, calibração e custo por consulta) e uma **decisão técnica registrada**. Entre as decisões centrais estão a ingestão anti-garbage, o chunking com overlay, a recuperação híbrida BM25 + embeddings com RRF ponderado, o OCR local de figuras, o roteamento `cascade` entre SLM local e LLM remoto, a regra determinística V5 para perguntas negativas e a decisão de **não treinar** modelos próprios.
+
+Os resultados medidos mostram WER de **0,2290 → 0,0863** na voz; recall@5 de **1,000** no golden original e **0,828** no golden expandido de 516 perguntas; acurácia fim-a-fim de **0,609** no fluxo de produção (`cascade`) contra **0,832** do frontier pago em todas as perguntas, a um custo **~7,6× menor**; e custo de **US$ 0,79 por mil consultas** no fluxo publicado (US$ 0,29/mil no modo local com SLM na rota simples). O assistente está disponível em um Space público, com o corpus mantido em dataset privado.
+
+### Abstract
+
+This work builds, incrementally and with measured evidence at every stage, a **multimodal generative assistant** over the course materials of the Master IAG & LLM program (PUC-Rio). Questions may arrive as **speech, image or text**, are processed by a **multi-agent RAG pipeline**, and produce an answer that **cites its source** — or an explicit **abstention** (`NAO_SEI`) when the question falls outside the corpus. The system combines local CPU stages (ASR, TTS, OCR, BM25, embeddings and a small language model) with a remote LLM (DeepSeek) for complex generation, deployed to a public Hugging Face Space.
+
+Methodologically, the project followed the course roadmap in successive releases (v0.1 to v1.0), each closing with **frozen golden sets**, objective metrics (WER, recall@k, MRR, accuracy, abstention rate, citation faithfulness, calibration and cost per query) and a **recorded technical decision**. Key decisions include anti-garbage ingestion, paragraph chunking with overlay, hybrid BM25 + embedding retrieval with weighted RRF, local OCR of figures, a `cascade` router between a local SLM and a remote LLM, the deterministic V5 rule for negative questions, and the decision **not to fine-tune** any model.
+
+Measured results show WER dropping from **0.2290 to 0.0863** for speech; recall@5 of **1.000** on the original golden set and **0.828** on the expanded 516-question set; end-to-end accuracy of **0.609** for the production `cascade` versus **0.832** for a frontier model answering every question at **~7.6× the cost**; and **US$ 0.79 per thousand queries** in the deployed flow (US$ 0.29 per thousand in local mode with the SLM on the simple route). The assistant is publicly available, with the corpus kept in a private dataset.
+
+### 1. Introdução
+
+Os materiais do curso estão distribuídos em dezenas de PDFs, slides, notebooks e gravações. Encontrar uma resposta pontual — um conceito, uma fórmula, um trecho de código ou o significado de uma sigla — exige busca manual em fontes heterogêneas, muitas vezes sem saber em qual aula o assunto foi tratado. Assistentes baseados em LLMs poderiam intermediar essa consulta, mas modelos genéricos **alucinam** e não distinguem o que pertence ao curso do que não pertence, o que é inaceitável em um contexto didático.
+
+O problema central deste trabalho é, portanto: **como responder perguntas sobre um corpus fechado, citando a fonte e abstendo-se quando a resposta não está no material?** A proposta é um assistente generativo com RAG (Retrieval-Augmented Generation) que aceita voz, imagem e texto, recupera trechos do corpus e gera a resposta com referência explícita; quando a evidência é insuficiente ou a pergunta é de outro domínio, o sistema responde `NAO_SEI`.
+
+**Objetivos.**
+
+- Construir um pipeline generativo ponta a ponta: voz → texto → recuperação → resposta citada → áudio.
+- Medir cada etapa com métricas objetivas e golden sets reprodutíveis, registrando a evidência em Markdown.
+- Comparar arquiteturas heterogêneas: SLM local × LLM remoto, com e sem RAG, prompt × fine-tuning.
+- Publicar uma versão de produção com URL funcional e custo estimado por mil consultas.
+
+**Contribuições.**
+
+- Um fluxo multimodal unificado (`POST /chat` para áudio, imagem ou texto) com abstenção e citação.
+- Ingestão anti-garbage, chunking com overlay e recuperação híbrida BM25 pt-BR + embeddings com RRF ponderado.
+- OCR local de figuras do corpus, integrado ao índice textual.
+- Roteamento `cascade` (classificador TF-IDF + XGBoost → SLM few-shot) e fallback cruzado entre rotas.
+- Uma régua de avaliação estratificada e congelada, incluindo perguntas negativas e adversariais, além de auditoria do juiz automático.
+- Evidência de que **engenharia de recuperação e pós-processamento** supera fine-tuning nesta tarefa.
+
+**Domínio e corpus.** Materiais didáticos do Master IAG & LLM (PUC-Rio): ementas, PDFs de aulas, slides e notebooks. O corpus passou de 10 documentos na fundação para **193 documentos / 3.517 chunks** (PDF, Markdown, IPYNB e PPTX), mantido fora do Git por direitos autorais e LGPD; os golden sets, por outro lado, são versionados para garantir reprodutibilidade.
+
+### 2. Modelagem
+
+#### 2.1 Arquitetura geral
+
+O sistema é organizado em um pipeline offline de ingestão e um pipeline online de recuperação, roteamento e geração. A figura abaixo resume o fluxo de produção.
+
+```mermaid
+flowchart LR
+    U["Entrada<br/>áudio · imagem · texto"] --> N["Normalização<br/>ASR local | visão remota"]
+    N --> Q["Preparação da query<br/>normalização + stopwords"]
+    Q --> R["Recuperação híbrida<br/>BM25 + embeddings · RRF ponderado"]
+    R --> RO{"Roteador<br/>cascade R2 → R1"}
+    RO -->|SIMPLES| S["SLM local<br/>Qwen2.5-1.5B (CPU, US$ 0)"]
+    RO -->|COMPLEXA| C["LLM remoto<br/>deepseek-v4-pro"]
+    S --> P["Pós-processamento<br/>referências [N] · V5 · NAO_SEI"]
+    C --> P
+    P --> O["Resposta citada<br/>+ áudio (TTS local)"]
+```
+
+- **Ingestão (offline):** extração e limpeza de páginas (anti-garbage), chunking por parágrafos (300–1.200 caracteres) com overlay de 100 caracteres, filtro de micro-chunks, índice BM25 próprio para pt-BR e embeddings multilíngues (fastembed/ONNX, 384 dimensões).
+- **Recuperação (online):** top-30 BM25 + top-30 denso, fundidos por Reciprocal Rank Fusion (k=60; BM25 1,0 × denso 1,5), resultando no top-5 enviado ao gerador. O rerank cross-encoder foi testado e **desativado** por piorar o MRR.
+- **Multimodalidade:** áudio é transcrito localmente (faster-whisper small com vocabulário de domínio) e respondido com áudio (Piper); imagens passam por um modelo de visão que extrai assunto e termos e alimentam a mesma consulta RAG.
+- **Agentes:** a rota SIMPLES usa o SLM local (Qwen2.5-1.5B-Instruct GGUF, 100% CPU, custo zero) e a COMPLEXA usa o LLM remoto. Há fallback cruzado: falha ou resposta vazia em uma rota aciona a outra; se ambas falharem, o sistema abstém-se com motivo.
+- **Figuras:** OCR local (RapidOCR/ONNX) sobre figuras extraídas dos PDFs (deduplicadas por sha1: 921 → 275 únicas; 22 úteis após filtros), indexadas em um índice separado de 294 chunks com peso 1,15 no RRF.
+- **Produção:** API FastAPI em container Docker, com o corpus sincronizado em runtime a partir de um dataset privado no Hugging Face; o SLM local fica restrito ao ambiente local/CLI, e o Space usa roteador `flash`, rota simples `flash` e rota complexa `pro`.
+
+#### 2.2 Releases e decisões
+
+| Release | Capacidade | Decisão central |
 |---|---|---|
-| v0.1 Voz | ASR local + vocabulário de domínio; TTS local | WER **0.2290 → 0.0863** |
-| v0.2 RAG | anti-garbage + BM25 pt-BR + RRF ponderado (rerank desativado) | recall@5 **1.000** / MRR **0.969**; e2e 0.700 |
-| v0.3 Imagem | OCR local; índice texto+imagem com peso no RRF | figura no top-5 **0.000 → 1.000**; 3/3 correções da visão |
-| v0.4 Agentes | SLM local na rota simples + pro na complexa; roteador default **cascade** | abstenção R1 **0.950**; cascade 0.850; rota simples US$ 0,00 |
-| v0.5 / v0.5b Adaptação | **não treinar** (prompt/RAG superam o destilado LoRA) | destilado 0.40 → **0.30**; SLM destilado 0.364 vs base 0.295 |
-| v0.6 Avaliação | medir **por estrato** + regra determinística V5 | composta 0.586 · negativa 0.125 → V5 resgata 11/14; página 0.605 < doc 0.659 |
-| v1.0 Produção | Space público + corpus em dataset privado | URL ativa (**3.517 chunks**); **US$ 0,79/mil** (deployado) · **US$ 0,29/mil** (local) |
-| v0.7 Apêndice | golden 516Q + cenários de roteador | recall@5 **0,828**; cascade **0,609** × frontier **0,832** (7,6× mais caro) |
+| v0.1 | Voz | ASR local com vocabulário de domínio + TTS local |
+| v0.2 | RAG | Ingestão anti-garbage, BM25 pt-BR + embeddings, RRF ponderado; rerank desativado |
+| v0.3 | Imagem | OCR local das figuras + índice texto+imagem com peso no RRF |
+| v0.4 | Agentes | SLM local na rota simples, LLM remoto na complexa, roteador `cascade`, fallback cruzado |
+| v0.5 / v0.5b | Adaptação | Comparativo prompt × RAG × LoRA × pré-treino → **não treinar**; corpus expandido para 193 documentos |
+| v0.6 | Avaliação | Avaliação por estrato, regra determinística V5, régua documento × página |
+| v0.7 | Apêndice | Golden expandido para 516 perguntas; cenários de roteador (Kev, Laya) refutados |
+| v1.0 | Produção | Space público + dataset privado, custo por mil consultas |
 
-**Conclusões.**
+#### 2.3 Datasets e protocolo de avaliação
 
-1. **RAG + frontier é o que funciona.** A rota sem-RAG **alucina** (v0.5: 3
-   alucinações e **0% de citação** vs 100% com RAG) e é mantida fora de produção;
-   `docs/notas/v06_roteador_laya.md` e `docs/notas/v06_roteador_kev.md` reforçam que nenhum motor
-   local bate a fronteira nessa tarefa.
-2. **"Não treinar" é a conclusão mais sustentada do projeto** — confirmada de
-   forma independente na v0.5, na v0.5b e nos cenários de roteador da v0.7 (Kev,
-   Laya zero-shot e **Laya fine-tuned**). O fine-tune do Laya melhora **dentro da
-   própria receita** (held-out 0.99 / 1.00) mas **colapsa na régua congelada**
-   (0.676 < R2 0.941 / R1 0.912), trocando erro bilateral por erro unilateral
-   confiante (11 falsos-S com confiança 1.00) e **destruindo a calibração**
-   (ECE 0.052 → 0.337). O ativo real do Laya zero-shot — probabilidade calibrada
-   — só sobrevive **sem treinar**.
-3. **O que moveu a agulha foi engenharia, não treino:** ingestão anti-garbage,
-   OCR de figuras, RRF ponderado e a regra determinística V5. Treinar perdeu
-   para pré/pós-processamento em todas as tentativas.
-4. **Os cenários negativos de roteador são evidência, não fracasso:** R2 (TF-IDF
-   + XGB, ~85% do tráfego a <2 ms e US$ 0) e R1 (0.941 / 0.912) ficam à frente de
-   todos os candidatos avaliados (flash 0.706, Kev 0.647, Laya 0.647/0.676).
-   Documentar a contra-evidência **evitou** uma troca por GPU mais caro e pior.
-5. **O limitante atual não é o modelo, é a granularidade da fonte** — a **página**
-   (0.605) rende menos que o **documento** (0.659) — e os **estratos frágeis**
-   (composta/negativa) da avaliação. É por aí, não por treino, que a próxima
-   release melhora.
+Todos os conjuntos de avaliação são versionados em `data/golden_set/` e possuem critério de rótulo congelado. As métricas são calculadas por scripts em `scripts/avaliadores/`, e os resultados oficiais são registrados em Markdown em `docs/`.
 
----
+| Conjunto | Tamanho | Uso |
+|---|---|---|
+| Voz | 10 áudios próprios | WER com e sem vocabulário de domínio |
+| RAG original | 20 perguntas | recall@5, MRR, acurácia fim-a-fim, abstenção |
+| RAG v0.5b | 44 perguntas | reavaliação no corpus expandido |
+| RAG v0.6 | 132 perguntas | avaliação por estrato (rotineira, composta, negativa, adversarial) |
+| RAG v0.7 | 516 perguntas | re-medição com intervalo de confiança menor |
+| Imagem | 3 perguntas | conteúdo da figura no top-5 e correção pela visão |
+| Adaptação | 29 e 42 Q&A curados | matriz base × destilado × sem/com RAG |
+| Roteador | 34 itens (20 canônicos + 14 typos) | acurácia de roteamento e calibração (ECE) |
 
-## Resumo executivo
+O juiz automático é um LLM (`deepseek-v4-pro`) com rubrica fixa; sua consistência foi auditada (concordância, viés de comprimento e sensibilidade à rubrica). As perguntas **negativas** exigem abstenção e as **adversariais** são deliberadamente fora do corpus. A separação por estratos evita que a média esconda falhas sistemáticas.
 
-Assistente **multimodal** (voz → texto → RAG → resposta citada → áudio), evoluído
-em **sete releases** (v0.1 → v0.7) com **decisões medidas e arquitetura leve**
-(etapas locais ONNX/CPU + LLM remoto DeepSeek + SLM local):
+### 3. Resultados
 
-- **v0.1 · Voz** — decisão: ASR local (`faster-whisper small`) com **vocabulário
-  de domínio** como prompt-guia e TTS local (Piper). Resultado: WER médio
-  **0.2290 → 0.0863** (10 audios do próprio aluno).
-- **v0.2 · RAG** — decisões: ingestão **anti-garbage** (remove e-mails/URLs/
-  mobilia de slides), chunking por parágrafos com **overlay** e filtro micro,
-  **BM25 próprio pt-BR + fastembed + RRF ponderado** (rerank cross-encoder
-  testado e **desativado** — piorava MRR). Resultado: recall@5 **1.000** /
-  MRR **0.969**; end-to-end **acurácia 0.700** (14/20) e abstenção indevida
-  **0.250** com `deepseek-chat`.
-- **v0.3 · Imagem** — decisões: **OCR local (RapidOCR/ONNX)** em vez de VLM
-  remoto para as figuras do corpus (dedup por sha1: 921 → 275 únicas, **22
-  figuras úteis** indexadas após filtros de novidade/sinal de domínio), índice
-  **texto+imagem separado** (272 → 294 chunks) com peso 1.15 para figuras no
-  RRF; e **visão multimodal** (`deepseek-v4-flash-vision-exp`) no chat por
-  imagem, que extrai ASSUNTO/TERMOS e pergunta ao RAG *"fale sobre"*. Resultado:
-  conteúdo da figura no top-5 **0.000 → 1.000** e **3/3** casos em que a visão
-  corrigiu o texto (o RAG só-texto abstinha-se com `NAO_SEI`).
-- **v0.4 · Agentes** — decisões: **SLM local de verdade** (Qwen2.5-1.5B-Instruct
-  GGUF Q4_K_M via llama-cpp-python, 100% CPU, US$ 0.00) na rota simples, LLM
-  remoto (`deepseek-v4-pro`) na rota complexa, **roteador SIMPLES/COMPLEXA** com
-  **fallback cruzado sob falha** (falha/rota → outra rota; ambas falham →
-  abstenção com motivo) e **estudo de roteadores**: default passou a
-  **`cascade`** (R2 TF-IDF+XGB decide ~85% a <2 ms/US$ 0; `INDETERMINADO` → R1
-  SLM few-shot; θ=0.60). Medição R1 (SLM): abstenção correta **0.950** (19/20);
-  com o default `cascade` o golden set mede **0.850** (decisão por custo,
-  detalhes em `docs/v04.md` §11). API: **um único `/chat`** (áudio, imagem ou
-  texto) roda o fluxo multiagente por padrão (`AGENTES_HABILITADO=true`);
-  todas as entradas passam pelo mesmo RAG/resposta e a saída é JSON
-  `{texto, resposta, audio_base64}` — WAV só para entradas de áudio/imagem.
+#### 3.1 Voz (v0.1)
 
-Cada release fecha com **evidência medida** em `docs/` (`v0X.md` +
-`v0X_evidencia.md`), testes `pytest tests/` e tag no Git (a v0.7 é **apêndice
-pós-v1.0**, fora do roadmap oficial, e não tem tag).
+| Métrica | Sem vocabulário | Com vocabulário |
+|---|---|---|
+| WER médio | 0,2290 | **0,0863** |
+| Acurácia média | 77,10% | **91,37%** |
+| Custo | US$ 0,00 (ASR/TTS local) | US$ 0,00 |
 
-- **v0.5 · Adaptação** — comparativo prompt/RAG/fine-tuning/pré-treino com
-  decisão **"não treinar"** (o destilado LoRA piora acurácia por super-cautela,
-  `docs/v05.md`). v0.5b expande o corpus para 193 docs / 3.401 chunks e o
-  golden para 44Q (`docs/v05b.md`).
-- **v0.6 · Avaliação** — avaliação **por estrato** com golden 132Q
-  (roteadora 0.609 → composta 0.586 → negativa 0.125 → adversarial 0.833);
-  regra determinística V5 resgata a negativa (2/16 → 11/14); régua
-  doc (0.659) × página (0.605) mostra a página como limitante; TCO
-  0.00027/Q (`docs/v06.md` + `v06_evidencia.md`).
-- **v1.0 · Produção** — deploy em **Space público** + **dataset privado**
-  (corpus fora do repo), custo por mil consultas, e três defeitos de produção
-  corrigidos no smoke test (nomes de modelo obsoletos, SIGPIPE no boot,
-  timeout de LLM) — ver §Arquitetura da v1.0 e `docs/v10.md`.
-- **v0.7 · Apêndice pós-v1.0** — golden expandido para **516Q** (132 congeladas
-  + 384 novas) e tudo re-medido na mesma régua: retrieval recall@5 **0,828**;
-  cascade **0,609** × frontier **0,832** a **~7,6× o custo**; cenários de
-  roteador (Kev, Laya zero-shot e Laya fine-tuned) refutados → decisão
-  **"não treinar" mantida** (`docs/v07.md` + `v07_evidencia.md`).
+O vocabulário de domínio como `initial_prompt` foi o que reduziu o WER; ASR e TTS rodam em CPU, sem custo por consulta.
 
----
+#### 3.2 Recuperação e RAG (v0.2 e v0.7)
 
-## 1. Objetivo
+| Métrica | v0.2 (20Q, 272 chunks) | v0.7 (441Q com fonte) |
+|---|---|---|
+| Recall@5 | **1,000** (16/16) | **0,828** |
+| MRR | **0,969** | 0,665 |
 
-Construir, **do zero e de forma incremental**, um assistente generativo completo sobre os materiais didáticos do próprio curso. O projeto segue o roadmap oficial da disciplina (v0.1 → v1.0) e cada release é reimplementada, testada manualmente e aprovada antes de avançar para a próxima.
+No golden original, a acurácia fim-a-fim foi **0,700** (14/20), com abstenção correta **0,800**, citação presente em **100%** das respostas não abstidas e **zero alucinações** segundo o juiz. No golden de 516 perguntas, a amostra maior mostra que o retrieval mantém o perfil (recall@5 0,828) e que o limitante passa a ser a granularidade da fonte: a **página** (0,605) rende menos que o **documento** (0,659).
 
-Os objetivos de aprendizado são:
+#### 3.3 Imagem (v0.3)
 
-- Implementar um pipeline generativo ponta a ponta: voz → texto → raciocínio → resposta + citação.
-- Medir o desempenho de cada etapa com métricas objetivas (WER, recall@k, taxa de abstenção, etc.).
-- Experimentar arquiteturas heterogêneas (SLM local + LLM remoto, agentes, RAG multimodal).
-- Documentar decisões técnicas e evidências em `docs/`.
-- Publicar uma URL pública funcional na v1.0, com estimativa de custo por mil consultas.
+| Métrica (3 perguntas) | Texto-only | Texto + imagem |
+|---|---|---|
+| Conteúdo da figura no top-5 | 0,000 (0/3) | **1,000** (3/3) |
+| Casos em que a visão corrigiu o texto | — | **3/3** |
 
----
+Com o OCR indexado, perguntas cuja resposta existia apenas na figura passaram a ser respondidas com fonte; sem as figuras, o sistema abstinha-se.
 
-## 2. Escolha do Tema / Domínio
+#### 3.4 Agentes (v0.4)
 
-**Domínio:** materiais didáticos do Master IAG & LLM (PUC-Rio) — ementas, PDFs de aulas, slides e notebooks.
+| Métrica (20 perguntas) | Valor |
+|---|---|
+| Abstenção correta (R1, SLM) | **0,950** (19/20) |
+| Abstenção correta (`cascade`) | 0,850 |
+| Rotas | 13 simples · 7 complexas |
+| Fallbacks | 0 |
+| Latência média | 64,96 s (SLM em CPU; complexas ~9–28 s) |
 
-**Por que este domínio atende à especificação:**
+O prompt few-shot corrigiu o viés do roteador (de 19/20 COMPLEXA para 13/7), e o limite de tokens eliminou respostas vazias do modelo remoto. O estudo de roteadores manteve o `cascade` como default por custo e latência, apesar de o SLM puro ter acurácia ligeiramente maior.
 
-- **Corpus acessível e controlado:** os PDFs e slides das disciplinas já estão disponíveis localmente, sem depender de dados de terceiros.
-- **Delimitado e mensurável:** perguntas fora do conteúdo do curso são naturalmente identificáveis, facilitando a abstenção correta.
-- **Sem PII sensível:** ementas e slides didáticos não carregam dados pessoais (cuidado com fotos ou dados pessoais que eventualmente apareçam — devem ser anonimizados).
-- **Cobre todas as releases do roadmap:** voz (aulas gravadas), RAG (PDFs), imagem (slides/figuras), agentes (roteamento de dúvidas), adaptação, avaliação e produção.
+#### 3.5 Adaptação (v0.5 / v0.5b)
 
-> **Corpus:** começou com **10 documentos** na v0.0 e foi expandido na v0.5b para
-> **193 docs / 3.517 chunks** (PDF/MD/IPYNB/PPTX) — este é o corpus de produção
-> em `data/raw/`.
+| Experimento | Resultado |
+|---|---|
+| Destilado LoRA (v0.5) | acurácia 0,40 → **0,30** por super-cautela |
+| SLM destilado × base (v0.5b) | **0,364 × 0,295** com RAG |
+| RAG + frontier (v0.5b) | **0,705** de acurácia, citação 100% |
+| Prompt-only (v0.5b) | 0,884 de acurácia, **0% de citação**, 3 alucinações |
 
----
+O fine-tuning melhorou o SLM dentro da própria receita, mas continuou distante do frontier e **não reduziu alucinações**. A decisão registrada foi **não treinar**; RAG + frontier permaneceu como produção.
 
-## 3. Especificações por Release
+#### 3.6 Avaliação estratificada (v0.6 e v0.7)
 
-O projeto segue a especificação oficial da disciplina. Cada release adiciona uma capacidade e fecha com evidência medida.
+| Estrato | v0.6 (132Q) | v0.7 (516Q) |
+|---|---|---|
+| Rotineira | 0,609 | 0,664 |
+| Composta | 0,586 | 0,633 |
+| Negativa | 0,125 | 0,091 |
+| Adversarial | 0,833 | 0,853 |
+| **Total** | **0,575** | **0,609** |
 
-| Release | Capacidade | Entrega esperada | Métrica / evidência |
-|---|---|---|---|
-| **v0.0** | Fundação | Estrutura de pastas, README, contrato de agentes, `.gitignore`, corpus de 10 docs, ambiente `uv` funcionando. | Repo inicializado, build limpo. |
-| **v0.1** | Voz | Protótipo de voz funcional; transcrição com e sem vocabulário de domínio. | WER em 10 amostras próprias, antes/depois do vocabulário. |
-| **v0.2** | RAG | Pipeline RAG que responde citando fonte e se abstém fora do corpus. | recall@k + taxa de abstenção correta em golden set. |
-| **v0.3** | Imagem | Analisador de imagens integrado ao RAG. | 1 caso documentado em que a visão corrigiu o texto. |
-| **v0.4** | Agentes | Fluxo heterogêneo (roteador + modelos distintos), diagrama de chamadas. | Comportamento sob falha documentado + teste. |
-| **v0.5** | Adaptação | Tabela comparativa: prompt / RAG / fine-tuning (LoRA) / pré-treino. | Decisão justificada e, se possível, medição. |
-| **v0.6** | Avaliação | Relatório de avaliação estratificada. | Desempenho por estrato + 1 falha encontrada pelo aluno. |
-| **v1.0** | Produção | URL pública funcionando + README de arquitetura. | Custo por mil consultas estimado. |
+A **negativa** foi a falha encontrada pelo aluno: o `cascade` abstinha demais (0,125). A auditoria mostrou que o juiz não era leniente e que a causa era recall@5 = 0. A regra determinística **V5** (casamento literal, janela de 14 tokens e mapa pt→SQL), que não usa LLM, resgatou **11/14** casos do tipo A a custo zero. A projeção fim-a-fim com V5 era 0,661 no golden de 132 perguntas.
 
-> **Apêndice pós-v1.0 (v0.7):** golden expandido para **516Q** e cenários de
-> roteador. É **exploração**, não release do roadmap oficial — ver §Arquitetura
-> da v0.7.
+No golden de 516 perguntas, o **frontier** (modelo remoto em todas as perguntas) mediu **0,832** de acurácia, contra **0,609** do `cascade` — uma diferença de **+0,22** a **~7,6× o custo**. O roteamento real foi de **89% simples / 11% complexa**; a negativa na rota simples (0,091) segue como o elo mais fraco e a V5 como a melhoria de maior retorno.
 
-Regras de controle:
+#### 3.7 Produção e custo (v1.0)
 
-- Uma release por aula; nunca quebrar uma release já aprovada.
-- Cada release fecha com evidência medida registrada em `docs/vXX_*.md`.
-- Dependências são adicionadas por release, sem bloat.
-- Nunca subir PDFs brutos, `.env`, `.venv` ou caches no Git.
+O assistente está publicado em [`rafaelang/assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (Docker, `cpu-upgrade`, sleep de 1 h). O endpoint `/saude` reporta **3.517 chunks**; o smoke test respondeu HTTP 200 em **14,7 s** com citação. O corpus fica em dataset privado e é baixado no boot, sem expor PDFs do curso.
 
----
+| Fluxo | Custo por consulta | Por mil consultas |
+|---|---|---|
+| Deployado (`flash` + `pro`, off-peak) | US$ 0,00079 | **US$ 0,79** |
+| Deployado (peak) | US$ 0,00158 | US$ 1,58 |
+| Local (`cascade` + SLM na simples) | US$ 0,00029 | **US$ 0,29** |
+| Frontier em todas as perguntas (v0.7, preços da medição) | US$ 0,001086 | US$ 1,09 |
+| `cascade` medido no golden v0.7 | US$ 0,000143 | US$ 0,14 |
 
-## 4. Instruções
+O break-even para self-host do SLM fica entre **~60 mil e ~140 mil respostas/mês**, acima da demanda acadêmica real; por isso a API `flash`/`pro` é a escolha racional na operação atual.
 
-### 4.1 Preparação do ambiente
+### 4. Conclusões
+
+1. **RAG + frontier é o que funciona.** A rota sem RAG alucina e não cita (0% de citação na v0.5); com RAG, as respostas citam a fonte e a abstenção é possível. Nenhum motor local testado bateu o frontier nesta tarefa.
+2. **"Não treinar" é a conclusão mais sustentada do projeto.** Confirmada na v0.5, na v0.5b e nos cenários de roteador da v0.7 (Kev, Laya zero-shot e Laya fine-tuned). O fine-tune do Laya melhora dentro da própria receita (0,99/1,00), mas colapsa na régua congelada (0,676 × R2 0,941) e destrói a calibração (ECE 0,052 → 0,337).
+3. **O que moveu a agulha foi engenharia, não treino:** ingestão anti-garbage, OCR de figuras, RRF ponderado, roteamento por custo e a regra V5.
+4. **Cenários negativos são evidência, não fracasso.** Documentar que R2 (TF-IDF + XGBoost, ~85% do tráfego a menos de 2 ms e custo zero) e R1 superam todos os candidatos evitou uma troca por infraestrutura mais cara e pior.
+5. **O limitante atual não é o modelo, é a granularidade da fonte** — a página rende **menos** que o documento — e os estratos frágeis (negativa e composta). É por aí que a próxima release deve evoluir.
+
+Como limitações, a rota local em CPU tem latência alta para uso interativo, o estrato negativo ainda depende de uma regra específica de domínio e a avaliação usa um juiz automático, auditado mas não substituível por revisão humana integral. Trabalhos futuros incluem rerank por página, calibração da abstenção na rota simples e ampliação da auditoria humana do golden set.
+
+### 5. Referências
+
+1. PUC-Rio — Curso [GenAI e LLM MASTER](https://ica.ele.puc-rio.br/cursos/ia-generativa-large-language-models/). Materiais didáticos do curso (corpus deste trabalho).
+2. DeepSeek. [API Docs — Models & Pricing](https://api-docs.deepseek.com/quick_start/pricing). Acesso em out. 2026.
+3. SYSTRAN. [faster-whisper](https://github.com/SYSTRAN/faster-whisper). ASR local em CPU.
+4. Rhasspy. [Piper TTS](https://github.com/rhasspy/piper). Síntese de voz local em pt-BR.
+5. RapidAI. [RapidOCR](https://github.com/RapidAI/RapidOCR). OCR local baseado em ONNX Runtime.
+6. Qdrant. [fastembed](https://github.com/qdrant/fastembed). Embeddings locais em ONNX.
+7. Abetlen. [llama-cpp-python](https://github.com/abetlen/llama-cpp-python). Inferência local de modelos GGUF em CPU.
+8. Qwen Team. [Qwen2.5](https://github.com/QwenLM/Qwen2.5). Modelo de linguagem pequeno utilizado na rota simples.
+9. Documentação interna: [`README_DETALHADO.md`](README_DETALHADO.md), [`docs/README.md`](docs/README.md) e [`docs/adr/`](docs/adr/).
+10. Hugging Face Space: [rafaelang/assistente-master-iag](https://huggingface.co/spaces/rafaelang/assistente-master-iag).
+
+### 6. Instalação
+
+Requisitos: Python **3.14** (definido em `.python-version`), [`uv`](https://docs.astral.sh/uv/) e acesso à API DeepSeek.
 
 ```bash
-cd projeto_final
+git clone git@github.com:rafaelang/proj-master--iag-llm-2025-2-puc-rio-final.git
+cd proj-master--iag-llm-2025-2-puc-rio-final
 
-# O projeto já foi inicializado com uv. Crie/ative o ambiente virtual:
 uv venv
 source .venv/bin/activate
-
-# Sincronize as dependências (inicialmente vazias; por release use uv add):
 uv sync
 ```
 
-### 4.2 Como acompanhar o desenvolvimento release a release
-
-1. **Leia o contrato** em `AGENTS.md`.
-2. **Verifique o escopo** da próxima release neste README e na spec.
-3. **Implemente** a release com testes em `tests/`.
-4. **Rode a suite:**
-   ```bash
-   pytest tests/
-   ```
-   (os subprojetos `deploy/mcp_colab/` e `deploy/mcp_deploy/` têm suíte própria
-   com `.venv` separado e não fazem parte da suíte principal.)
-5. **Meça a evidência** e registre em `docs/vXX_*.md`.
-6. **Teste manualmente** e peça aprovação ao usuário.
-7. **Só então** avance para a próxima release.
-
-### 4.3 Estrutura de pastas
-
-```
-projeto_final/
-├── README.md            ← este arquivo
-├── AGENTS.md            ← contrato permanente para agentes
-├── GLOSSARY.md          ← glossário do domínio
-├── RESUMO_ORIENTADOR.md ← resumo executivo
-├── Dockerfile           ← imagem do Space
-├── .gitignore
-├── pyproject.toml
-├── .python-version
-├── data/
-│   ├── raw/             ← corpus 193 docs (fora do Git)
-│   ├── processed/       ← chunks, índices, modelos (fora do Git)
-│   └── golden_set/      ← avaliação reprodutível (no Git): voz, rag, imagem, adaptação
-├── src/
-│   └── projeto_final/   ← pacote Python (voz, RAG, imagem, agentes, SLM, roteador)
-├── tests/               ← testes por release (`pytest tests/`)
-├── scripts/
-│   ├── avaliadores/     ← avaliadores por release (`avaliar_v1.py` … `avaliar_v07.py`)
-│   └── colab/           ← geração de golden e treino/avaliação no Colab
-├── prompts/             ← templates de prompt versionados
-├── static/              ← front-end (`index.html`)
-├── deploy/              ← `deploy.sh`, `entrypoint.sh`, bundle do Space e MCP servers
-└── docs/
-    ├── v0X.md · v0X_evidencia.md
-    ├── adr/             ← decisões de arquitetura
-    └── notas/           ← notas de processo e cenários
-```
-
-### 4.4 Variáveis de ambiente
-
-Crie um arquivo `.env` (não versionado) para chaves de API:
+Crie um `.env` na raiz (não versionado):
 
 ```bash
 DEEPSEEK_API_KEY=sk-...
+DEEPSEEK_BASE_URL=https://api.deepseek.com   # ou o gateway utilizado
+DEEPSEEK_MODEL=deepseek-v4.1-flash
+JUIZ_MODEL=deepseek-v4-pro
 ```
 
-Nunca commitar `.env`.
+O corpus bruto (`data/raw/`) e os índices (`data/processed/`) **não estão no repositório** por direitos autorais/LGPD; no ambiente de desenvolvimento eles precisam ser preparados localmente. Modelos de ASR, TTS, embeddings e OCR são baixados automaticamente na primeira execução.
+
+### 7. Como executar
+
+**API (interface web e `/chat`):**
+
+```bash
+uvicorn src.projeto_final.main:app --host 0.0.0.0 --port 7860
+# abra http://localhost:7860
+```
+
+O endpoint `POST /chat` aceita `file` (áudio ou imagem) ou `texto` e devolve JSON com `resposta`, `audio_base64`, `abstencao`, `referencias` e `latencia_s`.
+
+**CLI multiagente:**
+
+```bash
+python -m projeto_final.agentes perguntar "o que é um VAE?"
+python -m projeto_final.agentes avaliar --roteador cascade
+```
+
+**Avaliadores (evidência por release):**
+
+```bash
+python scripts/avaliadores/avaliar_v1.py   # WER da voz
+python scripts/avaliadores/avaliar_v2.py   # RAG
+python scripts/avaliadores/avaliar_v3.py   # imagem/OCR (--e2e para LLM)
+python scripts/avaliadores/avaliar_v4.py   # agentes (--roteador/--simples/--complexa)
+python scripts/avaliadores/avaliar_v07.py  # frontier RAG no golden 516Q
+```
+
+**Testes:**
+
+```bash
+pytest tests/
+```
+
+**Deploy:**
+
+```bash
+bash deploy/deploy.sh --dry-run   # revisa o bundle
+bash deploy/deploy.sh             # publica no Space
+```
 
 ---
 
-## 5. Arquitetura da v0.1
+Matrícula: [preencher]
 
-O prototipo v0.1 segue o pipeline **ASR -&gt; LLM -&gt; TTS**, servido por uma pagina HTML estatica via FastAPI:
+Pontifícia Universidade Católica do Rio de Janeiro
 
-```mermaid
-flowchart LR
-    A[Navegador - microfone] -->|audio/webm| B[FastAPI POST /chat]
-    B --> C[faster-whisper small CPU]
-    C -->|transcricao| D[DeepSeek deepseek-chat]
-    D -->|resposta texto| E[piper-tts pt-BR]
-    E -->|audio/wav| F[Navegador - player]
-```
-
-Componentes:
-
-- **Entrada:** pagina HTML em `static/index.html` grava audio do microfone e envia via multipart para `/chat`.
-- **ASR:** `faster-whisper` small roda 100% em CPU, com vocabulario de dominio como `initial_prompt`.
-- **LLM:** DeepSeek `deepseek-chat` via SDK OpenAI, prompt instruindo respostas curtas sem formatacao.
-- **TTS:** `piper-tts` com voz `pt_BR-faber-medium`, 100% local.
-- **Avaliacao:** 10 amostras de audio proprias em `data/golden_set/voz/`; WER medido antes/depois do vocabulario.
-
-### Resultado da v0.1
-
-| Metrica | Sem vocabulario | Com vocabulario | Ganho |
-|---|---|---|---|
-| WER medio | 0.2290 | 0.0863 | -0.1427 |
-| Acuracia media | 77.10% | 91.37% | +14.27 p.p. |
-| Custo por consulta | US$ 0.00 (ASR/TTS local) | US$ 0.00 | - |
-
-Mais detalhes em `docs/v01.md`.
-
-## Arquitetura da v0.2
-
-Pipeline RAG (ingestão offline + recuperação/geração online):
-
-```mermaid
-flowchart TB
-    subgraph INGESTAO["Ingestão (offline)"]
-        A["PDFs/MD (10 docs)"] --> B["_limpar_pagina por linha<br/>mobília de slides + anti-garbage PDF"]
-        B --> C["chunking por parágrafos 300-1200 chars<br/>+ overlay de 100 chars"]
-        C --> D["filtro rigoroso de micro-chunks<br/>(>= 100 chars e > 2 palavras)"]
-        D --> E1["BM25 próprio<br/>(pt-BR, stopwords na query)"]
-        D --> E2["embeddings fastembed 384d (ONNX)"]
-    end
-    subgraph ONLINE["Recuperação + Geração (online)"]
-        P["Pergunta (voz, imagem ou texto)"] --> F["preparar_query<br/>normalizar + stopwords"]
-        F --> G["busca híbrida top-30 BM25 + top-30 embeddings"]
-        G --> H["RRF ponderado k=60<br/>BM25 1.0 x denso 1.5"]
-        H --> I["top-5 chunks definitivo"]
-        I --> J["DeepSeek deepseek-chat<br/>resposta com citação [N]"]
-    end
-    E1 --> G
-    E2 --> G
-```
-
-### Resultado da v0.2 (concluída)
-
-**Retrieval isolado** (configuração final — ingestão limpa/anti-garbage, overlay 100,
-filtro micro, BM25 próprio, RRF ponderado; sem rerank):
-
-| Metrica | Valor |
-|---|---|
-| Recall@5 (16 com `docs_esperados`) | **1.000** (16/16) |
-| MRR | **0.969** |
-| Chunks no corpus | 272 |
-
-**RAG end-to-end** (medição final reexecutada — 272 chunks, `deepseek-chat`, juiz `deepseek-v4-pro`; 20/20 julgadas):
-
-| Metrica | Valor |
-|---|---|
-| recall@5 (16 com `docs_esperados`) | **1.000** (16/16) |
-| Acuracia end-to-end (20) | **0.700** (14/20) |
-| Abstencao correta (20) | **0.800** (16/20) |
-| Citacao presente (12 nao-abstidas) | 1.000 (12/12) |
-| Auditoria de citacao | fiel 10 · fora 2 · fantasma 0 |
-| Alucinacoes (juiz) | 0 |
-| Custo de embeddings/recuperacao | US$ 0.00 (local) |
-
-> Com o retrieval final (recall@5 1.000), a acurácia end-to-end subiu de 0.550 para
-> **0.700** e a abstenção indevida caiu de 0.438 para **0.250** — o gargalo restante é
-> a geração (ver `docs/v02.md` §5.4).
-
-Mais detalhes em `docs/v02.md` e `docs/v02_evidencia.md`.
-
-## Arquitetura da v0.3
-
-A v0.3 tem **duas frentes de "visão"**: (1) **indexação offline** das figuras do
-corpus por OCR local e (2) **chat por imagem** online com modelo multimodal remoto.
-
-```mermaid
-flowchart TB
-    subgraph OFFLINE["Figuras do corpus (offline)"]
-        A["PDFs (data/raw)"] --> B["extração PyMuPDF<br/>dedup sha1 dos pixels (921 → 275)"]
-        B --> C["RapidOCR ONNX/CPU<br/>+ limpeza de linhas"]
-        C --> D["filtros de qualidade<br/>novidade vs página ≥ 0.45 · sinal de domínio ≥ 0.40"]
-        D --> E["22 figuras úteis → chunks<br/>ancorados no título do slide"]
-        E --> F["índice v0.3 separado<br/>272 texto + 22 imagem = 294 chunks"]
-    end
-    subgraph ONLINE["Chat por imagem (online)"]
-        P["Navegador — botão Enviar imagem"] --> Q["POST /chat (file=imagem)"]
-        Q --> R["deepseek-v4-flash-vision-exp<br/>ASSUNTO + TERMOS + SÍNTESE"]
-        R --> S["prompt RAG: fale sobre o assunto da imagem"]
-        S --> T["busca híbrida + RRF<br/>peso 1.15 para chunks de imagem"]
-        T --> U["top-5 → DeepSeek deepseek-chat<br/>resposta com citação [N]"]
-        U --> V["piper-tts → JSON {resposta, audio_base64}"]
-        V --> W["Navegador — resposta do RAG (texto + áudio)"]
-    end
-    F --> T
-```
-
-Componentes:
-
-- **Extração:** `rag/imagem.py` usa PyMuPDF para extrair as figuras dos PDFs e
-  deduplica por **sha1 dos pixels** (921 ocorrências → 275 únicas, mín. 40 px).
-- **OCR local:** **RapidOCR (ONNX, CPU, US$ 0.00)** lê o texto embutido em
-  diagramas/tabelas/slides rasterizados — o que o layer de texto do PDF não tem.
-  Filtros de novidade (≥ 0.45 vs página) e sinal de domínio (≥ 0.40) deixam
-  **22 figuras úteis**.
-- **Índice v0.3 separado:** `data/processed/rag_v3/` (294 chunks) não toca o
-  índice texto-only da v0.2 (`data/processed/rag/`); o RRF dá **peso 1.15** a
-  chunks de imagem para a figura disputar o top-5 com a prosa.
-- **Chat por imagem:** no `/chat` unificado o modelo de visão
-  (`DEEPSEEK_VISION_MODEL`, `deepseek-v4-flash-vision-exp`) extrai
-  **ASSUNTO/TERMOS/SÍNTESE**; o RAG recebe o prompt *"fale sobre: {conteúdo}"* e
-  a **resposta com citação vai ao usuário** (texto + áudio); a mensagem do
-  usuário é a própria imagem.
-- **Endpoints (v0.4 — API unificada):** um único `POST /chat` recebe **áudio
-  (`file`)**, **imagem (`file`)** ou **texto (`texto`)**; independente da entrada,
-  todos passam pelo mesmo processo de RAG/resposta (corpus texto+imagem v0.3 /
-  multiagentes v0.4). A saída é sempre JSON com **texto + áudio**
-  (`{tipo_entrada, texto, resposta, audio_base64, abstencao, referencias,
-  latencia}`), exceto quando a entrada é apenas texto (`audio_base64: null`,
-  sem TTS). Os endpoints `/chat/imagem` e `/chat/texto` foram unificados em
-  `/chat` (e, na v0.4, os JSON `/rag/perguntar` e `/rag/imagem/analisar` já
-  haviam sido removidos).
-
-### Resultado da v0.3 (concluída)
-
-Sem as figuras o RAG abstém-se (`NAO_SEI`) nas perguntas cuja resposta está
-apenas na imagem; com o OCR indexado, o conteúdo da figura chega ao top-5 e o
-assistente responde com fonte — ex.: o slide pede "implemente o **modelo ao
-lado**", e o modelo (colunas e tipos) só existe na figura.
-
-| Metrica (golden set `data/golden_set/imagem/`, 3 perguntas) | Valor |
-|---|---|
-| Conteudo da figura no top-5 — corpus texto-only (contrafactual) | **0.000** (0/3) |
-| Conteudo da figura no top-5 — corpus texto+imagem | **1.000** (3/3) |
-| Casos em que a visao (OCR) corrigiu/agregou o texto | **3** |
-| Respostas LLM: texto-only absteve / texto+imagem acertou | 3/3 · 3/3 |
-| Custo do OCR/figuras | US$ 0.00 (local) |
-
-Mais detalhes em `docs/v03.md` e `docs/v03_evidencia.md`.
-
----
-
-## Arquitetura da v0.4 (Agentes)
-
-A v0.4 implementa um **fluxo heterogêneo ponta a ponta** com três papéis —
-**roteador**, **gerador da rota simples** e **gerador da rota complexa** —
-reutilizando o **índice RAG v0.3** (294 chunks: 272 texto + 22 imagem; não
-recria retrieval). A rota simples é respondida por um **SLM local de verdade**
-(Qwen2.5-1.5B) e a complexa por um **LLM remoto maior**, com **fallback cruzado**
-sob falha e abstenção com motivo.
-
-```mermaid
-flowchart TD
-    U["Usuário: pergunta"] --> RT["Agente Roteador<br/>SLM Qwen2.5-1.5B local<br/>SIMPLES | COMPLEXA"]
-    RT -->|SIMPLES| GS["Gerador SIMPLES<br/>SLM local via RAG v0.3<br/>custo zero"]
-    RT -->|COMPLEXA| GC["Gerador COMPLEXA<br/>deepseek-v4-pro via RAG v0.3"]
-    GS --> F["Pos-processamento:<br/>rodapé de referências + NAO_SEI"]
-    GC --> F
-    F --> R["Resposta + citação [n] | NAO_SEI"]
-    RT -. falha .-> SIMPLES
-    GS -. falha .-> GC
-    GC -. falha .-> GS
-    GS -. resposta vazia .-> GC
-    GC -. resposta vazia .-> GS
-    GS -. ambas falham .-> A["Abstenção: falha em ambas as rotas"]
-    GC -. ambas falham .-> A
-```
-
-Componentes:
-
-- **SLM local de verdade:** `src/projeto_final/slm.py` carrega
-  **Qwen2.5-1.5B-Instruct** (GGUF Q4_K_M, ~1,1 GB) via `llama-cpp-python`
-  (compilado do sdist, Python 3.14), **100% CPU, US$ 0.00**, com carga *lazy*.
-- **Roteador SIMPLES/COMPLEXA:** `agentes.classificar_rota` com **default
-  `cascade`** (R2 TF-IDF+XGB decide pela confiança; `INDETERMINADO` → R1 SLM
-  few-shot — estudo medido em `docs/v04.md` §11). O R1 (SLM local few-shot,
-  `AGENTE_ROTEADOR=slm`) classifica com `prompts/v0.4/roteador_sistema.txt`;
-  em falha assume SIMPLES. O Qwen 1.5B sem few-shot tendia a 19/20 COMPLEXA;
-  com o prompt versionado a distribuição ficou **13 simples / 7 complexas**.
-- **Geradores e mapeamento:** rota simples → SLM local · rota complexa →
-  `deepseek-v4-pro` · opção `flash` → `deepseek-v4.1-flash`
-  (`AGENTE_MODELO_FLASH`/`AGENTE_MODELO_PRO` com defaults próprios, independentes
-  de `DEEPSEEK_MODEL`/`JUIZ_MODEL`).
-  Escolha **parametrizável por env/CLI** (`AGENTE_ROTEADOR/SIMPLES/COMPLEXA` e
-  `--roteador {slm,flash,tfidf,cascade}`, `--simples/--complexa {slm,flash,pro}`); função nova
-  que usa `flash` chama o modelo mapeado explicitamente.
-- **Fallback cruzado:** exceção ou resposta vazia no gerador da rota escolhida →
-  tenta a outra rota; ambas falham → **abstenção (`NAO_SEI`) com
-  `motivo`/`erros[]`**. 6 cenários cobertos em `tests/test_v04.py` com mock
-  (sem API/LLM/GGUF).
-- **Prompts:** `prompts/v0.4/roteador_sistema.txt` (few-shot) e
-  `prompts/v0.4/rag_sistema_slm.txt` (regras curtas p/ o 1.5B: só o contexto,
-  `NAO_SEI` isolado, citação `[N]`).
-- **API/CLI:** o **único `POST /chat`** (áudio/imagem/texto — v0.4) passa pelo
-  fluxo multiagente por padrão (`AGENTES_HABILITADO=true`, desligável por env),
-  responde JSON `{texto, resposta, audio_base64, ...}` e o `index.html` usa esse
-  endpoint (os endpoints `/chat/imagem`, `/chat/texto` e os JSON
-  `/rag/perguntar`/`/rag/imagem/analisar` foram removidos); CLI:
-  `python -m projeto_final.agentes perguntar|avaliar`.
-
-### Resultado da v0.4 (concluída)
-
-| Metrica (golden set `data/golden_set/rag/perguntas.json`, 20 perguntas) | Valor |
-|---|---|
-| **Abstenção correta (20)** | **0.950** (19/20) |
-| Rotas | 13 simples (SLM local) + 7 complexas (pro) |
-| Agentes | gerador-slm 13 · gerador-pro 7 |
-| Fallbacks | **0** |
-| Latência média | **64.96 s** (simples ~40–140 s CPU · complexas ~9–28 s API) |
-| Tokens API (rotas pagas) | prompt 10 003 · completion 3 650 |
-| Custo das rotas simples | **US$ 0.00** (local) |
-
-Ajustes honestos documentados: o few-shot corrigiu o viés do roteador (19/20 →
-13/7) e o orçamento `AGENTE_PRO_MAX_TOKENS=1500` eliminou as respostas **vazias**
-do `deepseek-v4-pro` (raciocínio consumindo 400 tokens na 1ª rodada — 0.900 → a
-rodada final 0.950, 0 fallbacks). Único erro final: **#12** ("diferença entre
-prompt engineering e fine-tuning") — o `pro` abstém-se mesmo com fontes.
-
-> **No deploy público** (Space `cpu-upgrade`, 2 vCPU) os secrets definem
-> `AGENTE_ROTEADOR=flash` / `AGENTE_SIMPLES=flash` / `AGENTE_COMPLEXA=pro`: a
-> rota SLM síncrona levaria minutos em 2 vCPU e estouraria o gateway — o SLM
-> local roda em ambiente **local/CLI** (padrão do código), e o `llama-cpp-python`
-> do container é compilado portável (`GGML_NATIVE=OFF`).
-
-Mais detalhes em `docs/v04.md` e `docs/v04_evidencia.md`.
-
----
-
-## Arquitetura da v0.5 (Adaptação)
-
-A v0.5 **não altera a arquitetura de produção** — ela *mede e decide*: comparou
-as 4 abordagens (prompt/RAG/fine-tuning/pré-treino) e decidiu **não treinar**.
-O experimento reimplantou a PoC com as correções da aula07:
-
-```mermaid
-flowchart LR
-    subgraph LOCAL["Local (API)"]
-        A[golden set 20] --> B["prompt-only (frontier)"]
-        A --> C["RAG (frontier, citação)"]
-        B --> J["juiz de correção<br/>deepseek-v4-pro"]
-        C --> J
-    end
-    subgraph COLAB["Colab T4 (google-colab-cli)"]
-        D["dataset sintético 60 brutos"] --> E["curadoria (juiz de ancoragem)<br/>29 curados: 21 anc + 10 comp + 8 abst"]
-        E --> F["LoRA Qwen2.5-1.5B 4-bit<br/>22–32 s · loss 2.447"]
-        F --> G["matriz 2×2: base × destilado<br/>× sem/com RAG"]
-    end
-    J --> R["docs/v05_evidencia.md"]
-    G --> R
-    R --> D2["decisão: não treinar"]
-```
-
-**Resultado-chave:** o destilado (curado) reduziu alucinações (5→4) mas **piorou
-a acurácia** (0.40→0.30) por **super-cautela** (abstém mesmo com evidência) —
-confirma o "não treinar" com métrica de acurácia (R3), diferente da PoC que
-media só abstenção. Auditoria do juiz aprovada nas 3 sondas (R3).
-
-Mais detalhes em `docs/v05.md` e `docs/v05_evidencia.md`.
-
----
-
-## Arquitetura da v1.0 (Produção)
-
-A v1.0 **não altera o pipeline** (v0.1 → v0.6): ela o empacota para produção
-numa estrutura de duas camadas, mede o **custo por mil consultas** e corrige os
-defeitos de produção que o smoke test do Space expôs.
-
-```mermaid
-flowchart LR
-    subgraph PUB["Space PÚBLICO assistente-master-iag (docker, cpu-upgrade)"]
-        API["FastAPI /chat<br/>áudio·imagem·texto → multiagente"]
-        ROTE["roteador flash<br/>(deepseek-v4.1-flash)"]
-        SIM["simples: flash<br/>(deepseek-v4.1-flash)"]
-        CMP["complexa: pro<br/>(deepseek-v4-pro)"]
-        API --> ROTE --> SIM --> CMP
-    end
-    subgraph PRIV["Dataset PRIVADO assistente-master-iag-dados"]
-        RAW["data/raw (corpus)"]
-        IDX["índices processed/rag*, rag_v3"]
-        SLM["slm_models (GGUF)"]
-    end
-    PUB -- "boot: snapshot_download<br/>(secret HF_TOKEN_READ)" --> PRIV
-    CMP --> DS["DeepSeek API<br/>(deepseek-v4.1-flash / deepseek-v4-pro)"]
-```
-
-- **Corpus privado:** o repo público do Space **não** contém `data/` — o
-  `deploy.sh` sobe raw + índices para o dataset `assistente-master-iag-dados`
-  (privado) e o container baixa em runtime (`deploy/entrypoint.sh`,
-  `HF_TOKEN_READ`). Não expõe PDFs/notebooks do curso (LGPD/direitos autorais).
-- **Modelos remotos em produção:** `AGENTE_ROTEADOR=flash`,
-  `AGENTE_SIMPLES=flash`, `AGENTE_COMPLEXA=pro` (secrets do Space) — a **rota
-  simples é paga** (`flash`); o SLM local (Qwen 2.5-1.5B GGUF) roda só em
-  local/CLI, onde o roteador default é o `cascade` (R2→R1).
-- **Custo por mil consultas:** fluxo **deployado** (roteador `flash` + simples
-  `flash` + complexa `pro`) **US$ 0,79/mil** (off-peak); no modo local
-  (`cascade` + SLM na simples) cai para **US$ 0,29/mil**. Break-even do self-host
-  do SLM em **~60–140 mil respostas/mês** — `docs/notas/v07_tco.md`.
-- **Defeitos corrigidos no smoke test:** (1) nomes de modelo obsoletos
-  (IDs correntes no gateway: **`deepseek-v4.1-flash`** e `deepseek-v4-pro`);
-  (2) SIGPIPE no boot do
-  container (`set -o pipefail` + tqdm/`ls|head` → `disable_progress_bars` + retry
-  + `ls|wc`); (3) timeout no cliente LLM (degradação graciosa → `NAO_SEI`).
-
-Mais detalhes em `docs/v10.md` e `docs/v10_evidencia.md`.
-
----
-
-## Arquitetura da v0.7 (apêndice pós-v1.0 — golden 516Q)
-
-A v0.7 **não altera o pipeline** nem o roadmap oficial (que termina na v1.0):
-é um **apêndice de exploração** que amplia o golden de 132 → **516 perguntas**
-(receita P5: 132 congeladas da v0.6 + 384 novas) para re-medir tudo na mesma
-régua e testar roteadores alternativos. Golden e critério de rótulo seguem
-**congelados**; os avaliadores escrevem em arquivos `*_v07*` e não tocam as
-evidências das releases fechadas.
-
-```mermaid
-flowchart LR
-    G["golden 516Q<br/>rotineira 266 · composta 109<br/>negativa 66 · adversarial 75"] --> R["retrieval isolado<br/>RRF BM25 1.0 × denso 1.5<br/>sem rerank · top-5"]
-    G --> C["cascade (produção)<br/>R2/R1 → SLM local | pro"]
-    G --> F["frontier RAG<br/>pro em todas"]
-    C --> J["juiz DeepSeek<br/>rótulo congelado"]
-    F --> J
-    R --> E["docs/v07_evidencia.md"]
-    J --> E
-```
-
-| Leg (516Q) | Resultado | Custo US$/Q |
-|---|---|---|
-| Retrieval (441 com `docs_esperados`) | recall@5 **0,828** · MRR 0,665 | 0 |
-| Cascade (produção) | acurácia **0,609** · adversarial 0,853 · negativa 0,091 | **0,000143** |
-| Frontier RAG (contraste) | acurácia **0,832** | 0,001086 |
-
-Leituras: (1) com 4× mais casos o retrieval **sobe para 0,828** e mantém o perfil
-(a página continua o limitante); (2) o frontier mantém **+0,22** de acurácia por
-**~7,6× o custo**; (3) o elo fraco segue a **negativa na rota simples** (0,091),
-onde a regra V5 é a melhoria de maior retorno e custo zero. Nos cenários de
-roteador (mesma régua de 34 itens) **Kev** mede 0,647, **Laya** zero-shot 0,647
-(ECE 0,052) e **Laya fine-tuned** 0,676 (ECE 0,337) — nenhum bate o cascade
-R1/R2 (0,912/0,941), e a decisão **"não treinar"** segue mantida.
-
-Mais detalhes em `docs/v07.md` e `docs/v07_evidencia.md`; TCO em
-`docs/notas/v07_tco.md`; cenários em `docs/notas/v06_roteador_kev.md`,
-`v06_roteador_laya.md` e `v07_roteador_laya_ft.md`.
-
----
-
-## 6. Status
-
-| Release | Status |
-|---|---|
-| v0.0 · Fundação | ✅ Inicializado com `uv init --app`; README, AGENTS.md, estrutura criados. |
-| v0.1 · Voz | ✅ WER 0.2290 -> 0.0863; FastAPI + HTML, ASR faster-whisper, LLM DeepSeek, TTS Piper. |
-| v0.2 · RAG | ✅ **CONCLUÍDA** — retrieval Recall@5=1.000/MRR=0.969 (272 chunks limpos/anti-garbage); e2e recall@5=1.000/acurácia=0.700 (juiz deepseek-v4-pro); BM25 próprio + RRF ponderado; dataset único do projeto2; rerank testado/desativado. |
-| v0.3 · Imagem | ✅ **CONCLUÍDA** — OCR local (RapidOCR/ONNX) de figuras extraídas dos PDFs (PyMuPDF; 275 únicas, 22 úteis indexadas); corpus texto+imagem 294 chunks; conteúdo da figura no top-5: 0.000 (texto) → 1.000 (texto+imagem); 3/3 casos em que a visão corrigiu o texto; chat por imagem (`/chat/imagem` + deepseek-vision). *(Na v0.4, os endpoints JSON `/rag/perguntar` e `/rag/imagem/analisar` foram removidos.)* |
-| v0.4 · Agentes | ✅ **CONCLUÍDA** — fluxo heterogêneo (roteador SIMPLES/COMPLEXA + SLM local Qwen2.5-1.5B na rota simples + deepseek-v4-pro na complexa; fallback cruzado); estudo de roteadores com default `cascade` (R2 TF-IDF+XGB→R1, θ=0.60); R1 slm mede abstenção correta 0.950 e o default `cascade` mede 0.850 (decisão por custo, docs/v04.md §11); Python 3.14 + llama-cpp-python + scikit-learn/xgboost; `/chat` e `/chat/imagem` usam os agentes por padrão (`AGENTES_HABILITADO`); endpoints `/rag/perguntar` e `/rag/imagem/analisar` removidos. |
-| v0.5 · Adaptação | ✅ **CONCLUÍDA** — comparativo (prompt/RAG/fine-tuning/pré-treino) com **decisão: não treinar**; mini-experimento prompt-only × RAG com **juiz de correção** (R3: prompt-only alucina 2× fora do corpus e nunca cita; RAG 0 alucinações + 100% citação); **destilação LoRA com curadoria** (R5) no Colab T4 — dataset curado 29 Q&A (21 ancorados + 10 compostos + 8 abstenção), adapter 8,7 MB, 22–32 s de GPU, **train_loss 2.447**; matriz 2×2 (base × destilado × sem/com RAG) medida com juiz: destilado reduz alucinações (5→4) mas **piora acurácia** (0.40→0.30) por super-cautela; **auditoria do juiz aprovada** (consistência, viés de comprimento, rubrica — R3); **DPO não executado** (R6: sem preferência real); TCO 3 cenários (R7). |
-| v0.5b · Expansão do corpus | ✅ **CONCLUÍDA** — corpus expandido de 10 → 193 docs (PDF/MD/IPYNB/PPTX, 3.401 chunks, 2.380 páginas); golden set expandido para **44 perguntas** (20 congeladas + 24 novas); índice reconstruído; mini-experimento no corpus expandido: RAG **0.705** de acurácia (frontier) com **100% de citação** vs prompt-only 0.884 (0% citação, 3 alucinações); **destilação LoRA re-medida** (dataset curado 42 Q&A, train_loss 2.488, adapter ~8,7 MB): SLM destilado 0.364 de acurácia com RAG vs base 0.295 — melhora o SLM mas **continua longe do frontier** e **não reduz alucinações**; decisão **"não treinar" mantida**, RAG+frontier permanece produção; follow-up registrado: reavaliar rerank/top_k no corpus denso. |
-| v0.6 · Avaliação | ✅ **CONCLUÍDA** — relatório **por estrato** no golden 132Q (rotineira 0.609 / composta 0.586 / negativa 0.125 / adversarial 0.833; fim-a-fim cascade 0.575 → **0.661 projetado** com a regra V5); falha encontrada pelo aluno: a **negativa tipo A** (juiz não dá leniência → 0.125) e a **página** como limitante real (doc 0.659 × página 0.605); auditoria do juiz aprovada (P0); alvos v1.0 definidos em `docs/v06.md` §4; golden congelado (perguntas_v06.json); testes 86 passed. |
-| v1.0 · Produção | ✅ **CONCLUÍDA** — Space público [`rafaelang/assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (docker, cpu-upgrade, sleep 1h) + dataset privado `assistente-master-iag-dados` (corpus fora do repo); URL pública respondendo (`/saude` = 3.517 chunks); **custo por mil consultas US$ 0,79** (fluxo deployado `flash`/`pro`; peak US$ 1,58) / **US$ 0,29** (cascade + SLM local); correções de produção (IDs de modelo correntes `deepseek-v4.1-flash`/`deepseek-v4-pro`, SIGPIPE no boot, timeout no cliente LLM); `huggingface_hub` nas deps; `docs/v10.md` + `v10_evidencia.md`. |
-| v0.7 · Apêndice pós-v1.0 | ✅ **EXPLORAÇÃO CONCLUÍDA** (fora do roadmap oficial; sem tag) — golden expandido para **516Q** (132 congeladas + 384 novas) e medição consolidada: retrieval recall@5 **0,828**/MRR 0,665 · cascade **0,609** × frontier **0,832** a **~7,6× o custo** (0,000143 vs 0,001086 US$/Q; rotas 89% simples / 11% complexa); cenários de roteador (Kev 0,647; Laya zero-shot 0,647/ECE 0,052; Laya fine-tuned 0,676/ECE 0,337) **não batem** o cascade R1/R2 → **"não treinar" mantido**; `docs/v07.md` + `v07_evidencia.md`; suíte com **94 testes** (`pytest tests/`). |
-
----
-
-## 7. Referências
-
-- **Resumo executivo (leia primeiro):** [`RESUMO_ORIENTADOR.md`](RESUMO_ORIENTADOR.md)
-- **Glossário do domínio:** [`GLOSSARY.md`](GLOSSARY.md)
-- **Índice da documentação:** [`docs/README.md`](docs/README.md) — pares `v0X.md` + `v0X_evidencia.md` por release.
-- **Decisões de arquitetura (ADRs):** [`docs/adr/`](docs/adr/)
-- **Notas de processo e experimentos:** [`docs/notas/`](docs/notas/)
-- **Protótipo de exploração (PoC, fora deste repositório):** `projeto2/` — referência técnica; não integra esta entrega.
+Curso de Pós Graduação *Inteligência Artificial Generativa & Large Language Models*
