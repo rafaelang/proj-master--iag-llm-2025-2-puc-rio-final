@@ -1,8 +1,8 @@
 # Deploy — Hugging Face (API pública + corpus privado)
 
-Publica o assistente (v0.3: voz + RAG + imagem) em um **Space público** com a
-**API acessível** na internet, mantendo o **corpus privado** fora do repositório
-público (direitos autorais/LGPD).
+Publica o assistente (v0.4+: chat unificado com voz, RAG, imagem e agentes) em um
+**Space público** com a **API acessível** na internet, mantendo o **corpus privado**
+fora do repositório público (direitos autorais/LGPD).
 
 ## Arquitetura
 
@@ -11,7 +11,7 @@ Internet ──► Space PÚBLICO rafaelang/assistente-master-iag  (código, sem
                 │  boot: snapshot_download do dataset privado
                 ▼            (secret HF_TOKEN_READ)
             /app/data  ← dataset PRIVADO rafaelang/assistente-master-iag-dados
-                         (data/raw + índices processed/rag*)
+                         (data/raw + índices processed/rag*, rag_v3 + slm_models)
 ```
 
 | Item | Valor |
@@ -30,8 +30,10 @@ cp deploy/.env.example deploy/.env
 chmod 600 deploy/.env
 ```
 
-Secrets do Space definidos pelo script: `DEEPSEEK_API_KEY`, `HF_TOKEN_READ`,
-`HF_DATA_REPO`. **Nunca commitar tokens.**
+Secrets do Space definidos pelo script: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`,
+`DEEPSEEK_MODEL`, `AGENTE_MODELO_FLASH`, `AGENTE_MODELO_PRO`, `JUIZ_MODEL`,
+`DEEPSEEK_VISION_MODEL`, `HF_TOKEN_READ`, `HF_DATA_REPO` e o roteamento
+(`AGENTE_ROTEADOR`/`AGENTE_SIMPLES`/`AGENTE_COMPLEXA`). **Nunca commitar tokens.**
 
 ## Deploy
 
@@ -41,9 +43,10 @@ bash deploy/deploy.sh              # publica
 ```
 
 O script: 1) cria/atualiza o **dataset privado** e envia `data/raw` + índices
-(`processed/rag`, `processed/rag_v3`, sem `*_models`); 2) cria o **Space
-público** (docker, `cpu-upgrade`, sleep 3600s); 3) define os secrets; 4) monta
-`deploy/build/` **sem `data/`** e faz push.
+(`processed/rag`, `processed/rag_v3`) + modelos locais (`processed/slm_models`,
+GGUF — excluindo caches `*_models/*`); 2) cria o **Space público** (docker,
+`cpu-upgrade`, sleep 3600s); 3) define os secrets; 4) monta `deploy/build/`
+**sem `data/`** e faz push.
 
 No boot, `deploy/entrypoint.sh` baixa o dataset para `/app/data` e então sobe
 `uvicorn` na porta 7860.
