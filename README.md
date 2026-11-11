@@ -1,11 +1,12 @@
 # Assistente Generativo Multimodal com RAG para Materiais Didáticos do Master IAG & LLM
 
 #### Aluno: [Rafael Garcia](https://github.com/rafaelang)
-#### Orientadora: [Nome da Orientadora]
+#### Orientador: Leonardo Forero Mendoza
+#### Curso: Master IAG & LLM (PUC-Rio)
 
 ---
 
-Trabalho apresentado ao curso [GenAI e LLM MASTER](https://ica.ele.puc-rio.br/cursos/ia-generativa-large-language-models/) como pré-requisito para conclusão de curso e obtenção de crédito na disciplina "Projetos de Sistemas Inteligentes de Apoio à Decisão".
+Trabalho apresentado ao curso [Master IAG & LLM](https://ica.ele.puc-rio.br/cursos/ia-generativa-large-language-models/) como pré-requisito para conclusão de curso e obtenção de crédito na disciplina "Projetos de Sistemas Inteligentes de Apoio à Decisão".
 
 - [Link para o código](https://github.com/rafaelang/proj-master--iag-llm-2025-2-puc-rio-final)
 - [Documentação técnica detalhada](README_DETALHADO.md)
@@ -201,7 +202,7 @@ Como limitações, a rota local em CPU tem latência alta para uso interativo, o
 
 ### 5. Referências
 
-1. PUC-Rio — Curso [GenAI e LLM MASTER](https://ica.ele.puc-rio.br/cursos/ia-generativa-large-language-models/). Materiais didáticos do curso (corpus deste trabalho).
+1. PUC-Rio — Curso [Master IAG & LLM](https://ica.ele.puc-rio.br/cursos/ia-generativa-large-language-models/). Materiais didáticos do curso (corpus deste trabalho).
 2. DeepSeek. [API Docs — Models & Pricing](https://api-docs.deepseek.com/quick_start/pricing). Acesso em out. 2026.
 3. SYSTRAN. [faster-whisper](https://github.com/SYSTRAN/faster-whisper). ASR local em CPU.
 4. Rhasspy. [Piper TTS](https://github.com/rhasspy/piper). Síntese de voz local em pt-BR.
@@ -279,8 +280,8 @@ bash deploy/deploy.sh             # publica no Space
 
 ---
 
-Matrícula: [preencher]
+Matrícula: 251.100.863
 
 Pontifícia Universidade Católica do Rio de Janeiro
 
-Curso de Pós Graduação *Inteligência Artificial Generativa & Large Language Models*
+Curso de Pós Graduação *Master IAG & LLM - Inteligência Artificial Generativa & Large Language Models*

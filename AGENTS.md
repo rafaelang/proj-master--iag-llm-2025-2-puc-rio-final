@@ -3,6 +3,15 @@
 > Este arquivo é o contrato de trabalho para agentes de IA (Claude Code, Codex, etc.)
 > e para qualquer pessoa que continue este projeto. Leia antes de qualquer mudança.
 
+## Identificação do trabalho
+
+- **Título:** Assistente Generativo Multimodal com RAG para Materiais Didáticos do Master IAG & LLM
+- **Curso:** Master IAG & LLM (PUC-Rio) - Inteligência Artificial Generativa & Large Language Models
+- **Aluno:** Rafael Garcia - matrícula **251.100.863**
+- **Orientador:** Leonardo Forero Mendoza
+- **Repositório:** https://github.com/rafaelang/proj-master--iag-llm-2025-2-puc-rio-final
+- **Space:** https://huggingface.co/spaces/rafaelang/assistente-master-iag
+
 ## Domínio e proposta
 
 - **Domínio:** materiais didáticos do Master IAG & LLM (PUC-Rio) - ementas, PDFs, slides e notebooks.
