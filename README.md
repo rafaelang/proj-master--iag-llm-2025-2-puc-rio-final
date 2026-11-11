@@ -1,7 +1,7 @@
 # Projeto Final — Assistente Generativo sobre Materiais do Master IAG & LLM (PUC-Rio)
 
 > **Disciplina:** PROJ · Master IAG & LLM 2025-2 (PUC-Rio)
-> **Status:** v1.0 · Produção ✅ **CONCLUÍDA** — Space público [`assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (URL pública funcionando, docker/cpu-upgrade) + corpus privado em dataset separado; custo por mil consultas **US$ 0,79** (fluxo deployado flash/pro) / **US$ 0,29** (modo local cascade+SLM); docs/v10.md + v10_evidencia.md. Roadmap v0.1→v1.0 fechado (v0.1 voz → v0.6 avaliação → v1.0 produção).
+> **Status:** v1.0 · Produção ✅ **CONCLUÍDA** — Space público [`assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (URL pública funcionando, docker/cpu-upgrade) + corpus privado em dataset separado; custo por mil consultas **US$ 0,79** (fluxo deployado flash/pro) / **US$ 0,29** (modo local cascade+SLM); docs/v10.md + v10_evidencia.md. Roadmap v0.1→v1.0 fechado (v0.1 voz → v0.4 agentes → v0.6 avaliação → v1.0 produção) + **apêndice v0.7** (golden 516Q).
 > **Protótipo de exploração (fora deste repositório):** `projeto2/` — PoC usada como referência técnica; **não faz parte desta entrega**.
 
 **Proposta em uma frase:** assistente generativo que responde dúvidas sobre o conteúdo do curso Master IAG & LLM (PUC-Rio), com voz, leitura de imagens, roteamento simples/complexo entre SLM local e LLM remoto, e resposta sempre citando a fonte do material — abstendo-se quando a pergunta está fora do corpus.
@@ -18,7 +18,8 @@ um assistente generativo **multimodal** sobre os materiais do Master IAG & LLM
 (ASR/TTS, OCR, BM25 + embeddings, índice, SLM) e remota quando necessário
 (geração frontier DeepSeek). O resultado está **publicado** num Space público,
 [`rafaelang/assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag),
-a **US$ 0,27 por mil consultas** na cascata default.
+a **US$ 0,79 por mil consultas** no fluxo deployado (`flash`/`pro`) — **US$ 0,29/mil**
+no modo local (`cascade` + SLM na rota simples).
 
 **Como foi decidido.** Cada release fechou com **evidência medida** em `docs/` e
 uma **decisão registrada** — não apenas um número:
@@ -31,7 +32,8 @@ uma **decisão registrada** — não apenas um número:
 | v0.4 Agentes | SLM local na rota simples + pro na complexa; roteador default **cascade** | abstenção R1 **0.950**; cascade 0.850; rota simples US$ 0,00 |
 | v0.5 / v0.5b Adaptação | **não treinar** (prompt/RAG superam o destilado LoRA) | destilado 0.40 → **0.30**; SLM destilado 0.364 vs base 0.295 |
 | v0.6 Avaliação | medir **por estrato** + regra determinística V5 | composta 0.586 · negativa 0.125 → V5 resgata 11/14; página 0.605 < doc 0.659 |
-| v1.0 Produção | Space público + corpus em dataset privado | URL ativa (**3.517 chunks**); **US$ 0,27/mil** (cascade) |
+| v1.0 Produção | Space público + corpus em dataset privado | URL ativa (**3.517 chunks**); **US$ 0,79/mil** (deployado) · **US$ 0,29/mil** (local) |
+| v0.7 Apêndice | golden 516Q + cenários de roteador | recall@5 **0,828**; cascade **0,609** × frontier **0,832** (7,6× mais caro) |
 
 **Conclusões.**
 
@@ -64,8 +66,8 @@ uma **decisão registrada** — não apenas um número:
 ## Resumo executivo
 
 Assistente **multimodal** (voz → texto → RAG → resposta citada → áudio), evoluído
-em quatro releases com **decisões medidas e arquitetura leve** (etapas locais
-ONNX/CPU + LLM remoto DeepSeek + SLM local):
+em **sete releases** (v0.1 → v0.7) com **decisões medidas e arquitetura leve**
+(etapas locais ONNX/CPU + LLM remoto DeepSeek + SLM local):
 
 - **v0.1 · Voz** — decisão: ASR local (`faster-whisper small`) com **vocabulário
   de domínio** como prompt-guia e TTS local (Piper). Resultado: WER médio
@@ -98,7 +100,8 @@ ONNX/CPU + LLM remoto DeepSeek + SLM local):
   `{texto, resposta, audio_base64}` — WAV só para entradas de áudio/imagem.
 
 Cada release fecha com **evidência medida** em `docs/` (`v0X.md` +
-`v0X_evidencia.md`), testes `pytest` e tag no Git.
+`v0X_evidencia.md`), testes `pytest tests/` e tag no Git (a v0.7 é **apêndice
+pós-v1.0**, fora do roadmap oficial, e não tem tag).
 
 - **v0.5 · Adaptação** — comparativo prompt/RAG/fine-tuning/pré-treino com
   decisão **"não treinar"** (o destilado LoRA piora acurácia por super-cautela,
@@ -113,6 +116,11 @@ Cada release fecha com **evidência medida** em `docs/` (`v0X.md` +
   (corpus fora do repo), custo por mil consultas, e três defeitos de produção
   corrigidos no smoke test (nomes de modelo obsoletos, SIGPIPE no boot,
   timeout de LLM) — ver §Arquitetura da v1.0 e `docs/v10.md`.
+- **v0.7 · Apêndice pós-v1.0** — golden expandido para **516Q** (132 congeladas
+  + 384 novas) e tudo re-medido na mesma régua: retrieval recall@5 **0,828**;
+  cascade **0,609** × frontier **0,832** a **~7,6× o custo**; cenários de
+  roteador (Kev, Laya zero-shot e Laya fine-tuned) refutados → decisão
+  **"não treinar" mantida** (`docs/v07.md` + `v07_evidencia.md`).
 
 ---
 
@@ -141,7 +149,9 @@ Os objetivos de aprendizado são:
 - **Sem PII sensível:** ementas e slides didáticos não carregam dados pessoais (cuidado com fotos ou dados pessoais que eventualmente apareçam — devem ser anonimizados).
 - **Cobre todas as releases do roadmap:** voz (aulas gravadas), RAG (PDFs), imagem (slides/figuras), agentes (roteamento de dúvidas), adaptação, avaliação e produção.
 
-> **Corpus inicial (10 documentos):** será montado na preparação inicial (v0.0) em `data/raw/`. Exemplos de documentos: ementas, slides de TDP, NLP, PAI, DPIA, DGL e aulas do próprio projeto.
+> **Corpus:** começou com **10 documentos** na v0.0 e foi expandido na v0.5b para
+> **193 docs / 3.517 chunks** (PDF/MD/IPYNB/PPTX) — este é o corpus de produção
+> em `data/raw/`.
 
 ---
 
@@ -159,6 +169,10 @@ O projeto segue a especificação oficial da disciplina. Cada release adiciona u
 | **v0.5** | Adaptação | Tabela comparativa: prompt / RAG / fine-tuning (LoRA) / pré-treino. | Decisão justificada e, se possível, medição. |
 | **v0.6** | Avaliação | Relatório de avaliação estratificada. | Desempenho por estrato + 1 falha encontrada pelo aluno. |
 | **v1.0** | Produção | URL pública funcionando + README de arquitetura. | Custo por mil consultas estimado. |
+
+> **Apêndice pós-v1.0 (v0.7):** golden expandido para **516Q** e cenários de
+> roteador. É **exploração**, não release do roadmap oficial — ver §Arquitetura
+> da v0.7.
 
 Regras de controle:
 
@@ -186,13 +200,15 @@ uv sync
 
 ### 4.2 Como acompanhar o desenvolvimento release a release
 
-1. **Leia o contrato** em `AGENTS.md` (a ser criado na v0.0).
+1. **Leia o contrato** em `AGENTS.md`.
 2. **Verifique o escopo** da próxima release neste README e na spec.
 3. **Implemente** a release com testes em `tests/`.
 4. **Rode a suite:**
    ```bash
-   pytest
+   pytest tests/
    ```
+   (os subprojetos `deploy/mcp_colab/` e `deploy/mcp_deploy/` têm suíte própria
+   com `.venv` separado e não fazem parte da suíte principal.)
 5. **Meça a evidência** e registre em `docs/vXX_*.md`.
 6. **Teste manualmente** e peça aprovação ao usuário.
 7. **Só então** avance para a próxima release.
@@ -202,19 +218,30 @@ uv sync
 ```
 projeto_final/
 ├── README.md            ← este arquivo
-├── AGENTS.md            ← contrato permanente para agentes (v0.0)
+├── AGENTS.md            ← contrato permanente para agentes
+├── GLOSSARY.md          ← glossário do domínio
+├── RESUMO_ORIENTADOR.md ← resumo executivo
+├── Dockerfile           ← imagem do Space
 ├── .gitignore
 ├── pyproject.toml
 ├── .python-version
 ├── data/
-│   ├── raw/             ← corpus (fora do Git)
+│   ├── raw/             ← corpus 193 docs (fora do Git)
 │   ├── processed/       ← chunks, índices, modelos (fora do Git)
-│   └── golden_set/      ← avaliação reprodutível (no Git)
+│   └── golden_set/      ← avaliação reprodutível (no Git): voz, rag, imagem, adaptação
 ├── src/
-│   └── projeto_final/   ← pacote Python gerado pelo uv
-├── tests/               ← testes por release
+│   └── projeto_final/   ← pacote Python (voz, RAG, imagem, agentes, SLM, roteador)
+├── tests/               ← testes por release (`pytest tests/`)
+├── scripts/
+│   ├── avaliadores/     ← avaliadores por release (`avaliar_v1.py` … `avaliar_v07.py`)
+│   └── colab/           ← geração de golden e treino/avaliação no Colab
 ├── prompts/             ← templates de prompt versionados
-└── docs/                ← specs, evidências e relatórios
+├── static/              ← front-end (`index.html`)
+├── deploy/              ← `deploy.sh`, `entrypoint.sh`, bundle do Space e MCP servers
+└── docs/
+    ├── v0X.md · v0X_evidencia.md
+    ├── adr/             ← decisões de arquitetura
+    └── notas/           ← notas de processo e cenários
 ```
 
 ### 4.4 Variáveis de ambiente
@@ -549,6 +576,46 @@ Mais detalhes em `docs/v10.md` e `docs/v10_evidencia.md`.
 
 ---
 
+## Arquitetura da v0.7 (apêndice pós-v1.0 — golden 516Q)
+
+A v0.7 **não altera o pipeline** nem o roadmap oficial (que termina na v1.0):
+é um **apêndice de exploração** que amplia o golden de 132 → **516 perguntas**
+(receita P5: 132 congeladas da v0.6 + 384 novas) para re-medir tudo na mesma
+régua e testar roteadores alternativos. Golden e critério de rótulo seguem
+**congelados**; os avaliadores escrevem em arquivos `*_v07*` e não tocam as
+evidências das releases fechadas.
+
+```mermaid
+flowchart LR
+    G["golden 516Q<br/>rotineira 266 · composta 109<br/>negativa 66 · adversarial 75"] --> R["retrieval isolado<br/>RRF BM25 1.0 × denso 1.5<br/>sem rerank · top-5"]
+    G --> C["cascade (produção)<br/>R2/R1 → SLM local | pro"]
+    G --> F["frontier RAG<br/>pro em todas"]
+    C --> J["juiz DeepSeek<br/>rótulo congelado"]
+    F --> J
+    R --> E["docs/v07_evidencia.md"]
+    J --> E
+```
+
+| Leg (516Q) | Resultado | Custo US$/Q |
+|---|---|---|
+| Retrieval (441 com `docs_esperados`) | recall@5 **0,828** · MRR 0,665 | 0 |
+| Cascade (produção) | acurácia **0,609** · adversarial 0,853 · negativa 0,091 | **0,000143** |
+| Frontier RAG (contraste) | acurácia **0,832** | 0,001086 |
+
+Leituras: (1) com 4× mais casos o retrieval **sobe para 0,828** e mantém o perfil
+(a página continua o limitante); (2) o frontier mantém **+0,22** de acurácia por
+**~7,6× o custo**; (3) o elo fraco segue a **negativa na rota simples** (0,091),
+onde a regra V5 é a melhoria de maior retorno e custo zero. Nos cenários de
+roteador (mesma régua de 34 itens) **Kev** mede 0,647, **Laya** zero-shot 0,647
+(ECE 0,052) e **Laya fine-tuned** 0,676 (ECE 0,337) — nenhum bate o cascade
+R1/R2 (0,912/0,941), e a decisão **"não treinar"** segue mantida.
+
+Mais detalhes em `docs/v07.md` e `docs/v07_evidencia.md`; TCO em
+`docs/notas/v07_tco.md`; cenários em `docs/notas/v06_roteador_kev.md`,
+`v06_roteador_laya.md` e `v07_roteador_laya_ft.md`.
+
+---
+
 ## 6. Status
 
 | Release | Status |
@@ -561,7 +628,8 @@ Mais detalhes em `docs/v10.md` e `docs/v10_evidencia.md`.
 | v0.5 · Adaptação | ✅ **CONCLUÍDA** — comparativo (prompt/RAG/fine-tuning/pré-treino) com **decisão: não treinar**; mini-experimento prompt-only × RAG com **juiz de correção** (R3: prompt-only alucina 2× fora do corpus e nunca cita; RAG 0 alucinações + 100% citação); **destilação LoRA com curadoria** (R5) no Colab T4 — dataset curado 29 Q&A (21 ancorados + 10 compostos + 8 abstenção), adapter 8,7 MB, 22–32 s de GPU, **train_loss 2.447**; matriz 2×2 (base × destilado × sem/com RAG) medida com juiz: destilado reduz alucinações (5→4) mas **piora acurácia** (0.40→0.30) por super-cautela; **auditoria do juiz aprovada** (consistência, viés de comprimento, rubrica — R3); **DPO não executado** (R6: sem preferência real); TCO 3 cenários (R7). |
 | v0.5b · Expansão do corpus | ✅ **CONCLUÍDA** — corpus expandido de 10 → 193 docs (PDF/MD/IPYNB/PPTX, 3.401 chunks, 2.380 páginas); golden set expandido para **44 perguntas** (20 congeladas + 24 novas); índice reconstruído; mini-experimento no corpus expandido: RAG **0.705** de acurácia (frontier) com **100% de citação** vs prompt-only 0.884 (0% citação, 3 alucinações); **destilação LoRA re-medida** (dataset curado 42 Q&A, train_loss 2.488, adapter ~8,7 MB): SLM destilado 0.364 de acurácia com RAG vs base 0.295 — melhora o SLM mas **continua longe do frontier** e **não reduz alucinações**; decisão **"não treinar" mantida**, RAG+frontier permanece produção; follow-up registrado: reavaliar rerank/top_k no corpus denso. |
 | v0.6 · Avaliação | ✅ **CONCLUÍDA** — relatório **por estrato** no golden 132Q (rotineira 0.609 / composta 0.586 / negativa 0.125 / adversarial 0.833; fim-a-fim cascade 0.575 → **0.661 projetado** com a regra V5); falha encontrada pelo aluno: a **negativa tipo A** (juiz não dá leniência → 0.125) e a **página** como limitante real (doc 0.659 × página 0.605); auditoria do juiz aprovada (P0); alvos v1.0 definidos em `docs/v06.md` §4; golden congelado (perguntas_v06.json); testes 86 passed. |
-| v1.0 · Produção | ✅ **CONCLUÍDA** — Space público [`rafaelang/assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (docker, cpu-upgrade, sleep 1h) + dataset privado `assistente-master-iag-dados` (corpus fora do repo); URL pública respondendo (`/saude` = 3.517 chunks); **custo por mil consultas US$ 0,27** (cascade) / US$ 1,50 (pro); correções de produção (nomes de modelo `deepseek-flash`/`deepseek-v4-pro`, SIGPIPE no boot, timeout no cliente LLM); `huggingface_hub` nas deps; `docs/v10.md` + `v10_evidencia.md`. |
+| v1.0 · Produção | ✅ **CONCLUÍDA** — Space público [`rafaelang/assistente-master-iag`](https://huggingface.co/spaces/rafaelang/assistente-master-iag) (docker, cpu-upgrade, sleep 1h) + dataset privado `assistente-master-iag-dados` (corpus fora do repo); URL pública respondendo (`/saude` = 3.517 chunks); **custo por mil consultas US$ 0,79** (fluxo deployado `flash`/`pro`; peak US$ 1,58) / **US$ 0,29** (cascade + SLM local); correções de produção (IDs de modelo correntes `deepseek-v4.1-flash`/`deepseek-v4-pro`, SIGPIPE no boot, timeout no cliente LLM); `huggingface_hub` nas deps; `docs/v10.md` + `v10_evidencia.md`. |
+| v0.7 · Apêndice pós-v1.0 | ✅ **EXPLORAÇÃO CONCLUÍDA** (fora do roadmap oficial; sem tag) — golden expandido para **516Q** (132 congeladas + 384 novas) e medição consolidada: retrieval recall@5 **0,828**/MRR 0,665 · cascade **0,609** × frontier **0,832** a **~7,6× o custo** (0,000143 vs 0,001086 US$/Q; rotas 89% simples / 11% complexa); cenários de roteador (Kev 0,647; Laya zero-shot 0,647/ECE 0,052; Laya fine-tuned 0,676/ECE 0,337) **não batem** o cascade R1/R2 → **"não treinar" mantido**; `docs/v07.md` + `v07_evidencia.md`; suíte com **94 testes** (`pytest tests/`). |
 
 ---
 
